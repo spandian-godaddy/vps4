@@ -10,7 +10,6 @@ public class UtilsModule extends AbstractModule {
     @Override
     public void configure() {
         bind(Cryptography.class).toProvider(CryptographyProvider.class).in(Scopes.SINGLETON);
-        bind(MonitoringMeta.class).in(Scopes.SINGLETON);
         bind(NetworkService.class).to(JdbcNetworkService.class);
         bind(TroubleshootVmService.class).to(DefaultTroubleshootVmService.class).in(Scopes.SINGLETON);
     }

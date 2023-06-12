@@ -37,7 +37,6 @@ public class IpAddress {
     public UUID vmId;
     public String ipAddress;
     public IpAddressType ipAddressType;
-    public Long pingCheckId;
     public Instant validOn;
     public Instant validUntil;
     public int family;
@@ -45,14 +44,13 @@ public class IpAddress {
     public IpAddress() {
     }
 
-    public IpAddress(long addressId, long hfsAddressId, UUID vmId, String ipAddress, IpAddressType ipAddressType, Long pingCheckId, Instant validOn,
+    public IpAddress(long addressId, long hfsAddressId, UUID vmId, String ipAddress, IpAddressType ipAddressType, Instant validOn,
                      Instant validUntil, int family) {
         this.addressId = addressId;
         this.hfsAddressId = hfsAddressId;
         this.vmId = vmId;
         this.ipAddress = ipAddress;
         this.ipAddressType = ipAddressType;
-        this.pingCheckId = pingCheckId;
         this.validOn = validOn;
         this.validUntil = validUntil;
         this.family = family;

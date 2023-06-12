@@ -16,7 +16,6 @@ public enum CreateVmStep {
     ConfiguringPlesk,
     SetHostname,
     ConfigureMailRelay,
-    ConfigureNodeping,
     ConfigureMonitoring,
     SetupAutomaticBackupSchedule
 }

@@ -35,7 +35,7 @@ import com.godaddy.hfs.vm.VmAction;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.hfs.vm.DestroyVm;
-import com.godaddy.vps4.orchestration.monitoring.Vps4RemoveMonitoring;
+import com.godaddy.vps4.orchestration.monitoring.RemovePanoptaMonitoring;
 import com.godaddy.vps4.orchestration.scheduler.DeleteAutomaticBackupSchedule;
 import com.godaddy.vps4.orchestration.scheduler.ScheduleDestroyVm;
 import com.godaddy.vps4.orchestration.snapshot.Vps4DestroySnapshot;
@@ -106,7 +106,7 @@ public class Vps4DestroyVmTest {
     @Test
     public void executesRemovesMonitoring() {
         command.execute(context, request);
-        verify(context).execute(Vps4RemoveMonitoring.class, vm.vmId);
+        verify(context).execute(RemovePanoptaMonitoring.class, vm.vmId);
     }
 
     @Test
@@ -120,14 +120,14 @@ public class Vps4DestroyVmTest {
     public void skipsRemoveIpIfNullIp() {
         when(networkService.getVmPrimaryAddress(vm.vmId)).thenReturn(null);
         command.execute(context, request);
-        verify(context, never()).execute(any(), eq(Vps4RemoveMonitoring.class), any());
+        verify(context, never()).execute(any(), eq(RemovePanoptaMonitoring.class), any());
     }
 
     @Test
     public void skipsRemoveIpIfValidUntilAlreadySet() {
         primaryIp.validUntil = Instant.now().minus(Duration.ofHours(1));
         command.execute(context, request);
-        verify(context, never()).execute(any(), eq(Vps4RemoveMonitoring.class), any());
+        verify(context, never()).execute(any(), eq(RemovePanoptaMonitoring.class), any());
     }
 
     @Captor ArgumentCaptor<Function<CommandContext, Void>> lambda;
@@ -230,11 +230,11 @@ public class Vps4DestroyVmTest {
     @Test
     public void executesRemoveIpForAdditionalIps() {
         IpAddress primaryIp = new IpAddress(1,1111, vmId, "1.2.3.4", IpAddress.IpAddressType.SECONDARY,
-                null, Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS), 4);
+                Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS), 4);
         IpAddress secondaryIp = new IpAddress(2,1112, vmId, "1.2.3.4", IpAddress.IpAddressType.SECONDARY,
-                null, Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS), 4);
+                Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS), 4);
         IpAddress removedIp = new IpAddress(3,1113, vmId, "1.2.3.4", IpAddress.IpAddressType.SECONDARY,
-                null, Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS), 4);
+                Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS), 4);
 
         List<IpAddress> secondaryIps = new ArrayList<IpAddress>();
         secondaryIps.add(primaryIp);
@@ -250,11 +250,11 @@ public class Vps4DestroyVmTest {
     @Test
     public void marksIpDeletedForAdditionalIps() {
         IpAddress primaryIp = new IpAddress(1,1111, vmId, "1.2.3.4", IpAddress.IpAddressType.SECONDARY,
-                null, Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS), 4);
+                Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS), 4);
         IpAddress secondaryIp = new IpAddress(2,1112, vmId, "1.2.3.4", IpAddress.IpAddressType.SECONDARY,
-                null, Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS), 4);
+                Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS), 4);
         IpAddress removedIp = new IpAddress(3,1113, vmId, "1.2.3.4", IpAddress.IpAddressType.SECONDARY,
-                null, Instant.now(), Instant.now().minus(24, ChronoUnit.HOURS), 4);
+                Instant.now(), Instant.now().minus(24, ChronoUnit.HOURS), 4);
 
         MockitoAnnotations.initMocks(this);
         List<IpAddress> secondaryIps = new ArrayList<IpAddress>();

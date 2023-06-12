@@ -1,10 +1,8 @@
 package com.godaddy.vps4.orchestration.monitoring;
 
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -71,29 +69,5 @@ public class Vps4AddMonitoringTest {
         assertEquals(orionGuid, request.orionGuid);
         assertEquals(hfsVmId, request.hfsVmId);
         assertEquals(shopperId, request.shopperId);
-    }
-
-    @Test
-    public void executesRemoveNodePing() {
-        vm.primaryIpAddress.pingCheckId = 13L;
-        command.execute(context, req);
-
-        verify(context).execute(RemoveNodePingMonitoring.class, vm.primaryIpAddress);
-    }
-
-    @Test
-    public void skipsRemoveNodePingIfNullIp() {
-        vm.primaryIpAddress = null;
-        command.execute(context, req);
-
-        verify(context, never()).execute(eq(RemoveNodePingMonitoring.class), any());
-    }
-
-    @Test
-    public void skipsRemoveNodePingIfPingCheckIdNull() {
-        vm.primaryIpAddress.pingCheckId = null;
-        command.execute(context, req);
-
-        verify(context, never()).execute(eq(RemoveNodePingMonitoring.class), any());
     }
 }

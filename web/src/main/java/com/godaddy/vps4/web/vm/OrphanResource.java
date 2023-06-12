@@ -19,7 +19,6 @@ import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.ProjectService;
-import com.godaddy.vps4.util.MonitoringMeta;
 import com.godaddy.vps4.vm.ServerType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.web.Vps4Api;
@@ -31,8 +30,6 @@ import com.godaddy.vps4.web.security.RequiresRole;
 import com.google.inject.Inject;
 
 import gdg.hfs.vhfs.network.NetworkServiceV2;
-import gdg.hfs.vhfs.nodeping.NodePingCheck;
-import gdg.hfs.vhfs.nodeping.NodePingService;
 
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -52,22 +49,16 @@ public class OrphanResource {
     private final VmSnapshotResource snapshotResource;
     private final ProjectService projectService;
 
-    private final NodePingService hfsNodepingService;
     private final NetworkServiceV2 networkService;
-
-    private final MonitoringMeta monitoringMeta;
 
     @Inject
     public OrphanResource(VmResource vmResource, CreditResource creditResource, VmSnapshotResource snapshotResource,
-                          ProjectService projectService, NodePingService hfsNodepingService,
-                          NetworkServiceV2 networkService, MonitoringMeta monitoringMeta) {
+                          ProjectService projectService, NetworkServiceV2 networkService) {
         this.vmResource = vmResource;
         this.creditResource = creditResource;
         this.snapshotResource = snapshotResource;
         this.projectService = projectService;
-        this.hfsNodepingService = hfsNodepingService;
         this.networkService = networkService;
-        this.monitoringMeta = monitoringMeta;
     }
 
     @GET
@@ -162,33 +153,6 @@ public class OrphanResource {
                 logger.info("could not find hfs ip with id: " + primaryIp.hfsAddressId);
             }
         }
-
-        updateOrphanedNodepingAccount(primaryIp, orphans);
-    }
-
-    private void updateOrphanedNodepingAccount(IpAddress primaryIp, Orphans orphans) {
-        if(primaryIp != null && primaryIp.pingCheckId != null) {
-            try {
-                NodePingCheck pingCheck = hfsNodepingService.getCheck(monitoringMeta.getAccountId(), primaryIp.pingCheckId);
-                if (pingCheck != null &&
-                    isPingCheckEnabledInHfs(pingCheck) &&
-                    isPingCheckPointingAtThisVmsIp(primaryIp, pingCheck)) {
-                    orphans.nodePingCheck = pingCheck;
-                }
-            } catch (Exception e) {
-                logger.info("could not find nodeping check with account id: " + monitoringMeta.getAccountId() +
-                        " and ping checkId: " + primaryIp.pingCheckId);
-            }
-
-        }
-    }
-
-    private boolean isPingCheckPointingAtThisVmsIp(IpAddress primaryIp, NodePingCheck pingCheck) {
-        return pingCheck.target.equals(primaryIp.ipAddress);
-    }
-
-    private boolean isPingCheckEnabledInHfs(NodePingCheck pingCheck) {
-        return "active".equals(pingCheck.enabled);
     }
 
     private void getOrphanedSnapshots(UUID vmId, Orphans orphans) {

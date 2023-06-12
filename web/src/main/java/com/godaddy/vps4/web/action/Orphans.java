@@ -3,7 +3,6 @@ package com.godaddy.vps4.web.action;
 import com.godaddy.vps4.snapshot.Snapshot;
 import com.godaddy.vps4.vm.Image;
 import gdg.hfs.vhfs.network.IpAddress;
-import gdg.hfs.vhfs.nodeping.NodePingCheck;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
@@ -16,7 +15,6 @@ public class Orphans {
     public Image.ControlPanel controlPanel;
 
     public IpAddress ip;
-    public NodePingCheck nodePingCheck;
 
     public List<Snapshot> snapshotList;
 

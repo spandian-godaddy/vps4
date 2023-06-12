@@ -219,7 +219,6 @@ public class Vps4ProvisionVmTest {
     @Test
     public void provisionVmInvokesPanoptaSetup() {
         vm.primaryIpAddress = mock(com.godaddy.vps4.network.IpAddress.class);
-        vm.primaryIpAddress.pingCheckId = 1234L;
         request.vmInfo.isPanoptaEnabled = true;
         when(virtualMachineService.getVirtualMachine(any(UUID.class))).thenReturn(vm);
 

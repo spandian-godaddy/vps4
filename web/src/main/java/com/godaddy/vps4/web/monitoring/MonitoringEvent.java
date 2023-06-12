@@ -4,8 +4,6 @@ import java.time.Instant;
 
 import com.godaddy.vps4.vm.VmOutage;
 
-import gdg.hfs.vhfs.nodeping.NodePingEvent;
-
 public class MonitoringEvent {
     public String type;
     public Instant start;
@@ -13,6 +11,7 @@ public class MonitoringEvent {
     public boolean open;
     public String message;
 
+    // Empty constructor required for Jackson
     public MonitoringEvent() {}
 
     public MonitoringEvent(VmOutage sourceEvent) {
@@ -21,15 +20,5 @@ public class MonitoringEvent {
         this.end = sourceEvent.ended;
         this.open = sourceEvent.ended == null;
         this.message = sourceEvent.reason;
-    }
-
-    public MonitoringEvent(NodePingEvent sourceEvent) {
-        this.type = sourceEvent.type;
-        this.start = Instant.ofEpochMilli(sourceEvent.start);
-        if (sourceEvent.end != null) {
-            this.end = Instant.ofEpochMilli(sourceEvent.end);
-        }
-        this.open = sourceEvent.open;
-        this.message = sourceEvent.message;
     }
 }

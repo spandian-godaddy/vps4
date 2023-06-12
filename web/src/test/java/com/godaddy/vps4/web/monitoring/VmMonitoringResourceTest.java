@@ -27,9 +27,7 @@ import java.util.UUID;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 
-import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -40,7 +38,6 @@ import com.godaddy.vps4.panopta.PanoptaDetail;
 import com.godaddy.vps4.panopta.PanoptaGraph;
 import com.godaddy.vps4.panopta.PanoptaService;
 import com.godaddy.vps4.panopta.PanoptaServiceException;
-import com.godaddy.vps4.util.MonitoringMeta;
 import com.godaddy.vps4.util.ObjectMapperModule;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VmMetric;
@@ -50,38 +47,28 @@ import com.godaddy.vps4.web.vm.VmResource;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
-import gdg.hfs.vhfs.nodeping.NodePingEvent;
-import gdg.hfs.vhfs.nodeping.NodePingService;
-import gdg.hfs.vhfs.nodeping.NodePingUptimeRecord;
-
 public class VmMonitoringResourceTest {
 
     private VmMonitoringResource resource;
     private VmResource vmResource;
-    private NodePingService monitoringService;
     private VirtualMachine vm;
     private List<PanoptaGraph> graphs;
-    private long monitoringAccountId = 12;
-    private JSONParser parser;
     private UriInfo uriInfo;
-    private MonitoringMeta monitoringMeta;
     private PanoptaService panoptaService;
     private PanoptaDataService panoptaDataService;
     private VmOutageResource vmOutageResource;
 
-    private Injector injector = Guice.createInjector(new ObjectMapperModule());
+    private final Injector injector = Guice.createInjector(new ObjectMapperModule());
 
     @Before
     public void setup() throws PanoptaServiceException {
         injector.injectMembers(this);
-        monitoringService = mock(NodePingService.class);
         vmResource = mock(VmResource.class);
-        monitoringMeta = mock(MonitoringMeta.class);
         panoptaService = mock(PanoptaService.class);
         panoptaDataService = mock(PanoptaDataService.class);
         vmOutageResource = mock(VmOutageResource.class);
-        resource = new VmMonitoringResource(monitoringService, vmResource, monitoringMeta, panoptaService, panoptaDataService, vmOutageResource);
-        IpAddress ipAddress = new IpAddress(1, 0, null, null, null, 123L, null, null, 4);
+        resource = new VmMonitoringResource(vmResource, panoptaService, panoptaDataService, vmOutageResource);
+        IpAddress ipAddress = new IpAddress(1, 0, null, null, null, null, null, 4);
         vm = new VirtualMachine(UUID.randomUUID(),
                                 1L,
                                 null,
@@ -102,9 +89,8 @@ public class VmMonitoringResourceTest {
         graphs.add(createMockGraph(VmMetric.CPU));
         graphs.add(createMockGraph(VmMetric.DISK));
         when(vmResource.getVm(vm.vmId)).thenReturn(vm);
-        when(monitoringMeta.getAccountId()).thenReturn(12L);
         when(panoptaService.getUsageGraphs(vm.vmId, "week")).thenReturn(graphs);
-        parser = new JSONParser();
+        new JSONParser();
         setupUri();
     }
 
@@ -151,29 +137,6 @@ public class VmMonitoringResourceTest {
     }
 
     @Test
-    public void testGetVmUptimeForNodePing() throws ParseException, PanoptaServiceException {
-        List<NodePingUptimeRecord> npRecords = new ArrayList<>();
-        JSONObject jsonObject = (JSONObject) parser.parse("{\"enabled\": 2678400000,\"down\": 35210534,\"uptime\": 98.685}");
-        JSONObject jsonObject2 = (JSONObject) parser.parse("{\"enabled\": 3789511111,\"down\": 35210645,\"uptime\": 95.685}");
-        npRecords.add(new NodePingUptimeRecord("2017-05-05", jsonObject));
-        npRecords.add(new NodePingUptimeRecord("2017-05-06", jsonObject2));
-        npRecords.add(new NodePingUptimeRecord("total", jsonObject2));
-
-        when(panoptaDataService.getPanoptaDetails(vm.vmId)).thenReturn(null);
-        when(monitoringService.getCheckUptime(eq(monitoringAccountId), eq(vm.primaryIpAddress.pingCheckId), eq("days"), anyString(), anyString())).thenReturn(npRecords);
-
-        List<MonitoringUptimeRecord> records = resource.getVmUptime(vm.vmId, 30);
-
-        assertEquals(3, records.size());
-
-        MonitoringUptimeRecord first = records.stream().filter(x -> x.label.equals("2017-05-05")).findFirst().get();
-        assertEquals(98.685, first.uptime, 0);
-
-        MonitoringUptimeRecord second = records.stream().filter(x -> x.label.equals("2017-05-06")).findFirst().get();
-        assertEquals(95.685, second.uptime, 0);
-    }
-
-    @Test
     public void testGetVmMonitoringEventsForPanopta() throws PanoptaServiceException {
         List<VmOutage> panoptaEvents = new ArrayList<>();
         Instant now = Instant.now();
@@ -208,35 +171,6 @@ public class VmMonitoringResourceTest {
         assertEquals(now, event.start);
         assertNull(event.end);
         assertEquals("", event.message);
-    }
-
-    @Test
-    public void testGetVmMonitoringEventsForNodePing() throws ParseException, PanoptaServiceException {
-        List<NodePingEvent> npEvents = new ArrayList<>();
-        long now = Instant.now().toEpochMilli();
-        long lastMonth = Instant.now().minus(31, ChronoUnit.DAYS).toEpochMilli();
-
-        JSONObject jsonObject = (JSONObject) parser
-                .parse(String.format("{\"type\": \"down\",\"start\":%d,\"end\":%d,\"open\":true,\"message\":\"timeout\"}", now, null));
-        JSONObject jsonObject2 = (JSONObject) parser
-                .parse(String.format("{\"type\": \"down\",\"start\":%d,\"end\":%d,\"open\":false,\"message\":\"timeout\"}", lastMonth,
-                                     now));
-        npEvents.add(new NodePingEvent(jsonObject));
-        npEvents.add(new NodePingEvent(jsonObject2));
-
-        when(panoptaDataService.getPanoptaDetails(vm.vmId)).thenReturn(null);
-        when(monitoringService.getCheckEvents(monitoringAccountId, vm.primaryIpAddress.pingCheckId, 0)).thenReturn(npEvents);
-
-        PaginatedResult<MonitoringEvent> events = resource.getVmMonitoringEvents(vm.vmId, 30, 10, 0, uriInfo);
-
-        assertEquals(1, events.results.size());
-        assertEquals(1, events.pagination.total);
-        MonitoringEvent event = events.results.get(0);
-        assertEquals("down", event.type);
-        assertTrue(event.open);
-        assertEquals(Instant.ofEpochMilli(now), event.start);
-        assertNull(event.end);
-        assertEquals("timeout", event.message);
     }
 
     @Test

@@ -89,7 +89,6 @@ public class Vps4AccountMessageHandlerTest {
         setDefaultPlanFeatures();
 
         when(dcService.getDataCenter(5)).thenReturn(new DataCenter(5, "testDataCenter"));
-        when(configMock.get("monitoring.nodeping.account.id")).thenReturn("0");
         when(configMock.get("vps4.zombie.minimum.account.age")).thenReturn("7");
 
         orionGuid = UUID.randomUUID();

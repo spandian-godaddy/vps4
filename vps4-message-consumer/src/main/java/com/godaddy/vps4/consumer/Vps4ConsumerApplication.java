@@ -111,7 +111,7 @@ public class Vps4ConsumerApplication {
 
 	private static List<Vps4ConsumerConfiguration> getVps4ConsumerConfigs(Injector injector) {
         Config config = injector.getInstance(Config.class);
-        String[] consumerNames = config.get("vps4.kafka.consumer.names", "Account,Monitoring,Panopta").split(",");
+        String[] consumerNames = config.get("vps4.kafka.consumer.names", "Account,Panopta").split(",");
 
         List<Vps4ConsumerConfiguration> configs = new ArrayList<>();
         for(String name : consumerNames){

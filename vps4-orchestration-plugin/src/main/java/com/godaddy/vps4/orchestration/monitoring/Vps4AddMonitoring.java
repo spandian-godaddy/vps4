@@ -4,7 +4,6 @@ import javax.inject.Inject;
 
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
-import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.orchestration.ActionCommand;
 import com.godaddy.vps4.orchestration.panopta.SetupPanopta;
 import com.godaddy.vps4.orchestration.vm.VmActionRequest;
@@ -38,7 +37,6 @@ public class Vps4AddMonitoring extends ActionCommand<VmActionRequest, Void> {
         this.vm = request.virtualMachine;
 
         setupPanoptaAgent();
-        removeNodePing();
         return null;
     }
 
@@ -57,13 +55,6 @@ public class Vps4AddMonitoring extends ActionCommand<VmActionRequest, Void> {
     private String getShopperId() {
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(vm.orionGuid);
         return credit.getShopperId();
-    }
-
-    private void removeNodePing() {
-        IpAddress primaryIp = vm.primaryIpAddress;
-        if (primaryIp != null && primaryIp.pingCheckId != null) {
-            context.execute(RemoveNodePingMonitoring.class, primaryIp);
-        }
     }
 
 }

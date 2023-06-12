@@ -1,12 +1,9 @@
 package com.godaddy.vps4.web.monitoring;
 
-import gdg.hfs.vhfs.nodeping.NodePingUptimeRecord;
-
 public class MonitoringUptimeRecord {
-    public MonitoringUptimeRecord(NodePingUptimeRecord record) {
-
-        this.label = record.label;
-        uptime = record.uptime;
+    public MonitoringUptimeRecord(String label, double uptime) {
+        this.label = label;
+        this.uptime = uptime;
     }
 
     public String label;

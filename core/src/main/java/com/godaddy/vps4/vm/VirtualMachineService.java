@@ -8,13 +8,9 @@ import com.godaddy.vps4.credit.CreditHistory;
 
 public interface VirtualMachineService {
 
-    List<VirtualMachine> getVirtualMachinesForProject(long projectId);
-
     VirtualMachine getVirtualMachine(long hfsVmId);
 
     VirtualMachine getVirtualMachine(UUID vmId);
-
-    VirtualMachine getVirtualMachineByCheckId(long nodePingcheckId);
 
     List<CreditHistory> getCreditHistory(UUID orionGuid);
 

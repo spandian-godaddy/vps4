@@ -15,7 +15,7 @@ import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.ActionCommand;
 import com.godaddy.vps4.orchestration.hfs.vm.DestroyVm;
-import com.godaddy.vps4.orchestration.monitoring.Vps4RemoveMonitoring;
+import com.godaddy.vps4.orchestration.monitoring.RemovePanoptaMonitoring;
 import com.godaddy.vps4.orchestration.scheduler.DeleteAutomaticBackupSchedule;
 import com.godaddy.vps4.orchestration.scheduler.ScheduleDestroyVm;
 import com.godaddy.vps4.orchestration.snapshot.Vps4DestroySnapshot;
@@ -121,7 +121,7 @@ public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4Dest
     }
 
     private void removeMonitoring() {
-        context.execute(Vps4RemoveMonitoring.class, vm.vmId);
+        context.execute(RemovePanoptaMonitoring.class, vm.vmId);
     }
 
     private void removeIp() {

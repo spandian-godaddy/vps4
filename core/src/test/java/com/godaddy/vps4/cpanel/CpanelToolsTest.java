@@ -62,7 +62,7 @@ public class CpanelToolsTest {
         when(config.get("vps4.callable.timeout", "10000")).thenReturn("10");
 
         UUID vmId = UUID.randomUUID();
-        IpAddress ip = new IpAddress(1, 1, vmId, "123.0.0.1", IpAddressType.PRIMARY, null, null, null, 4);
+        IpAddress ip = new IpAddress(1, 1, vmId, "123.0.0.1", IpAddressType.PRIMARY, null, null, 4);
         when(networkService.getVmPrimaryAddress(hfsVmId)).thenReturn(ip);
         when(cpanelApiTokenService.getApiToken(eq(hfsVmId), any())).thenReturn("randomapitoken");
 

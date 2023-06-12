@@ -9,9 +9,6 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import com.godaddy.hfs.config.Config;
 
 public abstract class KafkaConfiguration {
-
-    public enum ConsumerType {ACCOUNT, MONITORING};
-
     private String topic;
 
     private int numberOfConsumers;

@@ -52,7 +52,7 @@ public class Vps4PlanChangeTest {
                 .withProductMeta(productMeta)
                 .withPlanFeatures(planFeatures)
                 .build();
-        IpAddress primaryIpAddress = new IpAddress(1, 0, credit.getProductId(), "1.2.3.4", IpAddressType.PRIMARY, 123L, null, null, 4);
+        IpAddress primaryIpAddress = new IpAddress(1, 0, credit.getProductId(), "1.2.3.4", IpAddressType.PRIMARY, null, null, 4);
         VirtualMachine vm = new VirtualMachine(credit.getProductId(),
                                                1234,
                                                credit.getOrionGuid(),

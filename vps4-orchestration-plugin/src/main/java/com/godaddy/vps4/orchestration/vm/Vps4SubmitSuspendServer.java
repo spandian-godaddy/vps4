@@ -1,20 +1,18 @@
 package com.godaddy.vps4.orchestration.vm;
 
-import com.godaddy.vps4.credit.CreditService;
-import com.godaddy.vps4.credit.ECommCreditService;
-import com.godaddy.vps4.orchestration.ActionCommand;
-import com.godaddy.vps4.orchestration.hfs.vm.StopVm;
-import com.godaddy.vps4.orchestration.panopta.PausePanoptaMonitoring;
-import com.godaddy.vps4.vm.AccountStatus;
-import com.godaddy.vps4.vm.ActionService;
-import com.godaddy.vps4.vm.ActionType;
-import gdg.hfs.orchestration.CommandContext;
-import gdg.hfs.orchestration.CommandMetadata;
-import gdg.hfs.orchestration.CommandRetryStrategy;
+import javax.inject.Inject;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
+import com.godaddy.vps4.credit.CreditService;
+import com.godaddy.vps4.credit.ECommCreditService;
+import com.godaddy.vps4.orchestration.ActionCommand;
+import com.godaddy.vps4.vm.ActionService;
+
+import gdg.hfs.orchestration.CommandContext;
+import gdg.hfs.orchestration.CommandMetadata;
+import gdg.hfs.orchestration.CommandRetryStrategy;
 
 
 @CommandMetadata(

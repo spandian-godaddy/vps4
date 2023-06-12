@@ -38,7 +38,7 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
             + "vms.spec_id, vms.spec_name, vms.tier, vms.cpu_core_count, vms.memory_mib, vms.disk_gib, vms.valid_on as \"spec_valid_on\", "
             + "vms.valid_until as \"spec_valid_until\", vms.name as \"spec_vps4_name\", vms.ip_address_count, st.server_type, st.server_type_id, st.platform, "
             + "image.name, image.hfs_name, image.image_id, image.control_panel_id, image.os_type_id, "
-            + "primaryIp.address_id, primaryIp.hfs_address_id, primaryIp.ip_address, primaryIp.ip_address_type_id, primaryIp.valid_on, primaryIp.valid_until, primaryIp.ping_check_id, family(primaryIp.ip_address), "
+            + "primaryIp.address_id, primaryIp.hfs_address_id, primaryIp.ip_address, primaryIp.ip_address_type_id, primaryIp.valid_on, primaryIp.valid_until, family(primaryIp.ip_address), "
             + "dc.data_center_id, dc.description "
             + "FROM virtual_machine vm "
             + "JOIN virtual_machine_spec vms ON vms.spec_id=vm.spec_id "
@@ -79,12 +79,6 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     }
 
     @Override
-    public List<VirtualMachine> getVirtualMachinesForProject(long projectId) {
-        return Sql.with(dataSource).exec(selectVirtualMachineQuery + "WHERE vm.project_id=?",
-                Sql.listOf(this::mapVirtualMachine), projectId);
-    }
-
-    @Override
     public VirtualMachine getVirtualMachine(long hfsVmId) {
         return Sql.with(dataSource).exec(selectVirtualMachineQuery + "WHERE vm.hfs_vm_id=?",
                 Sql.nextOrNull(this::mapVirtualMachine), hfsVmId);
@@ -94,12 +88,6 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     public VirtualMachine getVirtualMachine(UUID vmId) {
         return Sql.with(dataSource).exec(selectVirtualMachineQuery + "WHERE vm.vm_id=?",
                 Sql.nextOrNull(this::mapVirtualMachine), vmId);
-    }
-
-    @Override
-    public VirtualMachine getVirtualMachineByCheckId(long nodePingCheckId) {
-        return Sql.with(dataSource).exec(selectVirtualMachineQuery + "WHERE ip.ping_check_id=?",
-                Sql.nextOrNull(this::mapVirtualMachine), nodePingCheckId);
     }
 
     @Override

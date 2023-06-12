@@ -6,7 +6,6 @@ import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.snapshot.Snapshot;
-import com.godaddy.vps4.util.MonitoringMeta;
 import com.godaddy.vps4.vm.DataCenterService;
 import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.ServerSpec;
@@ -16,8 +15,6 @@ import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.action.Orphans;
 import com.godaddy.vps4.web.credit.CreditResource;
 import gdg.hfs.vhfs.network.NetworkServiceV2;
-import gdg.hfs.vhfs.nodeping.NodePingCheck;
-import gdg.hfs.vhfs.nodeping.NodePingService;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -40,10 +37,7 @@ public class OrphanResourceTest {
     private VmSnapshotResource snapshotResource;
     private ProjectService projectService;
 
-    private NodePingService hfsNodepingService;
     private NetworkServiceV2 networkService;
-
-    private MonitoringMeta monitoringMeta;
 
     private UUID vmId = UUID.randomUUID();
     private VirtualMachine vm;
@@ -75,16 +69,9 @@ public class OrphanResourceTest {
         creditResource = mock(CreditResource.class);
         snapshotResource = mock(VmSnapshotResource.class);
 
-
-        hfsNodepingService = mock(NodePingService.class);
         networkService = mock(NetworkServiceV2.class);
 
-        monitoringMeta = mock(MonitoringMeta.class);
-
-        when(monitoringMeta.getAccountId()).thenReturn(Long.valueOf(3333));
-
-        resource = new OrphanResource(vmResource, creditResource, snapshotResource,
-                projectService, hfsNodepingService, networkService, monitoringMeta);
+        resource = new OrphanResource(vmResource, creditResource, snapshotResource, projectService, networkService);
 
 
     }
@@ -225,81 +212,6 @@ public class OrphanResourceTest {
         when(networkService.getAddress(4545)).thenReturn(hfsIp);
         Orphans items = resource.getOrphanedResources(vm.vmId);
         assertEquals(hfsIp, items.ip);
-    }
-
-    @Test
-    public void getOrphanedNodepingAccountNoAccount(){
-        IpAddress ip = getPrimaryIp();
-        vm.primaryIpAddress = ip;
-        Orphans items = resource.getOrphanedResources(vm.vmId);
-        assertNull(items.nodePingCheck);
-    }
-
-    @Test
-    public void getOrphanedNodepingAccountHfsThrowsException(){
-        IpAddress ip = getPrimaryIp();
-        ip.pingCheckId = Long.valueOf(9999);
-        vm.primaryIpAddress = ip;
-
-        when(hfsNodepingService.getCheck(3333, 9999)).thenThrow(new Vps4Exception("Test Exception", "this is a test exception"));
-        Orphans items = resource.getOrphanedResources(vm.vmId);
-        assertNull(items.nodePingCheck);
-    }
-
-    @Test
-    public void getOrphanedNodepingAccountHfsReturnsNull(){
-        IpAddress ip = getPrimaryIp();
-        ip.pingCheckId = Long.valueOf(9999);
-        vm.primaryIpAddress = ip;
-
-        when(hfsNodepingService.getCheck(3333, 9999)).thenReturn(null);
-        Orphans items = resource.getOrphanedResources(vm.vmId);
-        assertNull(items.nodePingCheck);
-    }
-
-    @Test
-    public void getOrphanedNodepingAccountAccountNotActive(){
-        IpAddress ip = getPrimaryIp();
-        ip.pingCheckId = Long.valueOf(9999);
-        vm.primaryIpAddress = ip;
-
-        NodePingCheck npc = new NodePingCheck();
-        npc.enabled = "not active";
-        npc.target = "123.32.2.1";
-
-        when(hfsNodepingService.getCheck(3333, 9999)).thenReturn(npc);
-        Orphans items = resource.getOrphanedResources(vm.vmId);
-        assertNull(items.nodePingCheck);
-    }
-
-    @Test
-    public void getOrphanedNodepingAccountAccountTargetIsntPrimaryIp(){
-        IpAddress ip = getPrimaryIp();
-        ip.pingCheckId = Long.valueOf(9999);
-        vm.primaryIpAddress = ip;
-
-        NodePingCheck npc = new NodePingCheck();
-        npc.enabled = "active";
-        npc.target = "1.1.1.1";
-
-        when(hfsNodepingService.getCheck(3333, 9999)).thenReturn(npc);
-        Orphans items = resource.getOrphanedResources(vm.vmId);
-        assertNull(items.nodePingCheck);
-    }
-
-    @Test
-    public void getOrphanedNodepingAccountAccount(){
-        IpAddress ip = getPrimaryIp();
-        ip.pingCheckId = Long.valueOf(9999);
-        vm.primaryIpAddress = ip;
-
-        NodePingCheck npc = new NodePingCheck();
-        npc.enabled = "active";
-        npc.target = ip.ipAddress;
-
-        when(hfsNodepingService.getCheck(3333, 9999)).thenReturn(npc);
-        Orphans items = resource.getOrphanedResources(vm.vmId);
-        assertEquals(npc, items.nodePingCheck);
     }
 
     @Test

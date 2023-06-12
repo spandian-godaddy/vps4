@@ -135,7 +135,7 @@ public class DestroyTest {
         vm.vmId = UUID.randomUUID();
         vm.orionGuid = UUID.randomUUID();
         vm.validUntil = Instant.MAX;
-        vm.primaryIpAddress = new IpAddress(1, 1, vm.vmId, "192.168.0.1", IpAddress.IpAddressType.PRIMARY, 0L, Instant.now(), Instant.MAX, 4);
+        vm.primaryIpAddress = new IpAddress(1, 1, vm.vmId, "192.168.0.1", IpAddress.IpAddressType.PRIMARY, Instant.now(), Instant.MAX, 4);
 
         ServerSpec spec = new ServerSpec();
         spec.serverType = new ServerType();
