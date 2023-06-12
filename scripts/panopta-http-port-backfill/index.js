@@ -66,7 +66,7 @@ async function printErr(res, message) {
         const vm = await res.json();
 
         if (!vm.monitoringAgent) {
-            console.log(chalk.dim`-> Skipping VM ${vmId} since it does not have Panopta`);
+            console.log(chalk.dim(`-> Skipping VM ${vmId} since it does not have Panopta`));
             continue;
         }
 
@@ -79,11 +79,11 @@ async function printErr(res, message) {
         });
         if (!res.ok) {
             await printErr(res, `Failed to get network services for VM ${vmId}`);
-            process.exit();
+            continue;
         }
         const oldServices = (await res.json())['network_service_list'].filter(s => {
-            const serviceTypepId = s['service_type'].slice(s['service_type'].lastIndexOf('/') + 1);
-            return serviceTypepId === oldServiceTypeId;
+            const serviceTypeId = s['service_type'].slice(s['service_type'].lastIndexOf('/') + 1);
+            return serviceTypeId === oldServiceTypeId;
         });
 
         // Replace domain monitoring
