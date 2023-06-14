@@ -46,8 +46,7 @@ public class ImportedVmFilter extends VmFilter {
                             "mergeShopper",
                             "setHostname",
                             "rescue",
-                            "endRescue",
-                            "upgrade"
+                            "endRescue"
                 ),
               virtualMachineService);
     }
