@@ -45,12 +45,6 @@ public class CustomNotesResource {
     }
 
     @POST
-    @Path("/{vmId}/customNote")
-    public CustomNote createCustomNoteLegacy(@PathParam("vmId") UUID vmId, CustomNoteRequest request) {
-        return this.createCustomNote(vmId, request);
-    }
-
-    @POST
     @Path("/{vmId}/customNotes")
     public CustomNote createCustomNote(@PathParam("vmId") UUID vmId, CustomNoteRequest request) {
         if (customNotesService.getCustomNotes(vmId).size() >= CUSTOM_NOTES_LIMIT) {
