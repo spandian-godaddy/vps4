@@ -316,34 +316,34 @@ public class DefaultPanoptaService implements PanoptaService {
     @Override
     public void addNetworkService(UUID vmId, VmMetric metric, String additionalFqdn, int osTypeId, boolean isManaged) throws PanoptaServiceException {
         PanoptaDetail panoptaDetails = panoptaDataService.getPanoptaDetails(vmId);
-        int networkMetricFrequency = isManaged ? NETWORK_METRIC_FREQUENCY_MANAGED : NETWORK_METRIC_FREQUENCY_SELF_MANAGED;
-
-        String name;
+        PanoptaApiNetworkServiceRequest request;
         int port;
-        PanoptaApiNetworkServiceRequest.Metadata metadata;
-
+        int networkMetricFrequency = isManaged ? NETWORK_METRIC_FREQUENCY_MANAGED : NETWORK_METRIC_FREQUENCY_SELF_MANAGED;
+        PanoptaApiNetworkServiceRequest.Metadata metadata = new PanoptaApiNetworkServiceRequest.Metadata();
+        PanoptaApiNetworkServiceRequest.HttpsMetadata httpsMetadata = new PanoptaApiNetworkServiceRequest.HttpsMetadata();
         if (metric.equals(VmMetric.HTTPS_DOMAIN)) {
-            name = "vps4_domain_monitoring_https";
+            httpsMetadata = new PanoptaApiNetworkServiceRequest.HttpsMetadata();
+            httpsMetadata.metricOverride = METRIC_OVERRIDE;
+            httpsMetadata.httpSslExpiration = SSL_EXPIRATION_WARNING_TIME;
+            httpsMetadata.httpSslIgnore = SSL_IGNORE;
             port = HTTPS_PORT;
-            metadata = new PanoptaApiNetworkServiceRequest.HttpsMetadata(METRIC_OVERRIDE,
-                                                                         SSL_EXPIRATION_WARNING_TIME,
-                                                                         SSL_IGNORE);
         } else if (metric.equals(VmMetric.HTTP_DOMAIN)) {
-            name = "vps4_domain_monitoring_http";
+            metadata = new PanoptaApiNetworkServiceRequest.Metadata();
+            metadata.metricOverride = METRIC_OVERRIDE;
             port = HTTP_PORT;
-            metadata = new PanoptaApiNetworkServiceRequest.Metadata(METRIC_OVERRIDE);
-        } else {
+        }
+        else {
             throw new PanoptaServiceException("UNKNOWN_METRIC", "Only acceptable metrics are "
                     + VmMetric.HTTP_DOMAIN + " or " + VmMetric.HTTPS_DOMAIN
                     + ". This metric is unknown: " + metric);
         }
 
-        PanoptaApiNetworkServiceRequest request = new PanoptaApiNetworkServiceRequest(
-                panoptaMetricMapper.getMetricTypeId(metric, osTypeId), networkMetricFrequency, name,
-                EXCLUDE_FROM_AVAILABILITY, OUTAGE_CONFIRMATION_DELAY, port, additionalFqdn, metadata);
+        request = new PanoptaApiNetworkServiceRequest(panoptaMetricMapper.getMetricTypeId(metric, osTypeId),
+                networkMetricFrequency, EXCLUDE_FROM_AVAILABILITY, OUTAGE_CONFIRMATION_DELAY, port, additionalFqdn,
+                metric.equals(VmMetric.HTTPS_DOMAIN) ? httpsMetadata : metadata);
         panoptaApiServerService.addNetworkService(panoptaDetails.getServerId(),
-                                                  panoptaDetails.getPartnerCustomerKey(),
-                                                  request);
+                panoptaDetails.getPartnerCustomerKey(),
+                request);
     }
 
 
