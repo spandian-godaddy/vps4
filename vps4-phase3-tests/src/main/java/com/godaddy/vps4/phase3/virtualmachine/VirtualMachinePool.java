@@ -161,7 +161,6 @@ public class VirtualMachinePool {
                 // no pooled VMs, can we spin one up?
                 if (perImageLeases.tryAcquire()) {
                     if (vmLeases.tryAcquire()) {
-                        // we _can_ spin one up if a credit is available
                         createVm();
                     } else {
                         perImageLeases.release();
@@ -176,6 +175,10 @@ public class VirtualMachinePool {
 
                         logger.error("Can't wait forever, giving up! Never got vm with image " + imageName);
                         throw new RuntimeException("CreateVm Timed out. " + imageName + " vm did not complete.");
+                    }
+                    if(!vm.createSuccess) {
+                        logger.error("VM Creation failed, giving up! Vm {} failed to create", vm.vmId);
+                        throw new RuntimeException("CreateVm Failed for " + imageName + " with vmId " + vm.vmId);
                     }
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
@@ -195,10 +198,10 @@ public class VirtualMachinePool {
                 else {
                     // Create the VM and add to the pool
                     logger.debug("creating vm for {}, using credit guid {}", imageName, orionGuid);
-                    UUID vmId = provisionVm(orionGuid);
+                    ProvisionVmResult result = provisionVm(orionGuid);
                     VirtualMachine vm = new VirtualMachine(VirtualMachinePool.this, VirtualMachinePool.this.apiClient,
                                                            VirtualMachinePool.this.adminClient, this.imageName,
-                                                           username, password, vmId, orionGuid);
+                                                           username, password, result.vmId, orionGuid, result.success);
                     if (vm.isWindows()) {
                         enableWinexe(vm.vmId);
                     }
@@ -260,7 +263,9 @@ public class VirtualMachinePool {
         static final String username = "vpstester";
         static final String password = "thisvps4TEST!";
 
-        public UUID provisionVm(UUID orionGuid){
+        public ProvisionVmResult provisionVm(UUID orionGuid){
+            ProvisionVmResult result = new ProvisionVmResult();
+            result.success = false;
             JSONObject provisionResult = apiClient.provisionVm("VPS4 Phase 3 Test VM",
                                                                orionGuid,
                                                                imageName,
@@ -268,11 +273,18 @@ public class VirtualMachinePool {
                                                                username,
                                                                password);
             logger.debug("provision vm: {}", provisionResult.toJSONString());
-            UUID vmId = UUID.fromString(provisionResult.get("virtualMachineId").toString());
+            result.vmId = UUID.fromString(provisionResult.get("virtualMachineId").toString());
             long actionId = Long.parseLong(provisionResult.get("id").toString());
-            logger.debug("Creating vmId {} for orionGuid {} with actionId {}", vmId, orionGuid, actionId);
-            apiClient.pollForVmActionComplete(vmId, actionId, maxVmWaitSeconds);
-            return vmId;
+            logger.debug("Creating vmId {} for orionGuid {} with actionId {}", result.vmId, orionGuid, actionId);
+            try{
+                apiClient.pollForVmActionComplete(result.vmId, actionId, maxVmWaitSeconds);
+                result.success = true;
+            }
+            catch (RuntimeException ex)
+            {
+                logger.error("Failed to provisionVm {} for phase3 test", result.vmId);
+            }
+            return result;
         }
 
         public void enableWinexe(UUID vmId) {

@@ -19,6 +19,7 @@ public class VirtualMachine {
     final VirtualMachinePool vmPool;
     String defaultUsername;
     String defaultPassword;
+    public final boolean createSuccess;
 
     public VirtualMachine(
             VirtualMachinePool vmPool,
@@ -28,7 +29,8 @@ public class VirtualMachine {
             String defaultUsername,
             String defaultPassword,
             UUID vmId,
-            UUID orionGuid){
+            UUID orionGuid,
+            boolean createSuccess){
         this.apiClient = apiClient;
         this.adminClient = adminClient;
         this.imageName = imageName;
@@ -37,6 +39,7 @@ public class VirtualMachine {
         this.defaultUsername = defaultUsername;
         this.defaultPassword = defaultPassword;
         this.orionGuid = orionGuid;
+        this.createSuccess = createSuccess;
     }
 
     public Vps4ApiClient getClient() {
