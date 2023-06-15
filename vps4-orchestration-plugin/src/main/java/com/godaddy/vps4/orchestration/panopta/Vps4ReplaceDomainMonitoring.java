@@ -40,8 +40,8 @@ public class Vps4ReplaceDomainMonitoring extends ActionCommand<Vps4ReplaceDomain
 
             PanoptaMetricId panoptaMetricId = panoptaService.getNetworkIdOfAdditionalFqdn(request.vmId, request.additionalFqdn);
             panoptaService.deleteNetworkService(request.vmId, panoptaMetricId.id);
-            panoptaService.addNetworkService(request.vmId, request.protocol.equals("HTTPS") ? VmMetric.HTTPS_DOMAIN : VmMetric.HTTP_DOMAIN,
-                    request.additionalFqdn, request.operatingSystemId, request.isManaged);
+            panoptaService.addNetworkService(request.vmId, request.protocol, request.additionalFqdn,
+                                             request.operatingSystemId, request.isManaged);
         } catch (PanoptaServiceException e) {
             throw new RuntimeException(e);
         }
@@ -53,6 +53,6 @@ public class Vps4ReplaceDomainMonitoring extends ActionCommand<Vps4ReplaceDomain
         public String additionalFqdn;
         public int operatingSystemId;
         public boolean isManaged;
-        public String protocol;
+        public VmMetric protocol;
     }
 }

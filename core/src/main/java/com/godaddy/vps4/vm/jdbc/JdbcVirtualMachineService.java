@@ -73,7 +73,7 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
                         "valid_on as spec_valid_on, valid_until as spec_valid_until, ip_address_count, " +
                         "st.server_type_id, st.server_type, st.platform " +
                 "FROM virtual_machine_spec " +
-                "JOIN server_type st USING(server_type_id)" +
+                "JOIN server_type st USING(server_type_id) " +
                 "WHERE valid_until > now_utc() AND tier=? AND server_type_id=?",
                 Sql.nextOrNull(this::mapServerSpec), tier, serverTypeId);
     }

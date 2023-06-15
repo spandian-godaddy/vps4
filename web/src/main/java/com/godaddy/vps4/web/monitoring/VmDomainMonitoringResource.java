@@ -15,6 +15,7 @@ import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VmAction;
+import com.godaddy.vps4.vm.VmMetric;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.GDUser;
@@ -35,6 +36,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
+
 import java.util.List;
 import java.util.UUID;
 
@@ -95,10 +97,23 @@ public class VmDomainMonitoringResource {
                 ActionType.ADD_DOMAIN_MONITORING, ActionType.REPLACE_DOMAIN_MONITORING);
     }
 
+    private VmMetric validateAndReturnProtocol(String protocol) {
+        if (protocol == null) {
+            return null;
+        }
+        switch (protocol) {
+            case "HTTP":
+                return VmMetric.HTTP_DOMAIN;
+            case "HTTPS":
+                return VmMetric.HTTPS_DOMAIN;
+        }
+        throw new Vps4Exception("PROTOCOL_INVALID", "Protocol " + protocol + " is not supported for this operation");
+    }
+
     @GET
     @Path("/{vmId}/domains")
     public List<PanoptaDomain> getFqdnMetrics(@PathParam("vmId") UUID vmId) {
-        vmResource.getVm(vmId);
+        vmResource.getVm(vmId); // auth validation
         return panoptaService.getAdditionalDomains(vmId);
     }
 
@@ -111,7 +126,7 @@ public class VmDomainMonitoringResource {
         if (addDomainMonitoringRequest.additionalFqdn == null) {
             throw new Vps4Exception("INVALID_ADDITIONAL_FQDN", "Additional fqdn field cannot be empty.");
         }
-        VirtualMachine vm = vmResource.getVm(vmId);
+        VirtualMachine vm = vmResource.getVm(vmId); // auth validation
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(vm.orionGuid);
         List<String> activeFqdns = panoptaDataService.getPanoptaActiveAdditionalFqdns(vmId);
 
@@ -122,11 +137,11 @@ public class VmDomainMonitoringResource {
             throw new Vps4Exception("DUPLICATE_FQDN", "This server already has an active entry for fqdn: " + addDomainMonitoringRequest.additionalFqdn );
         }
 
+        VmMetric protocol = validateAndReturnProtocol(addDomainMonitoringRequest.overrideProtocol);
         validateFqdnConflictingActions(vmId);
 
         Vps4AddDomainMonitoring.Request request = new Vps4AddDomainMonitoring.Request();
-        request.overrideProtocol = addDomainMonitoringRequest.overrideProtocol == null ?
-                null : addDomainMonitoringRequest.overrideProtocol.toString();
+        request.overrideProtocol = protocol;
         request.vmId = vmId;
         request.additionalFqdn = addDomainMonitoringRequest.additionalFqdn;
         request.osTypeId = vm.image.operatingSystem.getOperatingSystemId();
@@ -153,13 +168,14 @@ public class VmDomainMonitoringResource {
     @ApiOperation(value = "replace HTTP/HTTPS domain monitoring on customer server")
     public VmAction replaceDomainMonitoring(@PathParam("vmId") UUID vmId, @PathParam("fqdn") String fqdn,
                                             ReplaceDomainMonitoringRequest replaceDomainMonitoringRequest) throws PanoptaServiceException {
-        VirtualMachine vm = vmResource.getVm(vmId);
+        VirtualMachine vm = vmResource.getVm(vmId); // auth validation
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(vm.orionGuid);
 
         if (replaceDomainMonitoringRequest.protocol == null) {
             throw new Vps4Exception("PROTOCOL_INVALID", "Protocol received is null.");
         }
 
+        VmMetric protocol = validateAndReturnProtocol(replaceDomainMonitoringRequest.protocol);
         validateFqdnConflictingActions(vmId);
 
         PanoptaMetricId metric = panoptaService.getNetworkIdOfAdditionalFqdn(vmId, fqdn);
@@ -167,7 +183,7 @@ public class VmDomainMonitoringResource {
             throw new Vps4Exception("METRIC_NOT_FOUND", "Panopta metric was not found.");
         }
 
-        if (replaceDomainMonitoringRequest.protocol.toString().equals(panoptaMetricMapper.getVmMetric(metric.typeId).toString())) {
+        if (protocol == panoptaMetricMapper.getVmMetric(metric.typeId)) {
             logger.info("Requested protocol matches existing protocol for vmId {} - no further action for metric Id {} ", vmId, metric.id);
             return null;
         }
@@ -177,21 +193,17 @@ public class VmDomainMonitoringResource {
         request.additionalFqdn = fqdn;
         request.operatingSystemId = vm.image.operatingSystem.getOperatingSystemId();
         request.isManaged = credit.isManaged();
-        request.protocol = replaceDomainMonitoringRequest.protocol.toString();
+        request.protocol = protocol;
         return createActionAndExecute(actionService, commandService, vmId,
                 ActionType.REPLACE_DOMAIN_MONITORING,  request, "Vps4ReplaceDomainMonitoring", user);
     }
 
-    public enum FqdnProtocol {
-        HTTP_DOMAIN, HTTPS_DOMAIN
-    }
-
     public static class AddDomainMonitoringRequest {
         public String additionalFqdn;
-        public FqdnProtocol overrideProtocol;
+        public String overrideProtocol;
     }
 
     public static class ReplaceDomainMonitoringRequest {
-        public FqdnProtocol protocol;
+        public String protocol;
     }
 }

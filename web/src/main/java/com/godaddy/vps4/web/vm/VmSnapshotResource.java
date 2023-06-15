@@ -194,7 +194,7 @@ public class VmSnapshotResource {
 
     private String getVmHypervisorHostname(UUID vmId, long hfsVmId) {
         VmExtendedInfo vmExtendedInfo = vmService.getVmExtendedInfo(hfsVmId);
-        if(vmExtendedInfo != null) {
+        if (vmExtendedInfo != null) {
             String hypervisorHostname = vmExtendedInfo.extended.hypervisorHostname;
             logger.info("Getting vm {} hypervisor: {}", vmId, hypervisorHostname);
             return hypervisorHostname;

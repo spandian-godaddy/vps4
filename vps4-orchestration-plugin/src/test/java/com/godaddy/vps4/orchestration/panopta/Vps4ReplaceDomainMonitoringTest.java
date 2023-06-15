@@ -36,14 +36,14 @@ public class Vps4ReplaceDomainMonitoringTest {
         request.vmId = vmId;;
         request.operatingSystemId = 1;;
         request.isManaged = true;
-        request.protocol = "HTTP";
+        request.protocol = VmMetric.HTTP_DOMAIN;
         panoptaServer = mock(PanoptaServer.class);
         panoptaServer.serverId = 1234567;
         when(panoptaService.getServer(vmId)).thenReturn(panoptaServer);
-        PanoptaMetricId fakeHTTPSmetric = new PanoptaMetricId();
-        fakeHTTPSmetric.id = 123456;
-        fakeHTTPSmetric.typeId = 81;
-        when(panoptaService.getNetworkIdOfAdditionalFqdn(vmId, request.additionalFqdn)).thenReturn(fakeHTTPSmetric);
+        PanoptaMetricId fakeHttpsMetric = new PanoptaMetricId();
+        fakeHttpsMetric.id = 123456;
+        fakeHttpsMetric.typeId = 81;
+        when(panoptaService.getNetworkIdOfAdditionalFqdn(vmId, request.additionalFqdn)).thenReturn(fakeHttpsMetric);
     }
     
     @Test

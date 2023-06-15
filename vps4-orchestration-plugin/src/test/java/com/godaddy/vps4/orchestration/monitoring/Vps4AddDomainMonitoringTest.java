@@ -5,6 +5,8 @@ import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.orchestration.panopta.AddAdditionalFqdnPanopta;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.vm.VmMetric;
+
 import gdg.hfs.orchestration.CommandContext;
 import org.junit.Before;
 import org.junit.Test;
@@ -13,6 +15,8 @@ import org.mockito.ArgumentCaptor;
 import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -73,12 +77,12 @@ public class Vps4AddDomainMonitoringTest {
         assertEquals(vmId, request.vmId);
         assertEquals(1, request.operatingSystemId);
         assertEquals("thisfqdn.isdefinitely.fake", request.additionalFqdn);
-        assertEquals(false, request.isHttps);
+        assertFalse(request.isHttps);
     }
 
     @Test
     public void acceptsHttpsOverride() {
-        req.overrideProtocol = "HTTPS";
+        req.overrideProtocol = VmMetric.HTTPS_DOMAIN;
         command.execute(context, req);
 
         ArgumentCaptor<AddAdditionalFqdnPanopta.Request> argument = ArgumentCaptor.forClass(AddAdditionalFqdnPanopta.Request.class);
@@ -87,7 +91,7 @@ public class Vps4AddDomainMonitoringTest {
         assertEquals(vmId, request.vmId);
         assertEquals(1, request.operatingSystemId);
         assertEquals("thisfqdn.isdefinitely.fake", request.additionalFqdn);
-        assertEquals(true, request.isHttps);
+        assertTrue(request.isHttps);
     }
 
     @Test
@@ -101,13 +105,13 @@ public class Vps4AddDomainMonitoringTest {
         assertEquals(vmId, request.vmId);
         assertEquals(1, request.operatingSystemId);
         assertEquals("myh.godaddy.com", request.additionalFqdn);
-        assertEquals(true, request.isHttps);
+        assertTrue(request.isHttps);
     }
 
     @Test
     public void acceptsHttpOverride() {
         req.additionalFqdn = "myh.godaddy.com";
-        req.overrideProtocol = "HTTP";
+        req.overrideProtocol = VmMetric.HTTP_DOMAIN;
         command.execute(context, req);
 
         ArgumentCaptor<AddAdditionalFqdnPanopta.Request> argument = ArgumentCaptor.forClass(AddAdditionalFqdnPanopta.Request.class);
@@ -116,6 +120,6 @@ public class Vps4AddDomainMonitoringTest {
         assertEquals(vmId, request.vmId);
         assertEquals(1, request.operatingSystemId);
         assertEquals("myh.godaddy.com", request.additionalFqdn);
-        assertEquals(false, request.isHttps);
+        assertFalse(request.isHttps);
     }
 }

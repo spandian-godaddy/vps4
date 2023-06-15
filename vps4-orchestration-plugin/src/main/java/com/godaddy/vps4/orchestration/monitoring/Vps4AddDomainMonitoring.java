@@ -10,6 +10,7 @@ import com.godaddy.vps4.orchestration.ActionCommand;
 import com.godaddy.vps4.orchestration.ActionRequest;
 import com.godaddy.vps4.orchestration.panopta.AddAdditionalFqdnPanopta;
 import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.VmMetric;
 
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
@@ -32,7 +33,7 @@ public class Vps4AddDomainMonitoring extends ActionCommand<Vps4AddDomainMonitori
     protected Void executeWithAction(CommandContext context, Vps4AddDomainMonitoring.Request request) {
         this.context = context;
         boolean isHttps = request.overrideProtocol == null ? isHttps(request.additionalFqdn) :
-                request.overrideProtocol.equals("HTTPS");
+                request.overrideProtocol == VmMetric.HTTPS_DOMAIN;
         addAdditionalFqdn(request.vmId, request.additionalFqdn, isHttps, request.osTypeId, request.isManaged);
         return null;
     }
@@ -65,7 +66,7 @@ public class Vps4AddDomainMonitoring extends ActionCommand<Vps4AddDomainMonitori
         public String additionalFqdn;
         public int osTypeId;
         public boolean isManaged;
-        public String overrideProtocol;
+        public VmMetric overrideProtocol;
 
         @Override
         public long getActionId() {
