@@ -20,6 +20,7 @@ import com.godaddy.vps4.mailrelay.MailRelayService;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.mailrelay.Vps4SetMailRelayQuota;
+import com.godaddy.vps4.reseller.ResellerService;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
@@ -59,6 +60,8 @@ public class VmMailRelayResource {
     private final CommandService commandService;
     private final ActionService actionService;
     private final CreditService creditService;
+    private final ResellerService resellerService;
+
     private final GDUser user;
 
     @Inject
@@ -68,13 +71,15 @@ public class VmMailRelayResource {
                                CommandService commandService,
                                ActionService actionService,
                                VmResource vmResource,
-                               CreditService creditService) {
+                               CreditService creditService,
+                               ResellerService resellerService) {
         this.mailRelayService = mailRelayService;
         this.networkService = networkService;
         this.commandService = commandService;
         this.actionService = actionService;
         this.creditService = creditService;
         this.vmResource = vmResource;
+        this.resellerService = resellerService;
         this.user = user;
     }
 
@@ -128,7 +133,10 @@ public class VmMailRelayResource {
     public Action updateMailRelayQuota(@ApiParam(value = "The ID of the selected server", required = true) @PathParam("vmId") UUID vmId,
             MailRelayQuotaPatch quotaPatch) {
         VirtualMachine vm = vmResource.getVm(vmId);
-        validateMailRelayUpdate(creditService, vm.orionGuid, user, quotaPatch.quota);
+
+        List<String> brandResellerIds = resellerService.getBrandResellerIds();
+
+        validateMailRelayUpdate(creditService, vm.orionGuid, user, quotaPatch.quota, brandResellerIds);
 
         IpAddress ipAddress = networkService.getVmPrimaryAddress(vmId);
         Vps4SetMailRelayQuota.Request request = new Vps4SetMailRelayQuota.Request(ipAddress.ipAddress, quotaPatch.quota);

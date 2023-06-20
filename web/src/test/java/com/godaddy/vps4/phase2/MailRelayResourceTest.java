@@ -6,6 +6,7 @@ import com.godaddy.vps4.network.IpAddress.IpAddressType;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.panopta.PanoptaApiCustomerService;
 import com.godaddy.vps4.panopta.PanoptaApiServerService;
+import com.godaddy.vps4.reseller.ResellerService;
 import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.security.SecurityModule;
@@ -65,6 +66,7 @@ public class MailRelayResourceTest {
                     bind(SchedulerWebService.class).toInstance(swServ);
                     bind(PanoptaApiCustomerService.class).toInstance(mock(PanoptaApiCustomerService.class));
                     bind(PanoptaApiServerService.class).toInstance(mock(PanoptaApiServerService.class));
+                    bind(ResellerService.class).toInstance(mock(ResellerService.class));
                 }
 
                 @Provides

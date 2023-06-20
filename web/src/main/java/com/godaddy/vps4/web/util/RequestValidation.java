@@ -204,25 +204,16 @@ public class RequestValidation {
         }
     }
 
-    private static boolean isBrandReseller(String resellerId) {
-        String[] brandResellers = {
-            "525848", // Heart Internet
-            "527397", // TSOHost
-            "525847", // Host Europe GmbH
-            "525845", // Domain Factory GmbH
-            "525844", // 123 Reg
-            "495469"  // Media Temple
-        };
-
-        return Arrays.stream(brandResellers).anyMatch(rsId -> rsId.equals(resellerId));
+    private static boolean isBrandReseller(String resellerId, List<String> brandResellers) {
+        return brandResellers.stream().anyMatch(rsId -> rsId.equals(resellerId));
     }
 
     public static void validateMailRelayUpdate(
-            CreditService creditService, UUID orionGuid, GDUser gdUser, int newQuota) {
+            CreditService creditService, UUID orionGuid, GDUser gdUser, int newQuota, List<String> brandResellerIds) {
         VirtualMachineCredit vmCredit = creditService.getVirtualMachineCredit(orionGuid);
 
         if (gdUser.roles().contains(Role.HS_AGENT)) {
-            if (isBrandReseller(vmCredit.getResellerId())) {
+            if (isBrandReseller(vmCredit.getResellerId(), brandResellerIds)) {
                 if (newQuota > BRAND_RESELLER_MAIL_RELAY_LIMIT) {
                     throw new Vps4Exception(
                         "EXCEEDS_LIMIT",

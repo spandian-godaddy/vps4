@@ -8,6 +8,7 @@ import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.mailrelay.Vps4SetMailRelayQuota;
 import com.godaddy.vps4.phase2.SqlTestData;
+import com.godaddy.vps4.reseller.ResellerService;
 import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4User;
@@ -41,6 +42,7 @@ import org.mockito.MockitoAnnotations;
 
 import javax.sql.DataSource;
 import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 
 import static org.mockito.Mockito.any;
@@ -54,9 +56,11 @@ import static org.mockito.Mockito.when;
 public class VmMailRelayResourceTest {
     private GDUser user;
     private long actionId = 123;
+    private List<String> resellerIds = Arrays.asList("525848,321312,123123");
     private Action mailRelayAction = mock(Action.class);
     private GDUser patchUser = mock(GDUser.class);
     private ActionService actionService = mock(ActionService.class);
+    private ResellerService resellerService = mock(ResellerService.class);
     private CreditService creditService = mock(CreditService.class);
     private NetworkService networkService = mock(NetworkService.class);
     private CommandService commandService = mock(CommandService.class);
@@ -86,6 +90,7 @@ public class VmMailRelayResourceTest {
                 bind(MailRelayService.class).toInstance(mock(MailRelayService.class));
                 bind(VirtualMachineService.class).toInstance(mock(VirtualMachineService.class));
                 bind(ActionService.class).toInstance(actionService);
+                bind(ResellerService.class).toInstance(resellerService);
             }
 
             @Provides
@@ -111,6 +116,8 @@ public class VmMailRelayResourceTest {
         when(networkService.getVmPrimaryAddress(eq(testVm.vmId))).thenReturn(ipAddress);
 
         when(creditService.getVirtualMachineCredit(eq(testVm.orionGuid))).thenReturn(vmCredit);
+
+        when(resellerService.getBrandResellerIds()).thenReturn(resellerIds);
 
         when(patchUser.roles()).thenReturn(Arrays.asList(GDUser.Role.HS_AGENT));
 
@@ -150,6 +157,13 @@ public class VmMailRelayResourceTest {
         verify(creditService, times(1)).getVirtualMachineCredit(eq(testVm.orionGuid));
     }
 
+    @Test
+    public void getsResellerIdsList() {
+        VmMailRelayResource mailRelayResource = getVmMailRelayResource();
+        mailRelayResource.updateMailRelayQuota(testVm.vmId, mailRelayQuotaPatch);
+        verify(resellerService, times(1)).getBrandResellerIds();
+    }
+    
     @Test(expected = Vps4Exception.class)
     public void hsAgentGoDaddyCustomerQuotaOverLimitNotAllowed() {
         mailRelayQuotaPatch.quota = 10001;
