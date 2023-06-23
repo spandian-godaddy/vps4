@@ -1,12 +1,14 @@
 package com.godaddy.vps4.orchestration.vm;
 
 import static com.godaddy.vps4.credit.ECommCreditService.ProductMetaField.PLAN_CHANGE_PENDING;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.atLeastOnce;
 
 import java.util.UUID;
 import java.util.function.Function;
@@ -24,6 +26,7 @@ import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 
 import gdg.hfs.orchestration.CommandContext;
+import org.mockito.ArgumentCaptor;
 
 public class Vps4UpgradeOHVmTest {
 
@@ -53,6 +56,20 @@ public class Vps4UpgradeOHVmTest {
         VmAction hfsAction = new VmAction();
         hfsAction.vmActionId = 123L;
         when(context.execute(eq(ResizeOHVm.class), any(ResizeOHVm.Request.class))).thenReturn(hfsAction);
+    }
+
+    @Test
+    public void testAppendsCtForImportedContainerWhenExecutingRestoreVmCommand() {
+        when(virtualMachineService.getImportedVm(vm.vmId)).thenReturn(vm.vmId);
+        ArgumentCaptor<ResizeOHVm.Request> argument = ArgumentCaptor.forClass(ResizeOHVm.Request.class);
+
+        command.executeWithAction(context, request);
+        verify(virtualMachineService, atLeastOnce()).getImportedVm(vm.vmId);
+        verify(virtualMachineService, atLeastOnce()).getSpec(request.newTier, ServerType.Platform.OPTIMIZED_HOSTING.getplatformId());
+
+        verify(context).execute(eq(ResizeOHVm.class), argument.capture());
+        ResizeOHVm.Request restoreReq = argument.getValue();
+        assertEquals(restoreReq.newSpecName, "oh.hosting.c4.r16.d200.ct");
     }
 
     @Test

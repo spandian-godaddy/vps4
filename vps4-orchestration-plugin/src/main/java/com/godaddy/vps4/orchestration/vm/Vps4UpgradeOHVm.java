@@ -48,7 +48,10 @@ public class Vps4UpgradeOHVm extends ActionCommand<Vps4UpgradeOHVm.Request, Void
         this.context = context;
         this.request = request;
 
+        boolean imported = virtualMachineService.getImportedVm(request.virtualMachine.vmId) != null;
         String specName = virtualMachineService.getSpec(request.newTier, ServerType.Platform.OPTIMIZED_HOSTING.getplatformId()).specName;
+        if (imported) specName = specName + ".ct";
+
         ResizeOHVm.Request resizeOHVmRequest= new ResizeOHVm.Request(request.virtualMachine.hfsVmId, specName);
         context.execute(ResizeOHVm.class, resizeOHVmRequest);
 
