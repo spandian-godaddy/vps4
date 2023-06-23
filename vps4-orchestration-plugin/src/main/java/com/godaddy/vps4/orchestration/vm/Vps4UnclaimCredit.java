@@ -9,7 +9,7 @@ import com.godaddy.hfs.mailrelay.MailRelay;
 import com.godaddy.hfs.mailrelay.MailRelayService;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
-import com.godaddy.vps4.orchestration.hfs.mailrelay.SetMailRelayQuota;
+import com.godaddy.vps4.orchestration.hfs.mailrelay.SetMailRelayQuotaAndCount;
 import com.godaddy.vps4.vm.ServerType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.google.inject.Inject;
@@ -18,7 +18,7 @@ import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
 
 public class Vps4UnclaimCredit implements Command<VirtualMachine, Void> {
-    private static final Logger logger = LoggerFactory.getLogger(SetMailRelayQuota.class);
+    private static final Logger logger = LoggerFactory.getLogger(SetMailRelayQuotaAndCount.class);
 
     private final CreditService creditService;
     private final MailRelayService mailRelayService;

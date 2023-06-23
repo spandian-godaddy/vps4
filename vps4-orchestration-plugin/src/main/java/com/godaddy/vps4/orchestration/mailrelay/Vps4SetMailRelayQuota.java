@@ -1,10 +1,10 @@
 package com.godaddy.vps4.orchestration.mailrelay;
 
+import com.godaddy.vps4.orchestration.hfs.mailrelay.SetMailRelayQuotaAndCount;
 import gdg.hfs.orchestration.CommandRetryStrategy;
 import org.json.simple.JSONObject;
 
 import com.godaddy.vps4.orchestration.ActionCommand;
-import com.godaddy.vps4.orchestration.hfs.mailrelay.SetMailRelayQuota;
 import com.godaddy.vps4.orchestration.vm.VmActionRequest;
 import com.godaddy.vps4.vm.ActionService;
 import com.google.inject.Inject;
@@ -28,14 +28,10 @@ public class Vps4SetMailRelayQuota extends ActionCommand<Vps4SetMailRelayQuota.R
 
     @Override
     public Void executeWithAction(CommandContext context, Request request){
-        // Wraps the SetMailRelayQuota command with a Vps4ActionCommand to handle
-        // all of the action work needed for vps4.
-
-        SetMailRelayQuota.Request hfsRequest = new SetMailRelayQuota.Request();
+        SetMailRelayQuotaAndCount.Request hfsRequest = new SetMailRelayQuotaAndCount.Request();
         hfsRequest.ipAddress = request.ipAddress;
-        hfsRequest.mailRelayQuota = request.mailRelayQuota;
-        context.execute(SetMailRelayQuota.class, hfsRequest);
-
+        hfsRequest.quota = request.mailRelayQuota;
+        context.execute(SetMailRelayQuotaAndCount.class, hfsRequest);
         return null;
     }
 

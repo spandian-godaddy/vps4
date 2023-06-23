@@ -19,6 +19,7 @@ import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.mailrelay.MailRelayService;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.NetworkService;
+import com.godaddy.vps4.orchestration.hfs.mailrelay.SetMailRelayQuotaAndCount;
 import com.godaddy.vps4.orchestration.mailrelay.Vps4SetMailRelayQuota;
 import com.godaddy.vps4.reseller.ResellerService;
 import com.godaddy.vps4.vm.Action;
@@ -127,8 +128,8 @@ public class VmMailRelayResource {
     @Path("{vmId}/mailRelay")
     @Produces({ "application/json" })
     @ApiOperation(httpMethod = "PATCH",
-                  value = "Reset the mail relay quota for the primary IP of the given vm",
-                  notes = "Reset the mail relay quota for the primary IP of the given vm")
+                  value = "Set the mail relay quota for the primary IP of the given vm",
+                  notes = "Set the mail relay quota for the primary IP of the given vm")
     @RequiresRole(roles = {Role.ADMIN, Role.HS_AGENT, Role.HS_LEAD})
     public Action updateMailRelayQuota(@ApiParam(value = "The ID of the selected server", required = true) @PathParam("vmId") UUID vmId,
             MailRelayQuotaPatch quotaPatch) {
@@ -140,10 +141,27 @@ public class VmMailRelayResource {
 
         IpAddress ipAddress = networkService.getVmPrimaryAddress(vmId);
         Vps4SetMailRelayQuota.Request request = new Vps4SetMailRelayQuota.Request(ipAddress.ipAddress, quotaPatch.quota);
-        long actionId = actionService.createAction(vmId, ActionType.UPDATE_MAILRELAY_QUOTA, request.toJSONString(), user.getUsername());
+        long actionId = actionService.createAction(vmId, ActionType.UPDATE_MAILRELAY_QUOTA, request.toJSONString(),
+                user.getUsername());
         request.actionId = actionId;
         Commands.execute(commandService, actionService, "Vps4SetMailRelayQuota", request);
         return actionService.getAction(actionId);
+    }
+
+    @PATCH
+    @Path("{vmId}/mailRelay/reset")
+    @Produces({ "application/json" })
+    @ApiOperation(httpMethod = "PATCH",
+            value = "Reset the mail relays for the primary IP of the given vm",
+            notes = "Reset the mail relays for the primary IP of the given vm")
+    @RequiresRole(roles = {Role.ADMIN, Role.HS_AGENT, Role.HS_LEAD})
+    public void resetMailRelays(@ApiParam(value = "The ID of the selected server", required = true)
+                                      @PathParam("vmId") UUID vmId) {
+        IpAddress ipAddress = networkService.getVmPrimaryAddress(vmId);
+        SetMailRelayQuotaAndCount.Request request = new SetMailRelayQuotaAndCount.Request();
+        request.relays = 0;
+        request.ipAddress = ipAddress.ipAddress;
+        Commands.execute(commandService, "SetMailRelayQuotaAndCount", request);
     }
 
 }

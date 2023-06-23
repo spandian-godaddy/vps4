@@ -1,31 +1,30 @@
 package com.godaddy.vps4.orchestration.mailrelay;
 
-import static org.mockito.Matchers.any;
+import com.godaddy.hfs.mailrelay.MailRelay;
+import com.godaddy.hfs.mailrelay.MailRelayService;
+import com.godaddy.hfs.mailrelay.MailRelayUpdate;
+import com.godaddy.vps4.orchestration.TestCommandContext;
+import com.godaddy.vps4.vm.ActionService;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+import gdg.hfs.orchestration.CommandContext;
+import gdg.hfs.orchestration.GuiceCommandProvider;
+import org.junit.Assert;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import org.junit.Test;
-
-import com.godaddy.vps4.orchestration.TestCommandContext;
-import com.godaddy.vps4.vm.ActionService;
-import com.google.inject.Guice;
-import com.google.inject.Injector;
-
-import gdg.hfs.orchestration.CommandContext;
-import gdg.hfs.orchestration.GuiceCommandProvider;
-import com.godaddy.hfs.mailrelay.MailRelay;
-import com.godaddy.hfs.mailrelay.MailRelayService;
-import com.godaddy.hfs.mailrelay.MailRelayUpdate;
-
 public class Vps4MailRelayTest {
 
     ActionService actionService = mock(ActionService.class);
     MailRelayService mailRelayService = mock(MailRelayService.class);
 
-    Vps4SetMailRelayQuota command = new Vps4SetMailRelayQuota(actionService);
+    Vps4SetMailRelayQuota setQuotaCommand = new Vps4SetMailRelayQuota(actionService);
 
     Injector injector = Guice.createInjector(binder -> {
         binder.bind(ActionService.class).toInstance(actionService);
@@ -36,12 +35,17 @@ public class Vps4MailRelayTest {
 
     @Test
     public void testSetMailRelayQuota(){
+        int quota = 4500;
         MailRelay returnValue = new MailRelay();
-        returnValue.quota = 4500;
-        when(mailRelayService.setRelayQuota(eq("1.2.3.4"), any(MailRelayUpdate.class))).thenReturn(returnValue);
-        Vps4SetMailRelayQuota.Request request = new Vps4SetMailRelayQuota.Request("1.2.3.4", 4500);
-        command.executeWithAction(context, request);
-        verify(mailRelayService, times(1)).setRelayQuota(eq("1.2.3.4"), any(MailRelayUpdate.class));
+        returnValue.quota = quota;
+        ArgumentCaptor<MailRelayUpdate> argCaptor = ArgumentCaptor.forClass(MailRelayUpdate.class);
+        when(mailRelayService.setRelayQuota(eq("1.2.3.4"), argCaptor.capture())).thenReturn(returnValue);
+        Vps4SetMailRelayQuota.Request request = new Vps4SetMailRelayQuota.Request("1.2.3.4", quota);
+
+        setQuotaCommand.executeWithAction(context, request);
+
+        verify(mailRelayService, times(1)).setRelayQuota("1.2.3.4", argCaptor.getValue());
+        Assert.assertEquals(quota, argCaptor.getValue().quota);
     }
 
     @Test(expected=RuntimeException.class)
@@ -49,17 +53,20 @@ public class Vps4MailRelayTest {
         MailRelay returnValue = new MailRelay();
         returnValue.quota = 4500;
         Vps4SetMailRelayQuota.Request request = new Vps4SetMailRelayQuota.Request("1.2.3.4", 4500);
-        command.executeWithAction(context, request);
+
+        setQuotaCommand.executeWithAction(context, request);
     }
 
     @Test(expected=RuntimeException.class)
     public void testSetMailRelayQuotaMailReturnsDifferentQuota(){
         MailRelay returnValue = new MailRelay();
         returnValue.quota = 1000;
-        when(mailRelayService.setRelayQuota(eq("1.2.3.4"), any(MailRelayUpdate.class))).thenReturn(returnValue);
+        ArgumentCaptor<MailRelayUpdate> argCaptor = ArgumentCaptor.forClass(MailRelayUpdate.class);
+        when(mailRelayService.setRelayQuota(eq("1.2.3.4"), argCaptor.capture())).thenReturn(returnValue);
         Vps4SetMailRelayQuota.Request request = new Vps4SetMailRelayQuota.Request("1.2.3.4", 4500);
-        command.executeWithAction(context, request);
-        verify(mailRelayService, times(1)).setRelayQuota(eq("1.2.3.4"), any(MailRelayUpdate.class));
-    }
 
+        setQuotaCommand.executeWithAction(context, request);
+
+        verify(mailRelayService, times(1)).setRelayQuota("1.2.3.4", argCaptor.getValue());
+    }
 }

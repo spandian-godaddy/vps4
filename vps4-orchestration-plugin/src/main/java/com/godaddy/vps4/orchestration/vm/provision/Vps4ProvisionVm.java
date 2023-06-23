@@ -19,6 +19,7 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import com.godaddy.vps4.orchestration.hfs.mailrelay.SetMailRelayQuotaAndCount;
 import com.godaddy.vps4.orchestration.hfs.plesk.SetPleskOutgoingEmailIp;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,7 +37,6 @@ import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.ActionCommand;
 import com.godaddy.vps4.orchestration.hfs.cpanel.ConfigureCpanel;
 import com.godaddy.vps4.orchestration.hfs.cpanel.ConfigureCpanel.ConfigureCpanelRequest;
-import com.godaddy.vps4.orchestration.hfs.mailrelay.SetMailRelayQuota;
 import com.godaddy.vps4.orchestration.hfs.network.AllocateIp;
 import com.godaddy.vps4.orchestration.hfs.network.BindIp;
 import com.godaddy.vps4.orchestration.hfs.plesk.ConfigurePlesk;
@@ -328,11 +328,11 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
 
         setStep(RequestingMailRelay);
 
-        SetMailRelayQuota.Request hfsRequest = new SetMailRelayQuota.Request();
+        SetMailRelayQuotaAndCount.Request hfsRequest = new SetMailRelayQuotaAndCount.Request();
         hfsRequest.ipAddress = ipAddress;
-        hfsRequest.mailRelayQuota = request.vmInfo.mailRelayQuota;
-        hfsRequest.previousRelays = request.vmInfo.previousRelays;
-        context.execute(SetMailRelayQuota.class, hfsRequest);
+        hfsRequest.quota = request.vmInfo.mailRelayQuota;
+        hfsRequest.relays = request.vmInfo.previousRelays;
+        context.execute(SetMailRelayQuotaAndCount.class, hfsRequest);
     }
 
     private void configureAdminUser(long hfsVmId, UUID vmId) {

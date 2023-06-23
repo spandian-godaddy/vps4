@@ -6,7 +6,7 @@ import com.godaddy.vps4.orchestration.hfs.cpanel.RefreshCpanelLicense;
 import com.godaddy.vps4.orchestration.hfs.cpanel.UnlicenseCpanel;
 import com.godaddy.vps4.orchestration.hfs.cpanel.WaitForCpanelAction;
 import com.godaddy.vps4.orchestration.hfs.dns.CreateDnsPtrRecord;
-import com.godaddy.vps4.orchestration.hfs.mailrelay.SetMailRelayQuota;
+import com.godaddy.vps4.orchestration.hfs.mailrelay.SetMailRelayQuotaAndCount;
 import com.godaddy.vps4.orchestration.hfs.network.AllocateIp;
 import com.godaddy.vps4.orchestration.hfs.network.BindIp;
 import com.godaddy.vps4.orchestration.hfs.network.ReleaseIp;
@@ -97,7 +97,7 @@ public class HfsCommandModule extends AbstractModule {
         bind(DestroySnapshot.class);
 
         // MailRelay
-        bind(SetMailRelayQuota.class);
+        bind(SetMailRelayQuotaAndCount.class);
 
         // dns
         bind(CreateDnsPtrRecord.class);

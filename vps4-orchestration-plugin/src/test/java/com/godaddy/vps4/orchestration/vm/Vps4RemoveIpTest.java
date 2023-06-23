@@ -1,5 +1,6 @@
 package com.godaddy.vps4.orchestration.vm;
 
+import com.godaddy.vps4.orchestration.hfs.mailrelay.SetMailRelayQuotaAndCount;
 import org.junit.Test;
 
 import static org.mockito.Matchers.any;
@@ -10,7 +11,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import com.godaddy.vps4.network.IpAddress;
-import com.godaddy.vps4.orchestration.hfs.mailrelay.SetMailRelayQuota;
 import com.godaddy.vps4.orchestration.hfs.network.ReleaseIp;
 import com.godaddy.vps4.orchestration.hfs.network.UnbindIp;
 import com.godaddy.vps4.orchestration.network.RemoveIpFromBlacklist;
@@ -31,7 +31,7 @@ public class Vps4RemoveIpTest {
         command.execute(context, ipAddress);
         verify(context, times(1)).execute(eq(ReleaseIp.class), eq(ipAddress.hfsAddressId));
         verify(context, times(1)).execute(eq(UnbindIp.class), any(UnbindIp.Request.class));
-        verify(context, never()).execute(eq(SetMailRelayQuota.class), any());
+        verify(context, never()).execute(eq(SetMailRelayQuotaAndCount.class), any());
         verify(context, times(1)).execute(eq(RemoveIpFromBlacklist.class), eq(ipAddress.ipAddress));
     }
     @Test
@@ -44,7 +44,7 @@ public class Vps4RemoveIpTest {
         command.execute(context, ipAddress);
         verify(context, times(1)).execute(eq(ReleaseIp.class), eq(ipAddress.hfsAddressId));
         verify(context, never()).execute(eq(UnbindIp.class), any(UnbindIp.Request.class));
-        verify(context, never()).execute(eq(SetMailRelayQuota.class), any());
+        verify(context, never()).execute(eq(SetMailRelayQuotaAndCount.class), any());
         verify(context, times(1)).execute(eq(RemoveIpFromBlacklist.class), eq(ipAddress.ipAddress));
     }
 
@@ -58,7 +58,7 @@ public class Vps4RemoveIpTest {
         command.execute(context, ipAddress);
         verify(context, never()).execute(eq(ReleaseIp.class), eq(ipAddress.hfsAddressId));
         verify(context, never()).execute(eq(UnbindIp.class), any(UnbindIp.Request.class));
-        verify(context, never()).execute(eq(SetMailRelayQuota.class), any());
+        verify(context, never()).execute(eq(SetMailRelayQuotaAndCount.class), any());
         verify(context, times(1)).execute(eq(RemoveIpFromBlacklist.class), eq(ipAddress.ipAddress));
     }
 
@@ -73,7 +73,7 @@ public class Vps4RemoveIpTest {
         command.execute(context, ipAddress);
         verify(context, never()).execute(eq(ReleaseIp.class), eq(ipAddress.hfsAddressId));
         verify(context, never()).execute(eq(UnbindIp.class), any(UnbindIp.Request.class));
-        verify(context, never()).execute(eq(SetMailRelayQuota.class), any());
+        verify(context, never()).execute(eq(SetMailRelayQuotaAndCount.class), any());
         verify(context, times(1)).execute(eq(RemoveIpFromBlacklist.class), eq(ipAddress.ipAddress));
     }
 }

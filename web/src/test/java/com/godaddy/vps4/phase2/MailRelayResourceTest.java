@@ -188,5 +188,4 @@ public class MailRelayResourceTest {
         user = GDUserMock.createStaff();
         getMailRelayResource().updateMailRelayQuota(vm.vmId, getQuotaPatch());
     }
-
 }

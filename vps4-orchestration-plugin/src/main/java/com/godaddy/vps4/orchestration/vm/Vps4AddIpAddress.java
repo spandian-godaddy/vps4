@@ -6,6 +6,7 @@ import java.util.UUID;
 import javax.inject.Inject;
 
 import com.godaddy.vps4.orchestration.ActionRequest;
+import com.godaddy.vps4.orchestration.hfs.mailrelay.SetMailRelayQuotaAndCount;
 import com.godaddy.vps4.orchestration.hfs.network.ReleaseIp;
 import gdg.hfs.orchestration.CommandRetryStrategy;
 import org.slf4j.Logger;
@@ -14,7 +15,6 @@ import org.slf4j.LoggerFactory;
 import com.godaddy.vps4.network.IpAddress.IpAddressType;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.ActionCommand;
-import com.godaddy.vps4.orchestration.hfs.mailrelay.SetMailRelayQuota;
 import com.godaddy.vps4.orchestration.hfs.network.AllocateIp;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VirtualMachine;
@@ -92,10 +92,10 @@ public class Vps4AddIpAddress extends ActionCommand<Vps4AddIpAddress.Request, Vo
     }
 
     private void disableMailRelays(CommandContext context, IpAddress hfsIp) {
-        SetMailRelayQuota.Request hfsRequest = new SetMailRelayQuota.Request();
+        SetMailRelayQuotaAndCount.Request hfsRequest = new SetMailRelayQuotaAndCount.Request();
         hfsRequest.ipAddress = hfsIp.address;
-        hfsRequest.mailRelayQuota = 0;
-        context.execute(SetMailRelayQuota.class, hfsRequest);
+        hfsRequest.quota = 0;
+        context.execute(SetMailRelayQuotaAndCount.class, hfsRequest);
     }
 
     public static class Request implements ActionRequest {
