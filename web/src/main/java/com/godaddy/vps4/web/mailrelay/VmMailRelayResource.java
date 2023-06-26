@@ -19,7 +19,7 @@ import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.mailrelay.MailRelayService;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.NetworkService;
-import com.godaddy.vps4.orchestration.hfs.mailrelay.SetMailRelayQuotaAndCount;
+import com.godaddy.vps4.orchestration.hfs.mailrelay.SetMailRelayQuota;
 import com.godaddy.vps4.orchestration.mailrelay.Vps4SetMailRelayQuota;
 import com.godaddy.vps4.reseller.ResellerService;
 import com.godaddy.vps4.vm.Action;
@@ -158,10 +158,10 @@ public class VmMailRelayResource {
     public void resetMailRelays(@ApiParam(value = "The ID of the selected server", required = true)
                                       @PathParam("vmId") UUID vmId) {
         IpAddress ipAddress = networkService.getVmPrimaryAddress(vmId);
-        SetMailRelayQuotaAndCount.Request request = new SetMailRelayQuotaAndCount.Request();
+        SetMailRelayQuota.Request request = new SetMailRelayQuota.Request();
         request.relays = 0;
         request.ipAddress = ipAddress.ipAddress;
-        Commands.execute(commandService, "SetMailRelayQuotaAndCount", request);
+        Commands.execute(commandService, "SetMailRelayQuota", request);
     }
 
 }

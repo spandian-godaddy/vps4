@@ -19,7 +19,7 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
-import com.godaddy.vps4.orchestration.hfs.mailrelay.SetMailRelayQuotaAndCount;
+import com.godaddy.vps4.orchestration.hfs.mailrelay.SetMailRelayQuota;
 import com.godaddy.vps4.orchestration.hfs.plesk.SetPleskOutgoingEmailIp;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -328,11 +328,11 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
 
         setStep(RequestingMailRelay);
 
-        SetMailRelayQuotaAndCount.Request hfsRequest = new SetMailRelayQuotaAndCount.Request();
+        SetMailRelayQuota.Request hfsRequest = new SetMailRelayQuota.Request();
         hfsRequest.ipAddress = ipAddress;
         hfsRequest.quota = request.vmInfo.mailRelayQuota;
         hfsRequest.relays = request.vmInfo.previousRelays;
-        context.execute(SetMailRelayQuotaAndCount.class, hfsRequest);
+        context.execute(SetMailRelayQuota.class, hfsRequest);
     }
 
     private void configureAdminUser(long hfsVmId, UUID vmId) {
