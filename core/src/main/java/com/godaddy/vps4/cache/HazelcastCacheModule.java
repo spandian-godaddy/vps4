@@ -1,7 +1,6 @@
 package com.godaddy.vps4.cache;
 
 import javax.cache.CacheManager;
-import javax.cache.Caching;
 import javax.cache.spi.CachingProvider;
 
 import com.google.inject.AbstractModule;
@@ -18,7 +17,7 @@ public class HazelcastCacheModule extends AbstractModule {
 
     @Provides
     public static CachingProvider provideCacheManager(HazelcastInstance hazelcastInstance) {
-        return Caching.getCachingProvider(HazelcastServerCachingProvider.class.getName());
+        return HazelcastServerCachingProvider.createCachingProvider(hazelcastInstance);
     }
 
     @Provides
