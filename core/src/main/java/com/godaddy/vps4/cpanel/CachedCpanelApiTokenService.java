@@ -51,14 +51,14 @@ public class CachedCpanelApiTokenService implements CpanelApiTokenService {
             cached = new CachedApiToken(vmId);
             CachedApiToken existing = cache.putIfAbsent(vmId, cached);
             if (existing != null) {
-                logger.trace("cached entry for vm {} was created while we were waiting, using it", vmId);
+                logger.info("cached entry for vm {} was created while we were waiting, using it", vmId);
                 cached = existing;
             }
         }
 
         // is the cached value good?
         if (Instant.now().isBefore(cached.expiresAt)) {
-            logger.debug("api token cache hit for vm {}", vmId);
+            logger.info("api token cache hit for vm {}", vmId);
             // Note: this may be null if the cached value represents "we couldn't retrieve the hash"
             return cached.getApiToken();
         }
@@ -67,7 +67,7 @@ public class CachedCpanelApiTokenService implements CpanelApiTokenService {
         // see if we need to do it, or if somebody else is already doing it
         if (cached.fetching.compareAndSet(false, true)) {
 
-            logger.debug("spinning off api token fetch for vm {}", vmId);
+            logger.info("spinning off api token fetch for vm {}", vmId);
 
             // we own fetching, spin off a thread
             Fetcher fetcher = new Fetcher(
@@ -81,7 +81,7 @@ public class CachedCpanelApiTokenService implements CpanelApiTokenService {
         // wait on the signal when the fetch is complete
         final Object fetchDoneSignal = cached.lock;
 
-        logger.debug("api token fetch in progress for vm {}, waiting...", vmId);
+        logger.info("api token fetch in progress for vm {}, waiting...", vmId);
 
         // if we're still fetching,
         // (i.e. it didn't complete while we were in lock acquisition)
@@ -101,7 +101,7 @@ public class CachedCpanelApiTokenService implements CpanelApiTokenService {
 
         // if we now have a good value, return that
         if (Instant.now().isBefore(cached.expiresAt)) {
-            logger.debug("fetch successful for vm {}", vmId);
+            logger.info("fetch successful for vm {}", vmId);
             return cached.getApiToken();
         }
 
@@ -109,7 +109,7 @@ public class CachedCpanelApiTokenService implements CpanelApiTokenService {
         // and we (probably) haven't been able to get a new one,
         // don't just return the current expired api token,
         // return null to indicate an issue
-        logger.debug("waited for api token for vm {}, "
+        logger.info("waited for api token for vm {}, "
                 + "but fetch didn't complete before our timeout", vmId);
         return null;
     }
