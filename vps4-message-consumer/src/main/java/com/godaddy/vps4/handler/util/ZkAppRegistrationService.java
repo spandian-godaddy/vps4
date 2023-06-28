@@ -1,7 +1,10 @@
 package com.godaddy.vps4.handler.util;
 
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
@@ -119,10 +122,16 @@ public class ZkAppRegistrationService {
 
     protected String resolveHostname() {
         try {
-            return InetAddress.getLocalHost().getHostName();
-        }
-        catch (UnknownHostException e) {
-            throw new RuntimeException("Unable to determine local hostname", e);
+            byte[] hostnameFile = Files.readAllBytes(Paths.get("/etc/hostname"));
+            return new String(hostnameFile).trim();
+        } catch (IOException e1) {
+            logger.error("Unable to determine local hostname from file", e1);
+            try {
+                return InetAddress.getLocalHost().getHostName();
+            } catch (UnknownHostException e2) {
+                logger.error("Unable to determine local hostname from rDNS", e2);
+                throw new RuntimeException("Unable to determine local hostname", e1);
+            }
         }
     }
 
