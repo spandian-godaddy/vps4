@@ -12,12 +12,26 @@ import com.google.inject.Injector;
 
 import gdg.hfs.orchestration.web.CommandsResource;
 import gdg.hfs.orchestration.web.CommandsViewResource;
+import org.eclipse.jetty.server.ConnectionFactory;
+import org.eclipse.jetty.server.HttpConfiguration;
+import org.eclipse.jetty.server.HttpConnectionFactory;
+import org.eclipse.jetty.server.ServerConnector;
 
 public class Vps4Application extends HfsWebApplication {
+    private int maxHeaderSize = 16384;
 
     @Override
     public Injector newInjector() {
         return new Vps4Injector().getInstance();
+    }
+
+    @Override
+    public ServerConnector configureConnector(ServerConnector connector) {
+        HttpConfiguration httpConfig = new HttpConfiguration();
+        httpConfig.setRequestHeaderSize(maxHeaderSize);
+        ConnectionFactory connectionFactory = new HttpConnectionFactory(httpConfig);
+        connector.addConnectionFactory(connectionFactory);
+        return connector;
     }
 
     @Override
