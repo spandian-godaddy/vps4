@@ -27,32 +27,9 @@
 - install [pre-commit](https://pre-commit.com/#install) and follow the quick start
     - the `.pre-commit-config.yaml` file is already set up and included in the VPS4 repo
 - install the [Java 8 SDK](https://www.oracle.com/java/technologies/downloads/#java8)
-- [install and configure maven](#maven-configuration)
 - install and configure your preferred IDE
     - [IntelliJ](#intellij-setup)
     - [Eclipse](#eclipse-setup)
-
-## Database Configuration
-
-- we use postgresql version 9.6.8, but brew doesn't support the installation of that version anymore, so 10 will work.
-- install postgresql locally or use vagrant
-    - for Mac with homebrew:
-        ```
-        brew install postgresql@10
-        brew services start postgresql
-        createuser -s -r postgres
-        ```
-    - add the following line to your `/etc/hosts` file, substituting 127.0.0.1 with your vagrant IP if using vagrant:
-        ```
-        127.0.0.1 vps4-local-dbserver.dev-godaddy.com
-        ```
-- in `vps4/core` directory, initialize postgres db:
-    ```bash
-    mvn initialize sql:execute@drop-create-database -Prebuild-database
-    mvn initialize flyway:migrate
-    ```
-- any future migrations can be applied with `mvn initialize flyway:migrate` in `vps4/core`
-- if you happen to get an error regarding `vhfs-sysadmin-common-lib` contact a team member to help you get a copy of the version we use from artifactory since HFS deleted it.
 
 ## Maven Configuration
 
@@ -93,6 +70,43 @@
         </settings>
         ```
     - you can get the real password from a teammate or the CICD server
+
+## Get Configs from AWS Secrets
+
+- we have [a Jenkins job](https://vps4.jenkins.int.godaddy.com/view/AWS%20Secrets/job/AWS%20Get%20Secret/) for retrieving secrets from AWS
+- for each secret in the table, run the Jenkins job and store the result from the Jenkins workspace on your laptop
+
+| Secret Name                    | File Name               | Environment | Path on Local Machine                                                         |
+|--------------------------------|-------------------------|-------------|-------------------------------------------------------------------------------|
+| /base/config.properties        | config.properties       | dev         | core/src/main/resources/com/godaddy/vps4/config/base/config.properties        |
+| /local/config.properties       | config.properties       | dev         | core/src/main/resources/com/godaddy/vps4/config/local/config.properties       |
+| /base/hfs.api.crt              | hfs.api.crt             | dev         | core/src/main/resources/com/godaddy/vps4/config/base/hfs.api.crt              |
+| /base/hfs.api.key              | hfs.api.key             | dev         | core/src/main/resources/com/godaddy/vps4/config/base/hfs.api.key              |
+| /local/messaging.api.crt       | messaging.api.crt       | dev         | core/src/main/resources/com/godaddy/vps4/config/local/messaging.api.crt       |
+| /local/messaging.api.key       | messaging.api.key       | dev         | core/src/main/resources/com/godaddy/vps4/config/local/messaging.api.key       |
+| /local/password_encryption.key | password_encryption.key | dev         | core/src/main/resources/com/godaddy/vps4/config/local/password_encryption.key |
+
+## Database Configuration
+
+- install postgresql locally or use vagrant
+    - we use v9.6.8, but brew doesn't support that version anymore, so 10 will work
+    - for Mac with homebrew:
+        ```
+        brew install postgresql@10
+        brew services start postgresql
+        createuser -s -r postgres
+        ```
+    - add the following line to your `/etc/hosts` file, substituting 127.0.0.1 with your vagrant IP if using vagrant:
+        ```
+        127.0.0.1 vps4-local-dbserver.dev-godaddy.com
+        ```
+- in `vps4/core` directory, initialize postgres db:
+    ```bash
+    mvn initialize sql:execute@drop-create-database -Prebuild-database
+    mvn initialize flyway:migrate
+    ```
+- any future migrations can be applied with `mvn initialize flyway:migrate` in `vps4/core`
+- if you happen to get an error regarding `vhfs-sysadmin-common-lib` contact a team member to help you get a copy of the version we use from artifactory since HFS deleted it.
 
 ## IntelliJ Setup
 
@@ -146,21 +160,6 @@
             - Main class: Search for Vps4Application
             - Arguments tab: Add VM arguments: ```-Dvps4.user.fake=false -Dvps4.config.mode=file -Dorchestration.engine.clustered=false```
             - Apply
-
-## Get Configs from AWS Secrets
-
-- we have [a Jenkins job](https://vps4.jenkins.int.godaddy.com/view/AWS%20Secrets/job/AWS%20Get%20Secret/) for retrieving secrets from AWS
-- for each secret in the table, run the Jenkins job and store the result from the Jenkins workspace on your laptop
-
-| Secret Name                    | File Name               | Environment | Path on Local Machine                                                         |
-|--------------------------------|-------------------------|-------------|-------------------------------------------------------------------------------|
-| /base/config.properties        | config.properties       | dev         | core/src/main/resources/com/godaddy/vps4/config/base/config.properties        |
-| /local/config.properties       | config.properties       | dev         | core/src/main/resources/com/godaddy/vps4/config/local/config.properties       |
-| /base/hfs.client.crt           | hfs.client.crt          | dev         | core/src/main/resources/com/godaddy/vps4/config/base/hfs.client.crt           |
-| /base/hfs.client.key           | hfs.client.key          | dev         | core/src/main/resources/com/godaddy/vps4/config/base/hfs.client.key           |
-| /local/messaging.api.crt       | messaging.api.crt       | dev         | core/src/main/resources/com/godaddy/vps4/config/local/messaging.api.crt       |
-| /local/messaging.api.key       | messaging.api.key       | dev         | core/src/main/resources/com/godaddy/vps4/config/local/messaging.api.key       |
-| /local/password_encryption.key | password_encryption.key | dev         | core/src/main/resources/com/godaddy/vps4/config/local/password_encryption.key |
 
 ## Creating Your First VM
 
