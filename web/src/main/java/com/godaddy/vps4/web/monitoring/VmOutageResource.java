@@ -96,7 +96,7 @@ public class VmOutageResource {
         VirtualMachine virtualMachine = vmResource.getVm(vmId); // Auth validation
         PanoptaServer server = panoptaService.getServer(vmId);
 
-        if(virtualMachine.isCanceledOrDeleted() || server == null){
+        if(virtualMachine.isCanceledOrDeleted() || server == null) {
             logger.info("VM {} is not active, no need to create outage {}", vmId, outageId);
             return null;
         }
@@ -117,7 +117,7 @@ public class VmOutageResource {
                                   VmOutageRequest request) {
         VirtualMachine virtualMachine = vmResource.getVm(vmId); // Auth validation
 
-        if(virtualMachine.isCanceledOrDeleted()){
+        if(virtualMachine.isCanceledOrDeleted()) {
             logger.info("VM {} is not active, no need to clear outage {}", vmId, outageId);
             return null;
         }

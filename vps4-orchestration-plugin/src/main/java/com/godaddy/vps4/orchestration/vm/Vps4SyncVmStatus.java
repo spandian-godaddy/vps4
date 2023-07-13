@@ -31,9 +31,8 @@ public class Vps4SyncVmStatus extends ActionCommand<VmActionRequest, Vps4SyncVmS
     @Override
     protected Response executeWithAction(CommandContext context, VmActionRequest request) {
 
-        VmAction hfsAction = context.execute("Vps4SyncVmStatus", ctx -> {
-            return vmService.sync(request.virtualMachine.hfsVmId);
-        }, VmAction.class);
+        VmAction hfsAction = context.execute("Vps4SyncVmStatus",
+                                             ctx -> vmService.sync(request.virtualMachine.hfsVmId), VmAction.class);
 
         hfsAction = context.execute(WaitForManageVmAction.class, hfsAction);
 

@@ -4,6 +4,7 @@ import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.network.IpAddress;
+import com.godaddy.vps4.orchestration.vm.Vps4SyncVmStatus;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VmMetric;
@@ -24,6 +25,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -198,5 +200,11 @@ public class Vps4ClearVmOutageTest {
 
         vps4ClearVmOutage.executeWithAction(context, request);
         verify(context, never()).execute(eq("ClearJsdOutageTicket"), eq(ClearJsdOutageTicket.class), any());
+    }
+
+    @Test
+    public void syncsVmStatus() {
+        vps4ClearVmOutage.executeWithAction(context, request);
+        verify(context, times(1)).execute("Vps4SyncVmStatus", Vps4SyncVmStatus.class, request);
     }
 }

@@ -1,21 +1,24 @@
 package com.godaddy.vps4.orchestration.monitoring;
 
+import java.time.Instant;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.orchestration.ActionCommand;
 import com.godaddy.vps4.orchestration.vm.VmActionRequest;
+import com.godaddy.vps4.orchestration.vm.Vps4SyncVmStatus;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VmOutage;
 import com.google.inject.Inject;
+
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
 import gdg.hfs.orchestration.CommandRetryStrategy;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.time.Instant;
 
 @CommandMetadata(
         name = "Vps4ClearVmOutage",
@@ -41,8 +44,7 @@ public class Vps4ClearVmOutage extends ActionCommand<Vps4ClearVmOutage.Request, 
     @Override
     protected Void executeWithAction(CommandContext context, Request request) {
         this.context = context;
-        if(request.virtualMachine.isCanceledOrDeleted())
-        {
+        if (request.virtualMachine.isCanceledOrDeleted()) {
             logger.info("VM {} is not active, no need to clear outage {}", request.virtualMachine.vmId, request.outageId);
             return null;
         }
@@ -50,6 +52,7 @@ public class Vps4ClearVmOutage extends ActionCommand<Vps4ClearVmOutage.Request, 
         logger.info("Clearing outage {} for VM {}", request.outageId, request.virtualMachine.vmId);
         sendOutageNotificationEmail(request.virtualMachine, outage);
         executeUpdateJsdTicket(request.virtualMachine, outage);
+        syncVmStatus(request);
         return null;
     }
 
@@ -60,6 +63,17 @@ public class Vps4ClearVmOutage extends ActionCommand<Vps4ClearVmOutage.Request, 
         VmOutage outage = context.execute("GetPanoptaOutage", GetPanoptaOutage.class, getOutageRequest);
         outage.ended = request.timestamp;
         return outage;
+    }
+
+    private void sendOutageNotificationEmail(VirtualMachine virtualMachine, VmOutage vmOutage) {
+        VirtualMachineCredit credit = creditService.getVirtualMachineCredit(virtualMachine.orionGuid);
+        if (credit != null && credit.isAccountActive() && virtualMachine.isActive()) {
+            VmOutageEmailRequest vmOutageEmailRequest =
+                    new VmOutageEmailRequest(virtualMachine.name, virtualMachine.primaryIpAddress.ipAddress,
+                                             credit.getOrionGuid(), credit.getShopperId(), virtualMachine.vmId, credit.isManaged(),
+                                             vmOutage);
+            context.execute("SendOutageClearNotificationEmail", SendVmOutageResolvedEmail.class, vmOutageEmailRequest);
+        }
     }
 
     private void executeUpdateJsdTicket(VirtualMachine virtualMachine, VmOutage outage) {
@@ -82,21 +96,13 @@ public class Vps4ClearVmOutage extends ActionCommand<Vps4ClearVmOutage.Request, 
         context.execute("ClearJsdOutageTicket", ClearJsdOutageTicket.class, clearOutageJsdTicketRequest);
     }
 
-    private void sendOutageNotificationEmail(VirtualMachine virtualMachine, VmOutage vmOutage) {
-        VirtualMachineCredit credit = creditService.getVirtualMachineCredit(virtualMachine.orionGuid);
-        if (credit != null && credit.isAccountActive() && virtualMachine.isActive()) {
-            VmOutageEmailRequest vmOutageEmailRequest =
-                    new VmOutageEmailRequest(virtualMachine.name, virtualMachine.primaryIpAddress.ipAddress,
-                            credit.getOrionGuid(), credit.getShopperId(), virtualMachine.vmId, credit.isManaged(),
-                            vmOutage);
-            context.execute("SendOutageClearNotificationEmail", SendVmOutageResolvedEmail.class, vmOutageEmailRequest);
-        }
+    private void syncVmStatus(Request request) {
+        context.execute("Vps4SyncVmStatus", Vps4SyncVmStatus.class, request);
     }
 
     public static class Request extends VmActionRequest {
         public long outageId;
         public Instant timestamp;
-        public VirtualMachine virtualMachine;
 
         @Override
         public long getActionId() {
