@@ -1,7 +1,6 @@
 package com.godaddy.vps4.orchestration.monitoring;
 
 import static org.junit.Assert.assertNotNull;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.never;
@@ -14,8 +13,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.UUID;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -41,9 +42,9 @@ public class SendVmOutageEmailTest {
     @Mock private VmAlertService vmAlertService;
     @Mock private CommandContext context;
 
-    VmOutageEmailRequest vmOutageEmailRequest = new VmOutageEmailRequest();
+    VmOutageEmailRequest request = new VmOutageEmailRequest();
     VmOutage vmOutage = new VmOutage();
-    VmMetricAlert vmMetricAlert = new VmMetricAlert();
+    List<VmMetricAlert> enabledAlerts = new ArrayList<>();
     String fakeMessageId = "fake-message-id";
     String fakeShopperId = "fake-shopper-id";
     String fakeAccountName = "fake-account-name";
@@ -54,83 +55,80 @@ public class SendVmOutageEmailTest {
 
     SendVmOutageEmail command;
 
-    @Captor
-    ArgumentCaptor<Function<CommandContext, String>> lambdaCaptor;
+    @Captor ArgumentCaptor<Function<CommandContext, String>> lambdaCaptor;
 
     @Before
     public void setUp() {
         Instant started = Instant.now();
         Instant ended = Instant.now();
-        vmOutageEmailRequest.managed = true;
-        vmOutageEmailRequest.shopperId = fakeShopperId;
-        vmOutageEmailRequest.vmId = fakeVmId;
-        vmOutageEmailRequest.accountName = fakeAccountName;
-        vmOutageEmailRequest.ipAddress = fakeIpAddress;
-        vmOutageEmailRequest.orionGuid = fakeOrionGuid;
-        vmOutageEmailRequest.vmOutage = vmOutage;
+        request.managed = true;
+        request.shopperId = fakeShopperId;
+        request.vmId = fakeVmId;
+        request.accountName = fakeAccountName;
+        request.ipAddress = fakeIpAddress;
+        request.orionGuid = fakeOrionGuid;
+        request.vmOutage = vmOutage;
 
         vmOutage.started = started;
         vmOutage.ended = ended;
         vmOutage.reason = fakeReason;
         vmOutage.domainMonitoringMetadata = new ArrayList<>();
-
         vmOutage.metrics = new HashSet<>();
 
-        setupMocks();
+        setupEnabledAlerts();
         command = new SendVmOutageEmail(messagingService, vmAlertService);
     }
 
-    private void setupMocks() {
-        when(context.execute(anyString(), any(Function.class), any())).thenReturn(fakeMessageId);
-        when(vmAlertService.getVmMetricAlert(any(UUID.class), anyString())).thenReturn(vmMetricAlert);
+    private void setupEnabledAlerts() {
+        enabledAlerts = Arrays.stream(VmMetric.values()).map(metric -> {
+            VmMetricAlert alert = new VmMetricAlert();
+            alert.metric = metric;
+            alert.status = VmMetricAlert.Status.ENABLED;
+            return alert;
+        }).collect(Collectors.toList());
+        when(vmAlertService.getVmMetricAlertList(fakeVmId)).thenReturn(enabledAlerts);
     }
 
     @Test
     public void verifyUptimeOutageEmailIsSent() {
-        vmOutageEmailRequest.vmOutage.metrics = Sets.newHashSet(VmMetric.PING);
-        vmMetricAlert.status = VmMetricAlert.Status.ENABLED;
-        when(messagingService
-                .sendUptimeOutageEmail(eq(fakeShopperId), eq(fakeAccountName), eq(fakeIpAddress), eq(fakeOrionGuid),
-                        any(Instant.class), eq(true))).thenReturn(fakeMessageId);
-        command.execute(context, vmOutageEmailRequest);
+        request.vmOutage.metrics = Sets.newHashSet(VmMetric.PING);
+        command.execute(context, request);
 
         verify(context, times(1))
-                .execute(eq("SendVmOutageEmail-PING"), lambdaCaptor.capture(),
-                        eq(String.class));
+                .execute(eq("SendVmOutageEmail-PING"), lambdaCaptor.capture(), eq(String.class));
         Function<CommandContext, String> lambdaValue = lambdaCaptor.getValue();
-        String actualMessageId = lambdaValue.apply(context);
-        assertNotNull(actualMessageId);
+        lambdaValue.apply(context);
+        verify(messagingService, times(1))
+                .sendUptimeOutageEmail(request.shopperId, request.accountName, request.ipAddress, request.orionGuid,
+                                       request.vmOutage.started, request.managed);
     }
 
     @Test
-    public void verifyServerUsageOutageEmailIsSent() {
-        vmOutageEmailRequest.vmOutage.metrics = Sets.newHashSet(VmMetric.CPU);
-        vmMetricAlert.status = VmMetricAlert.Status.ENABLED;
-        String fakeResourceName = VmMetric.CPU.name();
-        when(messagingService.sendServerUsageOutageEmail(eq(fakeShopperId), eq(fakeAccountName), eq(fakeIpAddress),
-                                                         eq(fakeOrionGuid), eq(fakeResourceName), anyString(), any(Instant.class), eq(true)))
-                .thenReturn(fakeMessageId);
-        command.execute(context, vmOutageEmailRequest);
+    public void verifyAgentResourceOutageEmailIsSent() {
+        request.vmOutage.metrics = Sets.newHashSet(VmMetric.CPU);
+        command.execute(context, request);
 
         verify(context, times(1))
                 .execute(eq("SendVmOutageEmail-CPU"), lambdaCaptor.capture(), eq(String.class));
         Function<CommandContext, String> lambdaValue = lambdaCaptor.getValue();
-        String actualMessageId = lambdaValue.apply(context);
-        assertNotNull(actualMessageId);
+        lambdaValue.apply(context);
+        verify(messagingService, times(1))
+                .sendServerUsageOutageEmail(request.shopperId, request.accountName, request.ipAddress,
+                                            request.orionGuid, VmMetric.CPU.name(), "95%",
+                                            request.vmOutage.started, request.managed);
     }
 
     @Test
-    public void verifyServicesDownEmailIsSent() {
-        vmOutageEmailRequest.vmOutage.metrics = Sets.newHashSet(VmMetric.FTP);
-        vmMetricAlert.status = VmMetricAlert.Status.ENABLED;
+    public void verifyNetworkServicesDownEmailIsSent() {
+        request.vmOutage.metrics = Sets.newHashSet(VmMetric.FTP);
         String fakeResourceName = VmMetric.FTP.name();
         when(messagingService
                 .sendServicesDownEmail(eq(fakeShopperId), eq(fakeAccountName), eq(fakeIpAddress), eq(fakeOrionGuid),
                         eq(fakeResourceName), any(Instant.class), eq(true))).thenReturn(fakeMessageId);
-        command.execute(context, vmOutageEmailRequest);
+        command.execute(context, request);
 
         verify(context, times(1))
-                .execute(eq("SendVmOutageEmail-FTP"), lambdaCaptor.capture(), eq(String.class));
+                .execute(eq("SendVmOutageEmail-Services"), lambdaCaptor.capture(), eq(String.class));
         Function<CommandContext, String> lambdaValue = lambdaCaptor.getValue();
         String actualMessageId = lambdaValue.apply(context);
         assertNotNull(actualMessageId);
@@ -138,9 +136,8 @@ public class SendVmOutageEmailTest {
 
     @Test
     public void verifyServicesDownEmailIsSentHTTP() {
-        vmOutageEmailRequest.vmOutage.metrics = Sets.newHashSet(VmMetric.HTTP_DOMAIN);
-        vmMetricAlert.status = VmMetricAlert.Status.ENABLED;
-        vmOutageEmailRequest.vmOutage.domainMonitoringMetadata =
+        request.vmOutage.metrics = Sets.newHashSet(VmMetric.HTTP_DOMAIN);
+        request.vmOutage.domainMonitoringMetadata =
                 Collections.singletonList(new VmOutage.DomainMonitoringMetadata(
                         "domainfake.here",
                         Collections.singletonList("Unable to resolve host name domainfake.here"),
@@ -149,7 +146,7 @@ public class SendVmOutageEmailTest {
         when(messagingService
                 .sendServicesDownEmail(eq(fakeShopperId), eq(fakeAccountName), eq(fakeIpAddress), eq(fakeOrionGuid),
                         eq("HTTP_DOMAIN (domainfake.here)"), any(Instant.class), eq(true))).thenReturn(fakeMessageId);
-        command.execute(context, vmOutageEmailRequest);
+        command.execute(context, request);
 
         verify(context, times(1))
                 .execute(eq("SendVmOutageEmail-HTTP_DOMAIN"), lambdaCaptor.capture(), eq(String.class));
@@ -160,15 +157,14 @@ public class SendVmOutageEmailTest {
 
     @Test
     public void verifyServicesDownEmailIsSentHTTPS() {
-        vmOutageEmailRequest.vmOutage.metrics = Sets.newHashSet(VmMetric.HTTPS_DOMAIN);
-        vmMetricAlert.status = VmMetricAlert.Status.ENABLED;
-        vmOutageEmailRequest.vmOutage.domainMonitoringMetadata = Arrays.asList(new VmOutage.DomainMonitoringMetadata(
+        request.vmOutage.metrics = Sets.newHashSet(VmMetric.HTTPS_DOMAIN);
+        request.vmOutage.domainMonitoringMetadata = Arrays.asList(new VmOutage.DomainMonitoringMetadata(
                 "domainfake.here", Arrays.asList("SSL error: certificate verify failed"), VmMetric.HTTPS_DOMAIN
         ));
         when(messagingService
                 .sendServicesDownEmail(eq(fakeShopperId), eq(fakeAccountName), eq(fakeIpAddress), eq(fakeOrionGuid),
                         eq("HTTPS_DOMAIN (domainfake.here)"), any(Instant.class), eq(true))).thenReturn(fakeMessageId);
-        command.execute(context, vmOutageEmailRequest);
+        command.execute(context, request);
 
         verify(context, times(1))
                 .execute(eq("SendVmOutageEmail-HTTPS_DOMAIN"), lambdaCaptor.capture(), eq(String.class));
@@ -179,16 +175,15 @@ public class SendVmOutageEmailTest {
 
     @Test
     public void verifyServicesDownEmailIsSentMultipleReasons() {
-        vmOutageEmailRequest.vmOutage.metrics = Sets.newHashSet(VmMetric.HTTPS_DOMAIN);
-        vmMetricAlert.status = VmMetricAlert.Status.ENABLED;
-        vmOutageEmailRequest.vmOutage.domainMonitoringMetadata = Arrays.asList(new VmOutage.DomainMonitoringMetadata(
+        request.vmOutage.metrics = Sets.newHashSet(VmMetric.HTTPS_DOMAIN);
+        request.vmOutage.domainMonitoringMetadata = Arrays.asList(new VmOutage.DomainMonitoringMetadata(
                 "domainfake.here", Arrays.asList("SSL error: certificate verify failed",
                 "SSL error: certificate verify failed"), VmMetric.HTTPS_DOMAIN
         ));
         when(messagingService
                 .sendServicesDownEmail(eq(fakeShopperId), eq(fakeAccountName), eq(fakeIpAddress), eq(fakeOrionGuid),
                         eq("HTTPS_DOMAIN (domainfake.here)"), any(Instant.class), eq(true))).thenReturn(fakeMessageId);
-        command.execute(context, vmOutageEmailRequest);
+        command.execute(context, request);
 
         verify(context, times(1))
                 .execute(eq("SendVmOutageEmail-HTTPS_DOMAIN"), lambdaCaptor.capture(), eq(String.class));
@@ -199,15 +194,14 @@ public class SendVmOutageEmailTest {
 
     @Test
     public void doesNotSendOutageEmailForSSLWarning() {
-        vmOutageEmailRequest.vmOutage.metrics = Sets.newHashSet(VmMetric.HTTPS_DOMAIN);
-        vmMetricAlert.status = VmMetricAlert.Status.ENABLED;
-        vmOutageEmailRequest.vmOutage.domainMonitoringMetadata = Arrays.asList(new VmOutage.DomainMonitoringMetadata(
+        request.vmOutage.metrics = Sets.newHashSet(VmMetric.HTTPS_DOMAIN);
+        request.vmOutage.domainMonitoringMetadata = Arrays.asList(new VmOutage.DomainMonitoringMetadata(
                 "domainfake.here", Arrays.asList("SSL certificate is expiring"), VmMetric.HTTPS_DOMAIN
         ));
         when(messagingService
                 .sendServicesDownEmail(eq(fakeShopperId), eq(fakeAccountName), eq(fakeIpAddress), eq(fakeOrionGuid),
                         eq("HTTPS (domainfake.here)"), any(Instant.class), eq(true))).thenReturn(fakeMessageId);
-        command.execute(context, vmOutageEmailRequest);
+        command.execute(context, request);
 
         verify(context, times(0))
                 .execute(eq("SendVmOutageEmail-HTTPS"), lambdaCaptor.capture(), eq(String.class));
@@ -215,9 +209,8 @@ public class SendVmOutageEmailTest {
 
     @Test
     public void doesNotSendEmailIfAlertMetricIsDisabled() {
-        vmOutageEmailRequest.vmOutage.metrics = Sets.newHashSet(VmMetric.PING);
-        vmMetricAlert.status = VmMetricAlert.Status.DISABLED;
-        command.execute(context, vmOutageEmailRequest);
+        request.vmOutage.metrics = Sets.newHashSet(VmMetric.PING);
+        command.execute(context, request);
 
         verify(context, never())
                 .execute(eq("SendVmOutageEmail-" + fakeShopperId), any(Function.class), eq(String.class));
@@ -225,11 +218,10 @@ public class SendVmOutageEmailTest {
 
     @Test
     public void passesCorrectValueToOutageEmail() {
-        vmOutageEmailRequest.vmOutage.metrics = Sets.newHashSet(VmMetric.DISK);
-        vmMetricAlert.status = VmMetricAlert.Status.ENABLED;
-        vmOutageEmailRequest.vmOutage.reason = "vps4_disk_total_percent_used greater than 42% for more than 10 minutes";
+        request.vmOutage.metrics = Sets.newHashSet(VmMetric.DISK);
+        request.vmOutage.reason = "vps4_disk_total_percent_used greater than 42% for more than 10 minutes";
 
-        command.execute(context, vmOutageEmailRequest);
+        command.execute(context, request);
 
         verify(context, times(1))
                 .execute(eq("SendVmOutageEmail-DISK"), lambdaCaptor.capture(), eq(String.class));
@@ -243,11 +235,10 @@ public class SendVmOutageEmailTest {
 
     @Test
     public void passesDefaultValueToOutageEmail() {
-        vmOutageEmailRequest.vmOutage.metrics = Sets.newHashSet(VmMetric.DISK);
-        vmMetricAlert.status = VmMetricAlert.Status.ENABLED;
-        vmOutageEmailRequest.vmOutage.reason = "unexpected string";
+        request.vmOutage.metrics = Sets.newHashSet(VmMetric.DISK);
+        request.vmOutage.reason = "unexpected string";
 
-        command.execute(context, vmOutageEmailRequest);
+        command.execute(context, request);
 
         verify(context, times(1))
                 .execute(eq("SendVmOutageEmail-DISK"), lambdaCaptor.capture(), eq(String.class));
@@ -261,21 +252,20 @@ public class SendVmOutageEmailTest {
 
     @Test
     public void handlesOutageWithMultipleMetrics() {
-        vmOutageEmailRequest.vmOutage.metrics = new HashSet<>();
-        vmOutageEmailRequest.vmOutage.metrics.add(VmMetric.HTTP_DOMAIN);
-        vmOutageEmailRequest.vmOutage.metrics.add(VmMetric.IMAP);
-        vmOutageEmailRequest.vmOutage.metrics.add(VmMetric.SSH);
-        vmOutageEmailRequest.vmOutage.domainMonitoringMetadata = Arrays.asList(new VmOutage.DomainMonitoringMetadata(
+        request.vmOutage.metrics = new HashSet<>();
+        request.vmOutage.metrics.add(VmMetric.HTTP_DOMAIN);
+        request.vmOutage.metrics.add(VmMetric.IMAP);
+        request.vmOutage.metrics.add(VmMetric.SSH);
+        request.vmOutage.domainMonitoringMetadata = Arrays.asList(new VmOutage.DomainMonitoringMetadata(
                 "domainfake.here", Arrays.asList("Unable to resolve host name domainfake.here"), VmMetric.HTTP_DOMAIN
         ));
-        vmMetricAlert.status = VmMetricAlert.Status.ENABLED;
-        vmOutageEmailRequest.vmOutage.reason = "unexpected string";
-        when(vmAlertService.getVmMetricAlert(any(UUID.class), anyString())).thenReturn(vmMetricAlert);
+        request.vmOutage.reason = "unexpected string";
 
-        command.execute(context, vmOutageEmailRequest);
+        command.execute(context, request);
 
-        verify(context).execute(eq("SendVmOutageEmail-HTTP_DOMAIN"), Matchers.<Function<CommandContext, String>> any(), eq(String.class));
-        verify(context).execute(eq("SendVmOutageEmail-IMAP"), Matchers.<Function<CommandContext, String>> any(), eq(String.class));
-        verify(context).execute(eq("SendVmOutageEmail-SSH"), Matchers.<Function<CommandContext, String>> any(), eq(String.class));
+        verify(context, times(1))
+                .execute(eq("SendVmOutageEmail-HTTP_DOMAIN"), Matchers.<Function<CommandContext, String>> any(), eq(String.class));
+        verify(context, times(1))
+                .execute(eq("SendVmOutageEmail-Services"), Matchers.<Function<CommandContext, String>> any(), eq(String.class));
     }
 }

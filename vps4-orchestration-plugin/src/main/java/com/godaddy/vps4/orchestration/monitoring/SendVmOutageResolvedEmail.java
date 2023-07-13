@@ -1,6 +1,9 @@
 package com.godaddy.vps4.orchestration.monitoring;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
@@ -28,7 +31,7 @@ public class SendVmOutageResolvedEmail implements Command<VmOutageEmailRequest, 
     private static final Logger logger = LoggerFactory.getLogger(SendVmOutageResolvedEmail.class);
     private final MessagingService messagingService;
     private final VmAlertService vmAlertService;
-    private static String SSL_EXPIRING_WARNING = "SSL certificate is expiring";
+    private static final String SSL_EXPIRING_WARNING = "SSL certificate is expiring";
 
     @Inject
     public SendVmOutageResolvedEmail(MessagingService messagingService, VmAlertService vmAlertService) {
@@ -38,106 +41,96 @@ public class SendVmOutageResolvedEmail implements Command<VmOutageEmailRequest, 
 
     @Override
     public Void execute(CommandContext context, VmOutageEmailRequest req) {
-        for (VmMetric metric : req.vmOutage.metrics) {
-            executeForMetric(context, req, metric);
-        }
+        req.vmOutage.metrics.retainAll(getEnabledMetrics(req.vmId));
+        executeForMetrics(context, req);
         for (VmOutage.DomainMonitoringMetadata domainMetric : req.vmOutage.domainMonitoringMetadata) {
-            executeForHTTPandHTTPS(context, req, domainMetric);
+            executeForHttpAndHttps(context, req, domainMetric);
         }
         return null;
     }
 
-    private void executeForHTTPandHTTPS(CommandContext context, VmOutageEmailRequest req, VmOutage.DomainMonitoringMetadata metricMetadata) {
+    private void executeForHttpAndHttps(CommandContext context, VmOutageEmailRequest req, VmOutage.DomainMonitoringMetadata metricMetadata) {
+        if (metricMetadata.metadata.size() == 1 && metricMetadata.metadata.get(0).equals(SSL_EXPIRING_WARNING)) {
+            String text = "SSL expiring warning detected - no outage emails sent for shopper ID {}, VM ID {}.";
+            logger.warn(text, req.shopperId, req.vmId);
+            return;
+        }
+
         String metricDomain = metricMetadata.metric + " (" + metricMetadata.additionalFqdn + ")";
-        String messageId;
-        if (emailAlertForMetricIsEnabled(req.vmId, metricMetadata.metric.toString())) {
-            if(metricMetadata.metadata.size() == 1 && metricMetadata.metadata.get(0).equals(SSL_EXPIRING_WARNING)) {
-                logger.warn("SSL Expiring Warning detected - no outage emails sent for shopper id {}, vm id {}.", req.shopperId,
-                        req.vmId);
-                return;
-            }
+        String messageId = context.execute("SendVmOutageResolvedEmail-" + metricMetadata.metric,
+                                           ctx -> messagingService
+                                                   .sendServiceOutageResolvedEmail(req.shopperId, req.accountName, req.ipAddress, req.orionGuid,
+                                                                                   metricDomain, req.vmOutage.ended, req.managed),
+                                           String.class);
 
-            messageId = context.execute("SendVmOutageResolvedEmail-" + metricMetadata.metric,
-                        ctx -> messagingService
-                                .sendServiceOutageResolvedEmail(req.shopperId, req.accountName, req.ipAddress, req.orionGuid,
-                                        metricDomain, req.vmOutage.ended, req.managed),
-                        String.class);
-
-            if (messageId != null) {
-                logger.info("Outage resolved message ID {} sent for VMID {}", messageId, req.vmId);
-            } else {
-                logger.warn("No outage resolved email sent, message id was null for shopper id {}.", req.shopperId);
-            }
+        if (messageId != null) {
+            logger.info("Outage resolved message ID {} sent for VM ID {}", messageId, req.vmId);
         } else {
-            logger.info(
-                    "No emails will be sent since email alert for metric {} is disabled for shopper id {}, vm id {}.",
-                    req.vmOutage.toString(), req.shopperId, req.vmId);
+            logger.warn("No outage resolved email sent, message ID was null for shopper id {}.", req.shopperId);
         }
     }
 
-    private void executeForMetric(CommandContext context, VmOutageEmailRequest req, VmMetric metric) {
+    private void executeForMetrics(CommandContext context, VmOutageEmailRequest req) {
         logger.info("Sending outage resolved email for shopper {} and vm {}", req.shopperId, req.vmId);
-
-        if (emailAlertForMetricIsEnabled(req.vmId, metric.toString())) {
-            String messageId;
+        Set<VmMetric> portCheckServices = new HashSet<>();
+        for (VmMetric metric : req.vmOutage.metrics) {
             switch (metric) {
                 case PING:
-                    messageId = context.execute("SendVmOutageResolvedEmail-" + metric,
-                            ctx -> messagingService
-                                    .sendUptimeOutageResolvedEmail(req.shopperId, req.accountName, req.ipAddress,
-                                            req.orionGuid, req.vmOutage.ended, req.managed),
-                            String.class);
+                    context.execute("SendVmOutageResolvedEmail-" + metric,
+                                    ctx -> messagingService
+                                            .sendUptimeOutageResolvedEmail(req.shopperId, req.accountName, req.ipAddress,
+                                                                           req.orionGuid, req.vmOutage.ended, req.managed),
+                                    String.class);
                     break;
 
                 case CPU:
-                case RAM:
                 case DISK:
-                    messageId = context.execute("SendVmOutageResolvedEmail-" + metric,
-                            ctx -> messagingService
-                                    .sendUsageOutageResolvedEmail(req.shopperId, req.accountName, req.ipAddress,
-                                            req.orionGuid, metric.name(), req.vmOutage.ended, req.managed),
-                            String.class);
+                case RAM:
+                    context.execute("SendVmOutageResolvedEmail-" + metric,
+                                    ctx -> messagingService
+                                            .sendUsageOutageResolvedEmail(req.shopperId, req.accountName, req.ipAddress,
+                                                                          req.orionGuid, metric.name(), req.vmOutage.ended, req.managed),
+                                    String.class);
                     break;
 
                 case FTP:
                 case HTTP:
-                case SSH:
-                case SMTP:
                 case IMAP:
                 case POP3:
-                    logger.info("sending resolved email for {}", metric);
-                    messageId = context.execute("SendVmOutageResolvedEmail-" + metric,
-                            ctx -> messagingService
-                                    .sendServiceOutageResolvedEmail(req.shopperId, req.accountName, req.ipAddress,
-                                            req.orionGuid, metric.name(), req.vmOutage.ended, req.managed),
-                            String.class);
+                case SMTP:
+                case SSH:
+                    portCheckServices.add(metric);
                     break;
 
                 case HTTP_DOMAIN:
                 case HTTPS_DOMAIN:
-                    return;
+                    break; // handled separately
+
                 case UNKNOWN:
                 default:
-                    logger.warn(
-                            "Metric type not determined, no outage resolved email sent for shopper id {}, vm id {}.",
-                            req.shopperId, req.vmId);
+                    logger.warn("No outage resolved email sent for shopper ID {}, VM ID {}.", req.shopperId, req.vmId);
                     return;
             }
-            if (messageId != null) {
-                logger.info("Outage Resolved message ID {} sent for VMID {}", messageId, req.vmId);
-            } else {
-                logger.warn(
-                        "No outage resolved email sent, message id was null for shopper id {}.", req.shopperId);
-            }
-        } else {
-            logger.info(
-                    "No emails will be sent since email alert for metric {} is disabled for shopper id {}, vm id {}.",
-                    req.vmOutage.toString(), req.shopperId, req.vmId);
+        }
+
+        if (!portCheckServices.isEmpty()) {
+            String portCheckServiceNames = portCheckServices.stream()
+                                                            .map(Enum::name)
+                                                            .collect(Collectors.joining(", "));
+            context.execute("SendVmOutageResolvedEmail-Services",
+                            ctx -> messagingService
+                                    .sendServiceOutageResolvedEmail(req.shopperId, req.accountName, req.ipAddress,
+                                                                    req.orionGuid, portCheckServiceNames,
+                                                                    req.vmOutage.ended, req.managed),
+                            String.class);
         }
     }
 
-    private boolean emailAlertForMetricIsEnabled(UUID vmId, String metric) {
-        VmMetricAlert alert = vmAlertService.getVmMetricAlert(vmId, metric);
-        return (alert.status == VmMetricAlert.Status.ENABLED);
+    private Set<VmMetric> getEnabledMetrics(UUID vmId) {
+        return vmAlertService.getVmMetricAlertList(vmId)
+                             .stream()
+                             .filter(a -> a.status == VmMetricAlert.Status.ENABLED)
+                             .map(a -> a.metric)
+                             .collect(Collectors.toSet());
     }
 }
