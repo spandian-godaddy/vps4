@@ -14,7 +14,7 @@ public class MessagingModule extends AbstractModule {
         bind(MessagingApiService.class)
                 .toProvider(getCertJwtAuthServiceProvider(MessagingApiService.class,
                                                           "messaging.api.url",
-                                                          CertJwtApi.MESSAGING))
+                                                          CertJwtApi.MESSAGING_API))
                 .in(Singleton.class);
     }
 }
