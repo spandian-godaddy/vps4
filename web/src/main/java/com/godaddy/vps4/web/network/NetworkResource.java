@@ -19,6 +19,7 @@ import javax.ws.rs.core.MediaType;
 
 import com.godaddy.vps4.ipblacklist.IpBlacklistService;
 import com.godaddy.vps4.orchestration.ActionRequest;
+import com.godaddy.vps4.vm.ServerSpec;
 import io.swagger.annotations.ApiParam;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -122,7 +123,7 @@ public class NetworkResource {
         VirtualMachine virtualMachine = vmResource.getVm(vmId);
         validateNoConflictingActions(vmId, actionService, ActionType.ADD_IP);
 
-        validateIPVAddressLimit(internetProtocolVersion, vmId, virtualMachine.spec.ipAddressLimit);
+        validateIPVAddressLimit(internetProtocolVersion, virtualMachine.vmId, virtualMachine.spec);
 
         logger.info("Adding IP to VM {}", virtualMachine.vmId);
         if (virtualMachine.hfsVmId == 0) {
@@ -177,23 +178,27 @@ public class NetworkResource {
             request.internetProtocolVersion = internetProtocolVersion;
             return request;
         } else
-            throw new Vps4Exception("ADD_IP_NOT_SUPPORTED_FOR_PLATFORM", String.format("Add IP for IPV %s not supported " +
+            throw new Vps4Exception("ADD_IP_NOT_SUPPORTED_FOR_PLATFORM", String.format("Add IP for IPv %s not supported " +
                     "for platform %s", internetProtocolVersion, vm.spec.serverType.platform));
     }
 
-    private void validateIPVAddressLimit(int internetProtocolVersion, UUID vmId, int ipv4AddressLimit) {
-        int currentIpsInUse = networkService.getActiveIpAddressesCount(vmId, internetProtocolVersion);
+    private void validateIPVAddressLimit(int ipVersion, UUID vmId, ServerSpec spec) {
+        int currentIpsInUse = networkService.getActiveIpAddressesCount(vmId, ipVersion);
+        boolean isOH = spec.serverType.platform == ServerType.Platform.OPTIMIZED_HOSTING;
+        int ipAddressLimit = getIpAddressLimit(ipVersion, spec, isOH);
 
-        if (internetProtocolVersion == 4) {
-            if (currentIpsInUse >= ipv4AddressLimit) {
-                throw new Vps4Exception("IPV4_LIMIT_REACHED", String.format("This vm's ipv4 limit is %s and it already has %s ips in use.", ipv4AddressLimit, currentIpsInUse));
-            }
-        } else if (internetProtocolVersion == 6) {
-            if (currentIpsInUse >= 1) {
-                throw new Vps4Exception("IPV6_LIMIT_REACHED", String.format("This vm's ipv6 limit is 1 and it already has %s ips in use.", currentIpsInUse));
-            }
+        if (currentIpsInUse >= ipAddressLimit) {
+            throw new Vps4Exception("IP_LIMIT_REACHED", String.format("This VM's IPv%s limit is %s and it already has %s ips in use.", ipVersion, spec.ipAddressLimit, currentIpsInUse));
+        }
+    }
+
+    private static int getIpAddressLimit(int ipVersion, ServerSpec spec, boolean isOH) {
+        if (ipVersion == 4) {
+            return spec.ipAddressLimit;
+        } else if (ipVersion == 6) {
+            return isOH ? 5 : 1;
         } else {
-            throw new Vps4Exception("INVALID_IPV", String.format("%s is not a valid int for Internet Protocol Version(IPV4 or IPV6 only).", internetProtocolVersion));
+            throw new Vps4Exception("INVALID_IPV", String.format("%s is not a valid int for IP Version(IPv4 or IPv6 only).", ipVersion));
         }
     }
 

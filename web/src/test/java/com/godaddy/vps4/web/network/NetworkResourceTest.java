@@ -32,6 +32,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
@@ -293,8 +295,21 @@ public class NetworkResourceTest {
     }
 
 
+    @Test
+    public void testAddIpPassedIpLimit5ForOHIpv6() {
+        when(networkService.getActiveIpAddressesCount(vm.vmId, 6)).thenReturn(5);
+
+        try {
+            resource.addIpAddress(vmId, 6);
+            fail();
+        } catch (Vps4Exception e) {
+            assertEquals("IP_LIMIT_REACHED", e.getId());
+        }
+    }
+
     @Test(expected = Vps4Exception.class)
-    public void testAddIpPassedIpLimit1ForIPV6() {
+    public void testAddIpPassedIpLimit1ForIpv6() {
+        vm.spec.serverType.platform = ServerType.Platform.OPENSTACK;
         when(networkService.getActiveIpAddressesCount(vm.vmId, 6)).thenReturn(1);
         resource.addIpAddress(vmId, 6);
     }

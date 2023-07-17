@@ -83,6 +83,7 @@ public class Vps4ProvisionOHVmTest {
     @Captor private ArgumentCaptor<SetHostname.Request> setHostnameArgumentCaptor;
     @Captor private ArgumentCaptor<SetupPanopta.Request> setupPanoptaRequestArgCaptor;
     @Captor private ArgumentCaptor<SetupCompletedEmailRequest> setupCompletedEmailRequestArgCaptor;
+    @Captor private ArgumentCaptor<Vps4AddIpAddress.Request> addIpAddressRequestCaptor;
 
     Vps4ProvisionOHVm command = new Vps4ProvisionOHVm(actionService, vmService, virtualMachineService,
                                                       vmUserService, networkService,
@@ -326,5 +327,18 @@ public class Vps4ProvisionOHVmTest {
         verify(context, never()).execute(eq(SetupAutomaticBackupSchedule.class), any());
         verify(context, never())
                 .execute(eq("AddBackupJobIdToVM"), Matchers.<Function<CommandContext, Void>> any(), eq(Void.class));
+    }
+
+    @Test
+    public void requestsIpv6Address() {
+        command.executeWithAction(context, request);
+
+        verify(context, times(1)).execute(eq(Vps4AddIpAddress.class), addIpAddressRequestCaptor.capture());
+        Vps4AddIpAddress.Request capturedRequest = addIpAddressRequestCaptor.getValue();
+        assertEquals(vmId, capturedRequest.vmId);
+        assertEquals(request.sgid, capturedRequest.sgid);
+        assertEquals(request.zone, capturedRequest.zone);
+        assertEquals(hfsVmId, capturedRequest.serverId);
+        assertEquals(6, capturedRequest.internetProtocolVersion);
     }
 }

@@ -409,4 +409,11 @@ public class Vps4ProvisionVmTest {
             assertEquals(e.getMessage(), "Server is no longer tied to credit");
         }
     }
+
+    @Test
+    public void doesNotRequestIpv6Address() {
+        command.executeWithAction(context, request);
+
+        verify(context, never()).execute(eq(Vps4AddIpAddress.class), isA(Vps4AddIpAddress.Request.class));
+    }
 }

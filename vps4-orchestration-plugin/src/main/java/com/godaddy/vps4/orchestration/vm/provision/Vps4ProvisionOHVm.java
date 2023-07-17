@@ -10,6 +10,7 @@ import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
 import com.godaddy.vps4.network.NetworkService;
+import com.godaddy.vps4.orchestration.vm.Vps4AddIpAddress;
 import com.godaddy.vps4.orchestration.vm.Vps4DestroyOHVm;
 import com.godaddy.vps4.orchestration.vm.Vps4DestroyVm;
 import com.godaddy.vps4.vm.ActionService;
@@ -19,6 +20,8 @@ import com.godaddy.vps4.vm.VmUserService;
 
 import gdg.hfs.orchestration.CommandMetadata;
 import gdg.hfs.orchestration.CommandRetryStrategy;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @CommandMetadata(
         name = "ProvisionOHVm",
@@ -27,6 +30,7 @@ import gdg.hfs.orchestration.CommandRetryStrategy;
         retryStrategy = CommandRetryStrategy.NEVER
 )
 public class Vps4ProvisionOHVm extends Vps4ProvisionVm {
+    private static final Logger logger = LoggerFactory.getLogger(Vps4ProvisionVm.class);
 
     @Inject
     public Vps4ProvisionOHVm(
@@ -53,6 +57,22 @@ public class Vps4ProvisionOHVm extends Vps4ProvisionVm {
     /* Optimized Hosting backups are initiated on the OH side */
     @Override
     protected void setupAutomaticBackupSchedule(UUID vps4VmId, String shopperId) {}
+
+    @Override
+    protected void requestIpv6Address(UUID vmId, String sgid, String zone, long serverId) {
+        Vps4AddIpAddress.Request request = new Vps4AddIpAddress.Request();
+        request.vmId = vmId;
+        request.sgid = sgid;
+        request.zone = zone;
+        request.serverId = serverId;
+        request.internetProtocolVersion = 6;
+
+        try {
+            context.execute(Vps4AddIpAddress.class, request);
+        } catch (RuntimeException e) {
+            logger.error("IPv6 address request failed {}", e);
+        }
+    }
 
     @Override
     protected void destroyVm(Vps4DestroyVm.Request destroyRequest) {

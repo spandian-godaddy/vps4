@@ -154,6 +154,8 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
 
         setupAutomaticBackupSchedule(request.vmInfo.vmId, request.shopperId);
 
+        requestIpv6Address(request.vmInfo.vmId, request.vmInfo.sgid, request.zone, hfsVmId);
+
         sendSetupEmail(request, primaryIpAddress);
 
         destroyIfOrionGuidIsMismatched(request.orionGuid);
@@ -175,6 +177,9 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
         bindIp(hfsVm.vmId, hfsIp.addressId);
         return hfsIp.address;
     }
+
+    // Only Optimized Hosting VMs should have a single IPv6 address assigned upon provisioning, so skip.
+    protected void requestIpv6Address(UUID vmId, String sgid, String zone, long serverId) {}
 
     /* Create Reverse DNS record.
        For Openstack/OptimizedHosting Vm, no need to set RDNS record, so skip. */
