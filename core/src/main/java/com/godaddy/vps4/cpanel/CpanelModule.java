@@ -24,13 +24,11 @@ public class CpanelModule extends AbstractModule {
             CPanelService cpanelService,
             CacheManager cacheManager) {
 
-        ExecutorService pool = Executors.newCachedThreadPool();
-
         CpanelApiTokenService hfsApiToken = new HfsCpanelApiTokenService(cpanelService);
 
         CpanelApiTokenService jcacheApiTokenService = new JCacheCpanelApiTokenService(hfsApiToken, cacheManager);
 
-        return new CachedCpanelApiTokenService(pool, jcacheApiTokenService);
+        return jcacheApiTokenService;
     }
 
 }

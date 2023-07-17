@@ -37,7 +37,7 @@ public class JCacheCpanelApiTokenServiceTest {
         String apiToken = UUID.randomUUID().toString();
 
         spyApiTokenService.invalidateApiToken(vmId, apiToken);
-        Mockito.verify(spyApiTokenService.cache, Mockito.times(1)).remove(vmId);
+        Mockito.verify(spyApiTokenService.cache, Mockito.times(1)).remove(vmId, apiToken);
     }
 
     @Test

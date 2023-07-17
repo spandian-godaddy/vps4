@@ -34,7 +34,7 @@ public class JCacheCpanelApiTokenService implements CpanelApiTokenService {
 
             apiToken = cpanelApiTokenService.getApiToken(vmId, timeoutAt);
             if (apiToken != null) {
-                logger.debug("populating cache for vm {}", vmId);
+                logger.info("populating cache for vm {}", vmId);
                 cache.put(vmId, apiToken);
             }
         }
@@ -45,6 +45,10 @@ public class JCacheCpanelApiTokenService implements CpanelApiTokenService {
     public void invalidateApiToken(long vmId, String apiToken) {
         // if the api token no longer works, remove it from the cache
         logger.info("invalidate api token for vm {}", vmId);
-        cache.remove(vmId);
+        boolean removed = cache.remove(vmId,apiToken);
+        if (removed) {
+            logger.info("successfully invalidated api token for vm {}", vmId);
+        }
+        logger.info("cache is holding onto a different api token for vm {}", vmId);
     }
 }
