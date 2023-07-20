@@ -34,6 +34,7 @@ public class JsdApiIssueRequest {
         @JsonProperty("customfield_10116") public JsdFieldValue escalationReason;
         @JsonProperty("customfield_10206") public String emailIsc;
         @JsonProperty("customfield_10180") public JsdFieldValue emailTarget;
+        @JsonProperty("customfield_10476") public String hypervisorHostname;
 
         @JsonProperty("description") public JsdContentDoc description;
 

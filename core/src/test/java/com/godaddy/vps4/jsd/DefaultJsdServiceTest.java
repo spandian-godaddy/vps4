@@ -108,6 +108,7 @@ public class DefaultJsdServiceTest {
         assertEquals(request.customerProduct, jsdApiIssueRequest.fields.customerProduct.value);
         assertEquals(request.metricTypes, jsdApiIssueRequest.fields.metricTypes);
         assertEquals(request.dataCenter, jsdApiIssueRequest.fields.dataCenter.value);
+        assertEquals(request.hypervisorHostname, jsdApiIssueRequest.fields.hypervisorHostname);
     }
 
     @Test

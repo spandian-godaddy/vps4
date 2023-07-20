@@ -100,6 +100,7 @@ public class CreateJsdOutageTicketTest {
         request.metricReasons = "oopsie whoopsie";
         request.severity = "standard";
         request.summary = "Monitoring Event - [CPU] - oopsie whoopsie (321123)";
+        request.hypervisorHostname = "phx3plohvmn0350";
         return request;
     }
 
@@ -130,6 +131,7 @@ public class CreateJsdOutageTicketTest {
         assertEquals("Fully Managed", createJsdTicketRequest.customerProduct);
         assertEquals(request.metricTypes, createJsdTicketRequest.metricTypes);
         assertEquals("a2", createJsdTicketRequest.dataCenter);
+        assertEquals("phx3plohvmn0350", createJsdTicketRequest.hypervisorHostname);
     }
 
     @Test

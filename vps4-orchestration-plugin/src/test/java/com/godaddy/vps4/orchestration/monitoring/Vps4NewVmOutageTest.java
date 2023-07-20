@@ -2,6 +2,9 @@ package com.godaddy.vps4.orchestration.monitoring;
 
 import com.godaddy.hfs.config.Config;
 
+import com.godaddy.hfs.vm.Extended;
+import com.godaddy.hfs.vm.VmExtendedInfo;
+import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.network.IpAddress;
@@ -10,6 +13,8 @@ import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VmMetric;
 import com.godaddy.vps4.vm.VmOutage;
+import com.godaddy.vps4.vm.ServerType;
+import com.godaddy.vps4.vm.ServerSpec;
 import gdg.hfs.orchestration.CommandContext;
 import org.junit.Assert;
 import org.junit.Before;
@@ -32,17 +37,19 @@ public class Vps4NewVmOutageTest {
 
     private ActionService actionService = mock(ActionService.class);
     private CreditService creditService = mock(CreditService.class);
+    private VmService vmService = mock(VmService.class);
     private CommandContext context = mock(CommandContext.class);
     private Config config = mock(Config.class);
 
     private Vps4NewVmOutage vps4NewVmOutage;
+    private VmExtendedInfo vmExtendedInfo;
     Vps4NewVmOutage.Request request;
     VirtualMachineCredit credit;
     VmOutage outage;
 
     @Before
     public void setup() {
-        vps4NewVmOutage = new Vps4NewVmOutage(actionService, creditService, config);
+        vps4NewVmOutage = new Vps4NewVmOutage(actionService, creditService, vmService, config);
 
         when(config.get("jsd.enabled", "false")).thenReturn("true");
 
@@ -56,6 +63,9 @@ public class Vps4NewVmOutageTest {
         request.virtualMachine.orionGuid = UUID.randomUUID();
         request.virtualMachine.vmId = UUID.randomUUID();
         request.partnerCustomerKey = "testKey_testShopperId";
+        request.virtualMachine.spec = new ServerSpec();
+        request.virtualMachine.spec.serverType = new ServerType();
+        request.virtualMachine.spec.serverType.serverType = ServerType.Type.VIRTUAL;
         when(request.virtualMachine.isActive()).thenReturn(true);
 
         credit = mock(VirtualMachineCredit.class);
@@ -73,6 +83,11 @@ public class Vps4NewVmOutageTest {
         outage.reason = "oopsie whoopsie";
         outage.domainMonitoringMetadata = Collections.emptyList();
         when(context.execute(eq("GetPanoptaOutage"), eq(GetPanoptaOutage.class), any())).thenReturn(outage);
+
+        vmExtendedInfo = new VmExtendedInfo();
+        vmExtendedInfo.extended = new Extended();
+        vmExtendedInfo.extended.hypervisorHostname = "phx3plohvmn0350";
+        when(vmService.getVmExtendedInfo(request.virtualMachine.hfsVmId)).thenReturn(vmExtendedInfo);
     }
 
     @Test
@@ -142,6 +157,33 @@ public class Vps4NewVmOutageTest {
         Assert.assertEquals("CPU", arg2.metricTypes);
         Assert.assertEquals(outage.reason, arg2.metricReasons);
         Assert.assertEquals("Monitoring Event - " + outage.metrics.toString() + " - "+ arg2.metricReasons + " (" + 321123 + ")", arg2.summary);
+        Assert.assertEquals(vmExtendedInfo.extended.hypervisorHostname, arg2.hypervisorHostname);
+    }
+
+    @Test
+    public void hypervisorHostnameIsNullIfDedicated() {
+        when(credit.isManaged()).thenReturn(true);
+        request.virtualMachine.spec.serverType.serverType = ServerType.Type.DEDICATED;
+        ArgumentCaptor<CreateJsdOutageTicket.Request> createJsdOutageTicketArgumentCaptor = ArgumentCaptor.forClass(CreateJsdOutageTicket.Request.class);
+
+        vps4NewVmOutage.executeWithAction(context, request);
+
+        verify(context).execute(eq("CreateJsdOutageTicket"), eq(CreateJsdOutageTicket.class), createJsdOutageTicketArgumentCaptor.capture());
+        CreateJsdOutageTicket.Request arg2 = createJsdOutageTicketArgumentCaptor.getValue();
+        Assert.assertEquals(null, arg2.hypervisorHostname);
+    }
+
+    @Test
+    public void hypervisorHostnameIsNullIfVmExtendedInfoIsNull() {
+        when(vmService.getVmExtendedInfo(request.virtualMachine.hfsVmId)).thenReturn(null);
+        when(credit.isManaged()).thenReturn(true);
+        ArgumentCaptor<CreateJsdOutageTicket.Request> createJsdOutageTicketArgumentCaptor = ArgumentCaptor.forClass(CreateJsdOutageTicket.Request.class);
+
+        vps4NewVmOutage.executeWithAction(context, request);
+
+        verify(context).execute(eq("CreateJsdOutageTicket"), eq(CreateJsdOutageTicket.class), createJsdOutageTicketArgumentCaptor.capture());
+        CreateJsdOutageTicket.Request arg2 = createJsdOutageTicketArgumentCaptor.getValue();
+        Assert.assertEquals(null, arg2.hypervisorHostname);
     }
 
     @Test

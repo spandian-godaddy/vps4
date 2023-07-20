@@ -1,5 +1,7 @@
 package com.godaddy.vps4.orchestration.monitoring;
 
+import com.godaddy.hfs.vm.VmExtendedInfo;
+import com.godaddy.hfs.vm.VmService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,14 +30,16 @@ public class Vps4NewVmOutage extends ActionCommand<Vps4NewVmOutage.Request, Void
     private static final Logger logger = LoggerFactory.getLogger(Vps4NewVmOutage.class);
 
     private final CreditService creditService;
+    private final VmService vmService;
     private final Config config;
 
     private CommandContext context;
 
     @Inject
-    public Vps4NewVmOutage(ActionService actionService, CreditService creditService, Config config) {
+    public Vps4NewVmOutage(ActionService actionService, CreditService creditService, VmService vmService, Config config) {
         super(actionService);
         this.creditService = creditService;
+        this.vmService = vmService;
         this.config = config;
     }
 
@@ -83,6 +87,14 @@ public class Vps4NewVmOutage extends ActionCommand<Vps4NewVmOutage.Request, Void
         }
     }
 
+    private String getHypervisorHostname(VirtualMachine virtualMachine) {
+        String hypervisorHostname = null;
+        if (virtualMachine.spec.isVirtualMachine()) {
+            VmExtendedInfo vmExtendedInfo = vmService.getVmExtendedInfo(virtualMachine.hfsVmId);
+            if (vmExtendedInfo != null) hypervisorHostname = vmExtendedInfo.extended.hypervisorHostname;
+        }
+        return hypervisorHostname;
+    }
 
     private void createJsdTicket(VirtualMachine virtualMachine, String shopperId, VmOutage vmOutage, String partnerCustomerKey) {
         String metricType = vmOutage.metricTypeMapper();
@@ -97,6 +109,8 @@ public class Vps4NewVmOutage extends ActionCommand<Vps4NewVmOutage.Request, Void
         createJsdOutageTicketRequest.metricTypes = metricType;
         createJsdOutageTicketRequest.metricInfo = metricType;
         createJsdOutageTicketRequest.metricReasons = vmOutage.reason;
+        createJsdOutageTicketRequest.hypervisorHostname = getHypervisorHostname(virtualMachine);
+
         context.execute("CreateJsdOutageTicket", CreateJsdOutageTicket.class, createJsdOutageTicketRequest);
     }
 

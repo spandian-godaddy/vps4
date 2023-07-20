@@ -59,6 +59,7 @@ public class CreateJsdOutageTicket implements Command<CreateJsdOutageTicket.Requ
         req.metricReasons = request.metricReasons;
         req.supportProduct = serverTypeMapper(credit.isDed4());
         req.customerProduct = managedLevelMapper(credit.isManaged());
+        req.hypervisorHostname = request.hypervisorHostname;
 
         return jsdService.createTicket(req);
     }
@@ -103,6 +104,7 @@ public class CreateJsdOutageTicket implements Command<CreateJsdOutageTicket.Requ
         public String metricTypes;
         public String metricInfo;
         public String metricReasons;
+        public String hypervisorHostname;
     }
 
 }

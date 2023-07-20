@@ -161,6 +161,7 @@ public class DefaultJsdService implements JsdService {
         fields.description = description;
         fields.emailIsc = EMAIL_ISC;
         fields.emailTarget = emailTarget;
+        fields.hypervisorHostname = createTicketRequest.hypervisorHostname;
 
         return fields;
     }

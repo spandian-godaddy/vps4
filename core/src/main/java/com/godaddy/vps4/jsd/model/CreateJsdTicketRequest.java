@@ -16,4 +16,5 @@ public class CreateJsdTicketRequest {
     public String metricInfo;
     public String metricReasons;
     public String orionGuid;
+    public String hypervisorHostname;
 }
