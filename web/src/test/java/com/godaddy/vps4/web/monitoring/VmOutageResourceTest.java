@@ -97,16 +97,30 @@ public class VmOutageResourceTest {
 
     @Test
     public void getOutageList() throws PanoptaServiceException {
-        resource.getVmOutageList(vmId, false);
+        resource.getVmOutageList(vmId, null, null, null);
         verify(vmResource).getVm(vmId);
-        verify(panoptaService).getOutages(vmId, false);
+        verify(panoptaService).getOutages(vmId, null, null, null);
     }
 
     @Test
     public void getActiveFilteredOutageList() throws PanoptaServiceException {
-        resource.getVmOutageList(vmId, true);
+        resource.getVmOutageList(vmId, null, null, VmOutage.Status.ACTIVE);
         verify(vmResource).getVm(vmId);
-        verify(panoptaService).getOutages(vmId, true);
+        verify(panoptaService).getOutages(vmId, null, null, VmOutage.Status.ACTIVE);
+    }
+
+    @Test
+    public void getDaysAgoFilteredOutageList() throws PanoptaServiceException {
+        resource.getVmOutageList(vmId, 1, null, null);
+        verify(vmResource).getVm(vmId);
+        verify(panoptaService).getOutages(vmId, 1, null, null);
+    }
+
+    @Test
+    public void getMetricFilteredOutageList() throws PanoptaServiceException {
+        resource.getVmOutageList(vmId, null, VmMetric.CPU, null);
+        verify(vmResource).getVm(vmId);
+        verify(panoptaService).getOutages(vmId, null, VmMetric.CPU, null);
     }
 
     @Test

@@ -5,7 +5,6 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
-import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -20,14 +19,15 @@ import com.godaddy.vps4.panopta.PanoptaServer;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VmAction;
+import com.godaddy.vps4.vm.VmMetric;
+import com.godaddy.vps4.vm.VmOutage;
+import com.godaddy.vps4.vm.VirtualMachine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.panopta.PanoptaService;
 import com.godaddy.vps4.panopta.PanoptaServiceException;
-import com.godaddy.vps4.vm.VirtualMachine;
-import com.godaddy.vps4.vm.VmOutage;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.security.RequiresRole;
@@ -75,10 +75,13 @@ public class VmOutageResource {
     @GET
     @Path("/{vmId}/outages")
     public List<VmOutage> getVmOutageList(@PathParam("vmId") UUID vmId,
-                                          @QueryParam("activeOnly") @DefaultValue("true") boolean activeOnly)
+                                          @QueryParam("daysAgo") Integer daysAgo,
+                                          @QueryParam("metric") VmMetric metric,
+                                          @QueryParam("status") VmOutage.Status status)
             throws PanoptaServiceException {
         vmResource.getVm(vmId); // Auth validation
-        return panoptaService.getOutages(vmId, activeOnly);
+
+        return panoptaService.getOutages(vmId, daysAgo, metric, status);
     }
 
     @GET
@@ -130,5 +133,4 @@ public class VmOutageResource {
         return createActionAndExecute(actionService, commandService, vmId, ActionType.CLEAR_VM_OUTAGE,
                 clearVmOutageRequest, "Vps4ClearVmOutage", user);
     }
-
 }

@@ -13,8 +13,13 @@ public class VmOutage {
     public Instant ended;
     public String reason;
     public String severity;
+    public String status;
     public long panoptaOutageId;
     public List<DomainMonitoringMetadata> domainMonitoringMetadata;
+
+    public enum Status {
+        ACTIVE, RESOLVED
+    }
 
     public static class DomainMonitoringMetadata {
         public String additionalFqdn;

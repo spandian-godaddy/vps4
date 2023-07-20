@@ -106,7 +106,7 @@ public class VmMonitoringResource {
         int scrubbedOffset = Math.max(offset, 0);
         List<MonitoringEvent> events;
 
-        List<VmOutage> sourceEvents = vmOutageResource.getVmOutageList(vmId, false);
+        List<VmOutage> sourceEvents = vmOutageResource.getVmOutageList(vmId, null, null, null);
         events = sourceEvents.stream()
                              .filter(event -> event.metrics.contains(VmMetric.PING))
                              .map(MonitoringEvent::new)

@@ -27,8 +27,10 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -131,6 +133,7 @@ public class DefaultPanoptaServiceTest {
         setupGraphs();
         setupCustomerList();
         setupServerGroups();
+        setupPanoptaMetrics();
         setupOtherMocks();
         when(cacheManager.getCache(CacheName.PANOPTA_METRIC_GRAPH,
                                    String.class,
@@ -181,6 +184,31 @@ public class DefaultPanoptaServiceTest {
         metricId.serverInterface = serverInterface;
         metricId.status = "active";
         return metricId;
+    }
+
+    private VirtualMachineCredit createDummyCredit() {
+        return new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+                .withAccountGuid(orionGuid.toString())
+                .withAccountStatus(AccountStatus.ACTIVE)
+                .withShopperID(shopperId)
+                .build();
+    }
+
+    private PanoptaOutage createDummyOutage(long metricId, Instant started, String reason) {
+        Set<Long> metricIds = new HashSet<>();
+        metricIds.add(metricId);
+
+        PanoptaOutage outage = new PanoptaOutage();
+        outage.outageId = -123456789;
+        outage.started = started;
+        outage.ended = Instant.now();
+        outage.reason = reason;
+        outage.severity = "critical";
+        outage.status = "resolved";
+        outage.metricIds = metricIds;
+        outage.networkMetricMetadata = new HashMap<>();
+
+        return outage;
     }
 
     private void setupGraphs() {
@@ -236,6 +264,30 @@ public class DefaultPanoptaServiceTest {
         when(panoptaApiServerGroupService.getServerGroups(partnerCustomerKey)).thenReturn(fakeGroups);
     }
 
+    private void setupPanoptaMetrics() {
+        PanoptaMetricId metricIdCpu = new PanoptaMetricId();
+        metricIdCpu.id = 215100054;
+        metricIdCpu.typeId = 1085;
+        metricIdCpu.serverInterface = null;
+        metricIdCpu.status = "active";
+        metricIdCpu.metadata = new HashMap<>();
+
+        PanoptaMetricId metricIdRam = new PanoptaMetricId();
+        metricIdRam.id = 215100057;
+        metricIdRam.typeId = 505;
+        metricIdRam.serverInterface = null;
+        metricIdRam.status = "active";
+        metricIdRam.metadata = new HashMap<>();
+
+        PanoptaUsageIdList usageIdList = new PanoptaUsageIdList();
+        usageIdList.value = new ArrayList<>(Arrays.asList(metricIdCpu, metricIdRam));
+
+        when(panoptaMetricMapper.getVmMetric(metricIdCpu.typeId)).thenReturn(VmMetric.CPU);
+        when(panoptaMetricMapper.getVmMetric(metricIdRam.typeId)).thenReturn(VmMetric.RAM);
+        when(panoptaApiServerService.getUsageList(anyLong(), anyString(), anyInt())).thenReturn(usageIdList);
+        when(panoptaDataService.getPanoptaDetails(vmId)).thenReturn(panoptaDetail);
+    }
+
     private void setupOtherMocks() {
         when(virtualMachineService.getVirtualMachine(any(UUID.class))).thenReturn(virtualMachine);
         when(creditService.getVirtualMachineCredit(any(UUID.class))).thenReturn(credit);
@@ -244,20 +296,10 @@ public class DefaultPanoptaServiceTest {
         when(config.get("panopta.api.name.prefix")).thenReturn("");
         when(config.get("panopta.api.package")).thenReturn("godaddy.hosting");
         doNothing().when(panoptaApiCustomerService).createCustomer(any(PanoptaApiCustomerRequest.class));
-        when(panoptaApiServerService.getUsageList(serverId, partnerCustomerKey, 0)).thenReturn(usageIdList);
         when(panoptaApiServerService.getNetworkList(serverId, partnerCustomerKey, 0)).thenReturn(networkIdList);
         when(panoptaApiServerService.getServer(serverId, partnerCustomerKey)).thenReturn(server);
         when(panoptaApiServerService.getServers(partnerCustomerKey, ipAddress, orionGuid.toString(), "active"))
                 .thenReturn(panoptaServers);
-        when(panoptaDataService.getPanoptaDetails(vmId)).thenReturn(panoptaDetail);
-    }
-
-    private VirtualMachineCredit createDummyCredit() {
-        return new VirtualMachineCredit.Builder(mock(DataCenterService.class))
-                .withAccountGuid(orionGuid.toString())
-                .withAccountStatus(AccountStatus.ACTIVE)
-                .withShopperID(shopperId)
-                .build();
     }
 
     @Test(expected = PanoptaServiceException.class)
@@ -301,6 +343,7 @@ public class DefaultPanoptaServiceTest {
 
     @Test
     public void testGetUsageIds() {
+        when(panoptaApiServerService.getUsageList(serverId, partnerCustomerKey, 0)).thenReturn(usageIdList);
         List<PanoptaMetricId> ids = defaultPanoptaService.getUsageIds(vmId);
         verify(panoptaApiServerService).getUsageList(serverId, partnerCustomerKey, 0);
         assertEquals(ids.size(), 1);
@@ -350,6 +393,7 @@ public class DefaultPanoptaServiceTest {
 
     @Test
     public void testGetUsageGraphs() throws PanoptaServiceException, InterruptedException {
+        when(panoptaApiServerService.getUsageList(serverId, partnerCustomerKey, 0)).thenReturn(usageIdList);
         when(cache.containsKey(String.format("%s.usage.%s", vmId, "hour"))).thenReturn(false);
         when(panoptaApiServerService.getUsageGraph(eq(serverId),
                                                    anyInt(),
@@ -652,7 +696,6 @@ public class DefaultPanoptaServiceTest {
         verify(panoptaMetricMapper, never()).getVmMetric(unaffectedMetric.typeId);
     }
 
-
     @Test
     public void testGetOutageReturnsNetworkMetadata() throws PanoptaServiceException {
         PanoptaMetricId affectedMetric = networkIdList.value.get(0);
@@ -686,7 +729,7 @@ public class DefaultPanoptaServiceTest {
         }
         verify(panoptaApiServerService, never()).getUsageList(anyLong(), anyString(), anyInt());
         verify(panoptaApiServerService, never()).getNetworkList(anyLong(), anyString(), anyInt());
-        verify(panoptaApiServerService, never()).getOutages(anyLong(), anyString(), anyString(), anyInt());
+        verify(panoptaApiServerService, never()).getOutages(anyLong(), anyString(), anyString(), anyInt(), anyString());
     }
 
     @Test
@@ -700,7 +743,38 @@ public class DefaultPanoptaServiceTest {
         }
         verify(panoptaApiServerService, never()).getUsageList(anyLong(), anyString(), anyInt());
         verify(panoptaApiServerService, never()).getNetworkList(anyLong(), anyString(), anyInt());
-        verify(panoptaApiServerService, never()).getOutages(anyLong(), anyString(), anyString(), anyInt());
+        verify(panoptaApiServerService, never()).getOutages(anyLong(), anyString(), anyString(), anyInt(), anyString());
+    }
+
+    @Test
+    public void testGetOutages() throws PanoptaServiceException {
+        long ramMetricId = 215100057L, cpuMetricId = 215100054L;
+        PanoptaOutageList panoptaOutageList = new PanoptaOutageList();
+        PanoptaOutage newRamOutage = createDummyOutage(ramMetricId, Instant.now(), "vps4_ram_outage");
+        PanoptaOutage oldCpuOutage = createDummyOutage(cpuMetricId, Instant.now().minus(7, ChronoUnit.DAYS), "vps4_cpu_outage");
+        panoptaOutageList.value = new ArrayList<>(Arrays.asList(newRamOutage, oldCpuOutage));
+
+        when(panoptaApiServerService.getOutages(serverId, partnerCustomerKey, null, 0, null)).thenReturn(panoptaOutageList);
+
+        List<VmOutage> outages = defaultPanoptaService.getOutages(vmId, null, null, null);
+
+        assertEquals(2, outages.size());
+    }
+
+    @Test
+    public void testGetMetricFilteredOutages() throws PanoptaServiceException {
+        long ramMetricId = 215100057L, cpuMetricId = 215100054L;
+        PanoptaOutageList panoptaOutageList = new PanoptaOutageList();
+        PanoptaOutage ramOutage = createDummyOutage(ramMetricId, Instant.now(), "vps4_ram_outage");
+        PanoptaOutage cpuOutage = createDummyOutage(cpuMetricId, Instant.now(), "vps4_cpu_outage");
+        panoptaOutageList.value = new ArrayList<>(Arrays.asList(ramOutage, cpuOutage));
+
+        when(panoptaApiServerService.getOutages(serverId, partnerCustomerKey, null, 0, null)).thenReturn(panoptaOutageList);
+
+        List<VmOutage> outages = defaultPanoptaService.getOutages(vmId, null, VmMetric.RAM, null);
+
+        assertEquals(1, outages.size());
+        assertEquals(ramOutage.reason, outages.get(0).reason);
     }
 
     @Test

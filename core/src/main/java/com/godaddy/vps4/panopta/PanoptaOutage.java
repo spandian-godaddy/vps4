@@ -59,6 +59,7 @@ public class PanoptaOutage {
     public Instant ended;
     public String reason;
     public String severity;
+    public String status;
     public Set<Long> metricIds = new HashSet<>();
     public Map<Long, List<String>> networkMetricMetadata = new HashMap<>();
 
@@ -81,6 +82,11 @@ public class PanoptaOutage {
     @JsonProperty("description")
     private void mapDescription(String description) {
         this.reason = description;
+    }
+
+    @JsonProperty("status")
+    private void mapStatus(String status) {
+        this.status = status;
     }
 
     @JsonProperty("network_service_type_list")

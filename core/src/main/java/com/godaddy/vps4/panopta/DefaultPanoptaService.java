@@ -120,9 +120,9 @@ public class DefaultPanoptaService implements PanoptaService {
         PanoptaApiCustomerList panoptaApiCustomerList = panoptaApiCustomerService.getCustomer(partnerCustomerKey);
         if (panoptaApiCustomerList != null) {
             return panoptaApiCustomerList.getCustomerList().stream().filter(customer -> StringUtils
-                    .equalsIgnoreCase(customer.partnerCustomerKey, partnerCustomerKey)).findFirst()
-                                         .orElseThrow(() -> new PanoptaServiceException("NO_MATCHING_CUSTOMER_FOUND",
-                                                                                        "No Matching customer found."));
+                            .equalsIgnoreCase(customer.partnerCustomerKey, partnerCustomerKey)).findFirst()
+                    .orElseThrow(() -> new PanoptaServiceException("NO_MATCHING_CUSTOMER_FOUND",
+                            "No Matching customer found."));
         }
         throw new PanoptaServiceException("NO_MATCHING_CUSTOMER_FOUND", "No Matching customer found.");
     }
@@ -608,7 +608,7 @@ public class DefaultPanoptaService implements PanoptaService {
     }
 
     @Override
-    public List<VmOutage> getOutages(UUID vmId, boolean activeOnly) throws PanoptaServiceException {
+    public List<VmOutage> getOutages(UUID vmId, Integer daysAgo, VmMetric metric, VmOutage.Status status) throws PanoptaServiceException {
         PanoptaDetail panoptaDetail = panoptaDataService.getPanoptaDetails(vmId);
         if (panoptaDetail == null) {
             logger.warn("Could not find Panopta data for VM ID: {}", vmId);
@@ -617,14 +617,17 @@ public class DefaultPanoptaService implements PanoptaService {
         }
 
         List<PanoptaMetricId> allMetricIds = getAllMetricIds(panoptaDetail);
+        String statusStr = status != null ? status.toString().toLowerCase() : null;
+        String daysAgoStr = daysAgo != null ? Instant.now().minus(daysAgo, ChronoUnit.DAYS).toString() : null;
         PanoptaOutageList outageList = panoptaApiServerService.getOutages(panoptaDetail.getServerId(),
-                                                                          panoptaDetail.getPartnerCustomerKey(),
-                                                                          (activeOnly) ? "active" : null,
-                                                                          UNLIMITED);
+                panoptaDetail.getPartnerCustomerKey(), statusStr, UNLIMITED, daysAgoStr);
 
-        return outageList.value.stream()
-                               .map(outage -> mapPanoptaOutageToVmOutage(vmId, allMetricIds, outage))
-                               .collect(Collectors.toList());
+        List<VmOutage> mappedOutages = outageList.value.stream()
+                .map(outage -> mapPanoptaOutageToVmOutage(vmId, allMetricIds, outage))
+                .collect(Collectors.toList());
+
+        return mappedOutages.stream().filter(outage -> metric == null || outage.metrics.contains(metric))
+                .collect(Collectors.toList());
     }
 
     private List<PanoptaMetricId> getAllMetricIds(PanoptaDetail panoptaDetail) {
@@ -647,6 +650,7 @@ public class DefaultPanoptaService implements PanoptaService {
         vmOutage.reason = outage.reason;
         vmOutage.panoptaOutageId = outage.outageId;
         vmOutage.severity = outage.severity;
+        vmOutage.status = outage.status;
 
         vmOutage.domainMonitoringMetadata = allMetricIds.stream()
                 .filter(p -> outage.networkMetricMetadata.containsKey(p.id)

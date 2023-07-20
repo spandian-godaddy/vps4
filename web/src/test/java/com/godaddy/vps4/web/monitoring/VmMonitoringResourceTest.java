@@ -159,7 +159,7 @@ public class VmMonitoringResourceTest {
                                                         "customerKey", 3, "serverKey",
                                                         Instant.now(), Instant.MAX);
         when(panoptaDataService.getPanoptaDetails(vm.vmId)).thenReturn(panoptaDetail);
-        when(vmOutageResource.getVmOutageList(vm.vmId, false)).thenReturn(panoptaEvents);
+        when(vmOutageResource.getVmOutageList(vm.vmId, null, null, null)).thenReturn(panoptaEvents);
 
         PaginatedResult<MonitoringEvent> events = resource.getVmMonitoringEvents(vm.vmId, 30, 10, 0, uriInfo);
 

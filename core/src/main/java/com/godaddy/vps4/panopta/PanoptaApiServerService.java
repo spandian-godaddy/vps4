@@ -105,5 +105,6 @@ public interface PanoptaApiServerService {
     PanoptaOutageList getOutages(@PathParam("server_id") long serverId,
                                  @QueryParam("partner_customer_key") String partnerCustomerKey,
                                  @QueryParam("status") String status,
-                                 @QueryParam("limit") int limit);
+                                 @QueryParam("limit") int limit,
+                                 @QueryParam("start_time") String startTime);
 }
