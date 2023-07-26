@@ -57,6 +57,7 @@ import com.godaddy.vps4.web.vm.VmUpgradeResource;
 import com.godaddy.vps4.web.vm.VmZombieResource;
 import com.godaddy.vps4.web.vm.VmNotificationResource;
 import com.godaddy.vps4.web.vm.WinexeResource;
+import com.godaddy.vps4.web.vm.PlatformMigrationResource;
 import com.google.inject.AbstractModule;
 
 import gdg.hfs.orchestration.web.CommandsResource;
@@ -124,6 +125,7 @@ public class WebModule extends AbstractModule {
         bind(VmDomainMonitoringResource.class);
         bind(VmJsdTicketingResource.class);
         bind(OhBackupResource.class);
+        bind(PlatformMigrationResource.class);
 
         bind(CommandsResource.class);
         bind(CommandsViewResource.class);

@@ -137,7 +137,7 @@ public class SnapshotScheduleResourceTest {
 
     @Test
     public void testNewPauseCallsScheduler() {
-        getSnapshotScheduleResource().newPauseAutomaicSnapshots(testVm.vmId, testVm.backupJobId);
+        getSnapshotScheduleResource().newPauseAutomaticSnapshots(testVm.vmId, testVm.backupJobId);
         verify(schedulerWebService, times(1)).pauseJob("vps4", "backups", testVm.backupJobId);
     }
 

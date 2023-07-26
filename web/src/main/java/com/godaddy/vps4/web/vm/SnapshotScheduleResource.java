@@ -146,7 +146,7 @@ public class SnapshotScheduleResource {
 
     @POST
     @Path("/{vmId}/snapshotSchedules/{scheduleId}/pause")
-    public SnapshotSchedule newPauseAutomaicSnapshots(@PathParam("vmId") UUID vmId, @PathParam("scheduleId") UUID scheduleId) {
+    public SnapshotSchedule newPauseAutomaticSnapshots(@PathParam("vmId") UUID vmId, @PathParam("scheduleId") UUID scheduleId) {
         VirtualMachine virtualMachine = getVirtualMachine(vmId);
         if(virtualMachine.backupJobId == null){
             throw new Vps4Exception("INVALID_BACKUP_JOB_ID", "No automatic backup job assigned to this vm.");
