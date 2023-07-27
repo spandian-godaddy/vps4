@@ -3,7 +3,6 @@ package com.godaddy.vps4.orchestration.vm;
 import com.godaddy.vps4.orchestration.panopta.PausePanoptaMonitoring;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4RemoveSupportUser;
 import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
-import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmUserService;
 import com.godaddy.vps4.vm.VmUserType;
@@ -28,7 +27,6 @@ import java.util.stream.Collectors;
         retryStrategy = CommandRetryStrategy.NEVER
 )
 
-// TODO: Add extra error handling, testing, and get David's opinions on the code
 public class Vps4MoveOut extends ActionCommand<Vps4MoveOut.Request, Void> {
     private CommandContext context;
     private final VirtualMachineService virtualMachineService;
@@ -49,23 +47,24 @@ public class Vps4MoveOut extends ActionCommand<Vps4MoveOut.Request, Void> {
 
     public static class Request extends Vps4ActionRequest {
         public UUID vmId;
+        public UUID backupJobId;
+        public long hfsVmId;
     }
 
     @Override
     protected Void executeWithAction(CommandContext context, Request request) {
         this.context = context;
-        VirtualMachine vm = virtualMachineService.getVirtualMachine(request.vmId);
 
         try {
-            removeSupportUsers(request.vmId, vm.hfsVmId);
-            pauseAutomaticBackups(vm.backupJobId);
+            removeSupportUsers(request.vmId, request.hfsVmId);
+            pauseAutomaticBackups(request.backupJobId);
             setCanceledAndValidUntil(request.vmId);
             pausePanoptaMonitoring(request.vmId);
         } catch (Exception e) {
-            logger.warn("Move out failed for vmId {}", request.vmId, e);
-            throw e;
+            String errorMessage = String.format("Move out failed for VM %s", request.vmId);
+            logger.warn(errorMessage, e);
+            throw new RuntimeException(errorMessage, e);
         }
-
         return null;
     }
 
@@ -78,7 +77,8 @@ public class Vps4MoveOut extends ActionCommand<Vps4MoveOut.Request, Void> {
             removeSupportUserRequest.hfsVmId = hfsVmId;
             removeSupportUserRequest.username = username;
 
-            context.execute(Vps4RemoveSupportUser.class, removeSupportUserRequest);
+            context.execute("RemoveUser-" + removeSupportUserRequest.username,
+                    Vps4RemoveSupportUser.class, removeSupportUserRequest);
         }
     }
 

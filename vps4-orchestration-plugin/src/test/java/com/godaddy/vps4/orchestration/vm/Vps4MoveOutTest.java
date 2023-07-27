@@ -4,7 +4,6 @@ import com.godaddy.vps4.orchestration.panopta.PausePanoptaMonitoring;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4RemoveSupportUser;
 import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.godaddy.vps4.vm.ActionService;
-import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmUser;
 import com.godaddy.vps4.vm.VmUserService;
@@ -39,9 +38,9 @@ public class Vps4MoveOutTest {
     private Vps4MoveOut command;
 
     private Vps4MoveOut.Request request;
-    private VirtualMachine vm;
     private List<VmUser> supportUsers;
 
+    @Captor private ArgumentCaptor<String> commandNameCaptor;
     @Captor private ArgumentCaptor<Vps4RemoveSupportUser.Request> removeSupportUserRequestCaptor;
 
     @Before
@@ -56,11 +55,8 @@ public class Vps4MoveOutTest {
 
         request = new Vps4MoveOut.Request();
         request.vmId = UUID.randomUUID();
-
-        vm = new VirtualMachine();
-        vm.backupJobId = UUID.randomUUID();
-        vm.vmId = request.vmId;
-        vm.hfsVmId = 42L;
+        request.backupJobId = UUID.randomUUID();
+        request.hfsVmId = 42L;
 
         VmUser[] supportUserArray = new VmUser[] {
                 new VmUser("lobster", request.vmId, true, VmUserType.SUPPORT),
@@ -69,18 +65,23 @@ public class Vps4MoveOutTest {
         supportUsers = Arrays.asList(supportUserArray);
 
         when(context.getId()).thenReturn(UUID.randomUUID());
-        when(virtualMachineService.getVirtualMachine(request.vmId)).thenReturn(vm);
         when(vmUserService.listUsers(request.vmId, VmUserType.SUPPORT)).thenReturn(supportUsers);
     }
 
     @Test
     public void removesAllSupportUsers() {
+        List<String> capturedCommandNames;
         List<Vps4RemoveSupportUser.Request> capturedRequests;
 
         command.execute(context, request);
 
-        verify(context, times(2)).execute(eq(Vps4RemoveSupportUser.class), removeSupportUserRequestCaptor.capture());
+        verify(context, times(2)).execute(commandNameCaptor.capture(),
+                eq(Vps4RemoveSupportUser.class), removeSupportUserRequestCaptor.capture());
+        capturedCommandNames = commandNameCaptor.getAllValues();
         capturedRequests = removeSupportUserRequestCaptor.getAllValues();
+
+        assertEquals("RemoveUser-lobster", capturedCommandNames.get(0));
+        assertEquals("RemoveUser-duck", capturedCommandNames.get(1));
         assertEquals("lobster", capturedRequests.get(0).username);
         assertEquals("duck", capturedRequests.get(1).username);
     }
@@ -94,17 +95,17 @@ public class Vps4MoveOutTest {
 
     @Test
     public void doesNotPauseAutomaticBackupsForNullBackupJobId() {
-        vm.backupJobId = null;
+        request.backupJobId = null;
         command.execute(context, request);
-        verify(schedulerWebService, never()).pauseJob("vps4", "backups", vm.backupJobId);
+        verify(schedulerWebService, never()).pauseJob("vps4", "backups", request.backupJobId);
     }
 
     @Test
     public void callsToSetCanceledAndValidUntil() {
         command.execute(context, request);
+
         verify(context, times(1)).execute(eq("MarkVmAsZombie"),
                 any(Function.class), eq(Void.class));
-
         verify(context, times(1)).execute(eq("MarkVmAsRemoved"),
                 any(Function.class), eq(Void.class));
     }

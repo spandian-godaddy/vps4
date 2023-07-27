@@ -80,20 +80,22 @@ public class PlatformMigrationResource {
     public MoveOutInfo moveOut(@PathParam("vmId") UUID vmId) {
         // TODO: Call intervention endpoint
 
+        VirtualMachine vm = virtualMachineService.getVirtualMachine(vmId);
+        MoveOutInfo info = getInfo(vm);
+
         Vps4MoveOut.Request moveOutRequest = new Vps4MoveOut.Request();
         moveOutRequest.vmId = vmId;
+        moveOutRequest.backupJobId = vm.backupJobId;
+        moveOutRequest.hfsVmId = vm.hfsVmId;
+
         VmAction action = createActionAndExecute(actionService, commandService, vmId, ActionType.MOVE_OUT, moveOutRequest,
                 "Vps4MoveOut", gdUser);
-
-        MoveOutInfo info = getInfo(vmId);
         info.commandId = action.commandId;
 
         return info;
     }
 
-    private MoveOutInfo getInfo(UUID vmId) {
-        VirtualMachine vm = virtualMachineService.getVirtualMachine(vmId);
-
+    private MoveOutInfo getInfo(VirtualMachine vm) {
         MoveOutInfo info = new MoveOutInfo();
         info.entitlementId = vm.orionGuid;
         info.serverName = vm.name;
@@ -103,9 +105,9 @@ public class PlatformMigrationResource {
         info.project = projectService.getProject(vm.projectId);
         info.primaryIpAddress = vm.primaryIpAddress;
         info.additionalIps = networkService.getVmSecondaryAddress(vm.hfsVmId);
-        info.actions = getActions(vmId);
-        info.panoptaDetail = panoptaDataService.getPanoptaDetails(vmId);
-        info.vmUser = vmUserService.getPrimaryCustomer(vmId);
+        info.actions = getActions(vm.vmId);
+        info.panoptaDetail = panoptaDataService.getPanoptaDetails(vm.vmId);
+        info.vmUser = vmUserService.getPrimaryCustomer(vm.vmId);
         info.vps4User = vps4UserService.getUser(gdUser.getShopperId());
 
         return info;

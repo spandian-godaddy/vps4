@@ -96,6 +96,7 @@ public class PlatformMigrationResourceTest {
         injector.injectMembers(this);
 
         vm = new VirtualMachine();
+        vm.vmId = vmId;
         vm.orionGuid = UUID.randomUUID();
         vm.name = "mock-vm";
         vm.spec = mock(ServerSpec.class);
