@@ -1,0 +1,10 @@
+update image set imported_image = 'false' where hfs_name in ('openstack-ubuntu-1604',
+                                                             'openstack-windows-2016',
+                                                             'openstack-windows-2016-plesk-17',
+                                                             'openstack-ubuntu-1604-plesk-17',
+                                                             'openstack-debian-8',
+                                                             'openstack-ubuntu-1604-ispconfig-3',
+                                                             'openstack-windows-2016-plesk-18',
+                                                             'openstack-windows-2012r2',
+                                                             'openstack-windows-2012r2-plesk-12.5',
+                                                             'openstack-hfs-windows-2012r2-plesk-17');
