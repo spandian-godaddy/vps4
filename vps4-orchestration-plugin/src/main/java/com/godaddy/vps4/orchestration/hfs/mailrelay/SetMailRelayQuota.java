@@ -27,6 +27,7 @@ public class SetMailRelayQuota implements Command<SetMailRelayQuota.Request, Voi
         MailRelayUpdate mailRelayUpdate = new MailRelayUpdate();
         setQuotaUpdateValue(request, mailRelayUpdate);
         mailRelayUpdate.relays = request.relays;
+
         logger.info("Updating mail relay quota to {}, relays to {} for ip {}",
                 mailRelayUpdate.quota, mailRelayUpdate.relays, request.ipAddress);
         MailRelay relay = mailRelayService.setRelayQuota(request.ipAddress, mailRelayUpdate);
@@ -41,7 +42,7 @@ public class SetMailRelayQuota implements Command<SetMailRelayQuota.Request, Voi
     }
 
     private void setQuotaUpdateValue(Request request, MailRelayUpdate mailRelayUpdate) {
-        if(request.quota == 0) {
+        if(request.quota == 0 && !request.isAdditionalIp) {
             MailRelay mailRelay = mailRelayService.getMailRelay(request.ipAddress);
             mailRelayUpdate.quota = mailRelay.quota;
         }
@@ -52,6 +53,7 @@ public class SetMailRelayQuota implements Command<SetMailRelayQuota.Request, Voi
 
     public static class Request {
         public String ipAddress;
+        public boolean isAdditionalIp = false;
         public int quota;
         public int relays;
     }

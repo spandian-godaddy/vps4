@@ -95,6 +95,7 @@ public class Vps4AddIpAddress extends ActionCommand<Vps4AddIpAddress.Request, Vo
         SetMailRelayQuota.Request hfsRequest = new SetMailRelayQuota.Request();
         hfsRequest.ipAddress = hfsIp.address;
         hfsRequest.quota = 0;
+        hfsRequest.isAdditionalIp = true;
         context.execute(SetMailRelayQuota.class, hfsRequest);
     }
 
