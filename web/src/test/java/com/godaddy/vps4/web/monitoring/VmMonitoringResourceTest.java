@@ -123,7 +123,7 @@ public class VmMonitoringResourceTest {
         panoptaAvailability.availability = 0.9985360556398332;
         PanoptaDetail panoptaDetail = new PanoptaDetail(vm.vmId, "partnerCustomerKey",
                                                         "customerKey", 23, "serverKey",
-                                                        Instant.now(), Instant.MAX);
+                                                        Instant.now(), Instant.MAX, "templateId");
 
         when(panoptaDataService.getPanoptaDetails(vm.vmId)).thenReturn(panoptaDetail);
         when(panoptaService.getAvailability(eq(vm.vmId), anyString(), anyString())).thenReturn(panoptaAvailability);
@@ -157,7 +157,7 @@ public class VmMonitoringResourceTest {
 
         PanoptaDetail panoptaDetail = new PanoptaDetail(vm.vmId, "partnerCustomerKey",
                                                         "customerKey", 3, "serverKey",
-                                                        Instant.now(), Instant.MAX);
+                                                        Instant.now(), Instant.MAX, "templateId");
         when(panoptaDataService.getPanoptaDetails(vm.vmId)).thenReturn(panoptaDetail);
         when(vmOutageResource.getVmOutageList(vm.vmId, null, null, null)).thenReturn(panoptaEvents);
 

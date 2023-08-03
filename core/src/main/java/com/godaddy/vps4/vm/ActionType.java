@@ -68,7 +68,8 @@ public enum ActionType {
     INSTALL_CPANEL_PACKAGE(59),
     SET_SUPPORT_USER_PASSWORD(60),
     ADD_ADDON_DOMAIN(61),
-    MOVE_OUT(62);
+    MOVE_OUT(62),
+    MOVE_IN(63);
 
     private final int typeId;
 

@@ -4,10 +4,12 @@ import java.util.UUID;
 
 public class VmUser {
     
-    public final UUID vmId;
-    public final String username;
-    public final boolean adminEnabled;
-    public final VmUserType vmUserType;
+    public UUID vmId;
+    public String username;
+    public boolean adminEnabled;
+    public VmUserType vmUserType;
+
+    public VmUser () {}
 
     public VmUser(String username, UUID vmId, boolean adminEnabled, VmUserType vmUserType) {
         this.vmId = vmId;

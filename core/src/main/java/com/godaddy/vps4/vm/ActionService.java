@@ -20,6 +20,8 @@ public interface ActionService {
         throw new UnsupportedOperationException("Not implemented, yet");
     }
 
+    long insertAction(UUID vmId, Action action);
+
     void tagWithCommand(long actionId, UUID commandId);
 
     void markActionInProgress(long actionId);

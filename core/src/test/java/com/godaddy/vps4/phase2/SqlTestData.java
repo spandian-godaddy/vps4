@@ -16,7 +16,7 @@ import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
-import com.godaddy.vps4.vm.VirtualMachineService.ProvisionVirtualMachineParameters;
+import com.godaddy.vps4.vm.ProvisionVirtualMachineParameters;
 import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
 
 import javax.sql.DataSource;

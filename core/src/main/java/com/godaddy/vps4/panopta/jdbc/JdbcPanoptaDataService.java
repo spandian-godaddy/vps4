@@ -52,6 +52,14 @@ public class JdbcPanoptaDataService implements PanoptaDataService {
     }
 
     @Override
+    public void insertPanoptaServer(UUID vmId, String shopperId, long serverId, String serverKey, String templateId) {
+        Sql.with(dataSource)
+                .exec("INSERT INTO panopta_server (partner_customer_key, vm_id, server_id, server_key, template_id) " +
+                                "values (?,?,?,?,?)",
+                        null, getPartnerCustomerKey(shopperId), vmId, serverId, serverKey, templateId);
+    }
+
+    @Override
     public void setPanoptaServerDestroyed(UUID vmId) {
         Sql.with(dataSource)
            .exec("UPDATE panopta_server SET destroyed = now_utc() WHERE vm_id = ? ", null, vmId);
@@ -132,7 +140,7 @@ public class JdbcPanoptaDataService implements PanoptaDataService {
     public PanoptaDetail getPanoptaDetails(UUID vmId) {
         return Sql.with(dataSource).exec(
                 "SELECT pc.partner_customer_key, pc.customer_key, ps.vm_id, ps.server_id, ps.server_key, " +
-                        " ps.created, ps.destroyed " +
+                        " ps.created, ps.destroyed, ps.template_id " +
                         " FROM panopta_customer pc " +
                         " JOIN panopta_server ps USING (partner_customer_key) " +
                         " WHERE ps.vm_id = ?  AND ps.destroyed = 'infinity' ",

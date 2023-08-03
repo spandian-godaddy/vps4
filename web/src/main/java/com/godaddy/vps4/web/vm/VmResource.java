@@ -25,7 +25,7 @@ import com.godaddy.vps4.vm.ServerSpec;
 import com.godaddy.vps4.vm.ServerType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
-import com.godaddy.vps4.vm.VirtualMachineService.ProvisionVirtualMachineParameters;
+import com.godaddy.vps4.vm.ProvisionVirtualMachineParameters;
 import com.godaddy.vps4.vm.VirtualMachineType;
 import com.godaddy.vps4.vm.VmAction;
 import com.godaddy.vps4.web.Vps4Api;

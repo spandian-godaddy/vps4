@@ -19,9 +19,9 @@ public class JdbcVmMoveSpecMapService implements VmMoveSpecMapService {
 
     @Override
     public VmMoveSpecMap getVmMoveSpecMap(int originalSpecId, ServerType.Platform toPlatform) {
-        return Sql.with(dataSource).exec("SELECT id, from_spec_id, to_spec_id from vm_move_spec_map " +
-                "join virtual_machine_spec on vm_move_spec_map.from_spec_id = virtual_machine_spec.spec_id" +
-                "where from_spec_id = ? and virtual_machine_spec.server_type_id = ?",
+        return Sql.with(dataSource).exec("SELECT id, from_spec_id, to_spec_id from vm_move_spec_map m " +
+                "join virtual_machine_spec s on m.to_spec_id = s.spec_id " +
+                "where m.from_spec_id = ? and s.server_type_id = ?",
                 Sql.nextOrNull(this::mapGetVmMoveSpecMap), originalSpecId, toPlatform.getplatformId());
     }
 

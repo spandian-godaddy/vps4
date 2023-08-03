@@ -7,14 +7,18 @@ import java.util.UUID;
 
 public class Vps4User {
 
-    private final long id;
-    private final String shopperId;
-    private final UUID customerId;
+    private long id;
+    private String shopperId;
+    private UUID customerId;
+    private String resellerId;
 
-    public Vps4User(long id, String shopperId, UUID customerId) {
+    public Vps4User() {}
+
+    public Vps4User(long id, String shopperId, UUID customerId, String resellerId) {
         this.id = id;
         this.shopperId = shopperId;
         this.customerId = customerId;
+        this.resellerId = resellerId;
     }
 
     public long getId() {
@@ -27,9 +31,10 @@ public class Vps4User {
 
     public UUID getCustomerId() { return customerId; }
 
+    public String getResellerId() { return resellerId; }
+
     @Override
     public String toString() {
         return ReflectionToStringBuilder.toString(this, ToStringStyle.SHORT_PREFIX_STYLE);
     }
-
 }

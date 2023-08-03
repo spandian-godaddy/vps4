@@ -21,6 +21,8 @@ public class Action {
     public UUID commandId;
     public String initiatedBy;
 
+    public Action() {}
+
     
     public Action(long id, UUID resourceId, ActionType type, String request, String state, String response,
             ActionStatus status, Instant created, Instant completed, String note, UUID commandId, String initiatedBy) {

@@ -17,6 +17,7 @@ import javax.sql.DataSource;
 
 import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.security.jdbc.JdbcVps4UserService;
+import com.godaddy.vps4.vm.InsertVirtualMachineParameters;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -39,7 +40,7 @@ import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.ServerType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
-import com.godaddy.vps4.vm.VirtualMachineService.ProvisionVirtualMachineParameters;
+import com.godaddy.vps4.vm.ProvisionVirtualMachineParameters;
 import com.godaddy.vps4.vm.VirtualMachineType;
 import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
 import com.google.inject.Guice;
@@ -442,14 +443,15 @@ public class JdbcVirtualMachineServiceTest {
     @Test
     public void testImportVirtualMachine() {
         Project project = projectService.createProjectAndPrivilegeWithSgid("testProjectForImportVm", vps4User.getId(), "testProjectForImportVm");
-        VirtualMachineService.ImportVirtualMachineParameters parameters =
-                new VirtualMachineService.ImportVirtualMachineParameters(-1,
-                                                                         UUID.randomUUID(),
-                                                                         "testImportServer",
-                                                                         project.getProjectId(),
-                                                                         10,
-                                                                         1,
-                                                                         1);
+        InsertVirtualMachineParameters parameters =
+                new InsertVirtualMachineParameters(-1,
+                                                   UUID.randomUUID(),
+                                                   "testImportServer",
+                                                   project.getProjectId(),
+                                                   10,
+                                                   1,
+                                                   1,
+                                                   null);
         VirtualMachine testVm2 = virtualMachineService.importVirtualMachine(parameters);
         UUID importedVm = virtualMachineService.getImportedVm(testVm2.vmId);
         virtualMachines.add(testVm2);

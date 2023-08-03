@@ -7,6 +7,8 @@ import static org.junit.Assert.assertTrue;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.TemporalAmount;
+import java.time.temporal.TemporalUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -439,5 +441,32 @@ public class ActionServiceTest {
         List<String> result = vmActionService.getVmActionTypes(vm.vmId);
 
         assertTrue(expected.equals(result));
+    }
+
+    @Test
+    public void testInsertAction() {
+        Action originalAction = new Action(
+                567,
+                UUID.randomUUID(),
+                ActionType.CREATE_VM,
+                null,
+                null,
+                null,
+                ActionStatus.COMPLETE,
+                Instant.now(),
+                Instant.now(),
+                null,
+                UUID.randomUUID(),
+                "user");
+        long newActionId = vmActionService.insertAction(vm.vmId, originalAction);
+
+        ActionListFilters filters = new ActionListFilters();
+        filters.byResourceId(vm.vmId);
+        Action action = vmActionService.getAction(newActionId);
+
+        assertEquals(vm.vmId, action.resourceId);
+        assertEquals(ActionType.CREATE_VM, action.type);
+        assertEquals(ActionStatus.COMPLETE, action.status);
+        assertEquals("user", action.initiatedBy);
     }
 }

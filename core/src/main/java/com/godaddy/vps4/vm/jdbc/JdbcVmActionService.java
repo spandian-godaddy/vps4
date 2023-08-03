@@ -120,6 +120,35 @@ public class JdbcVmActionService implements ActionService {
         return actionListUtils.getActions(actionFilters);
     }
 
+    @Override
+    public long insertAction(UUID vmId, Action action) {
+        return Sql.with(dataSource).exec("INSERT INTO vm_action (" +
+                        "action_type_id, " +
+                        "command_id, " +
+                        "request, " +
+                        "state, " +
+                        "response, " +
+                        "status_id, " +
+                        "created, " +
+                        "note, " +
+                        "vm_id, " +
+                        "completed, " +
+                        "initiated_by) " +
+                "VALUES (?, ?, ?::json, ?::json, ?::json, ?, ?, ?, ?, ?, ?) RETURNING id;",
+                Sql.nextOrNull(rs -> rs.getLong("id")),
+                action.type.getActionTypeId(),
+                action.commandId,
+                action.request,
+                action.state,
+                action.response,
+                action.status.getStatusId(),
+                Timestamp.from(action.created),
+                action.note,
+                vmId,
+                Timestamp.from(action.completed),
+                action.initiatedBy);
+    }
+
     private Action mapAction(ResultSet rs) throws SQLException {
         ActionStatus status = ActionStatus.valueOf(rs.getString("status"));
         ActionType type = ActionType.valueOf(rs.getString("type"));

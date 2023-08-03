@@ -1,9 +1,11 @@
 package com.godaddy.vps4.orchestration.vm;
 
+import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.panopta.PausePanoptaMonitoring;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4RemoveSupportUser;
 import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmUser;
 import com.godaddy.vps4.vm.VmUserService;
@@ -15,6 +17,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.MockitoAnnotations;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -35,9 +38,11 @@ public class Vps4MoveOutTest {
     private VirtualMachineService virtualMachineService;
     private VmUserService vmUserService;
     private SchedulerWebService schedulerWebService;
+    private NetworkService networkService;
     private Vps4MoveOut command;
 
     private Vps4MoveOut.Request request;
+    private VirtualMachine vm;
     private List<VmUser> supportUsers;
 
     @Captor private ArgumentCaptor<String> commandNameCaptor;
@@ -51,12 +56,21 @@ public class Vps4MoveOutTest {
         virtualMachineService = mock(VirtualMachineService.class);
         vmUserService = mock(VmUserService.class);
         schedulerWebService = mock(SchedulerWebService.class);
-        command = new Vps4MoveOut(actionService, virtualMachineService, vmUserService, schedulerWebService);
+        networkService = mock(NetworkService.class);
+        command = new Vps4MoveOut(actionService, virtualMachineService, vmUserService, schedulerWebService, networkService);
 
         request = new Vps4MoveOut.Request();
         request.vmId = UUID.randomUUID();
         request.backupJobId = UUID.randomUUID();
         request.hfsVmId = 42L;
+        request.addressIds = new ArrayList<>();
+        request.addressIds.add(123456l);
+        request.addressIds.add(552364l);
+
+        vm = new VirtualMachine();
+        vm.backupJobId = UUID.randomUUID();
+        vm.vmId = request.vmId;
+        vm.hfsVmId = 42L;
 
         VmUser[] supportUserArray = new VmUser[] {
                 new VmUser("lobster", request.vmId, true, VmUserType.SUPPORT),
@@ -65,6 +79,7 @@ public class Vps4MoveOutTest {
         supportUsers = Arrays.asList(supportUserArray);
 
         when(context.getId()).thenReturn(UUID.randomUUID());
+        when(virtualMachineService.getVirtualMachine(request.vmId)).thenReturn(vm);
         when(vmUserService.listUsers(request.vmId, VmUserType.SUPPORT)).thenReturn(supportUsers);
     }
 
@@ -75,8 +90,7 @@ public class Vps4MoveOutTest {
 
         command.execute(context, request);
 
-        verify(context, times(2)).execute(commandNameCaptor.capture(),
-                eq(Vps4RemoveSupportUser.class), removeSupportUserRequestCaptor.capture());
+        verify(context, times(2)).execute(commandNameCaptor.capture(), eq(Vps4RemoveSupportUser.class), removeSupportUserRequestCaptor.capture());
         capturedCommandNames = commandNameCaptor.getAllValues();
         capturedRequests = removeSupportUserRequestCaptor.getAllValues();
 
@@ -103,7 +117,6 @@ public class Vps4MoveOutTest {
     @Test
     public void callsToSetCanceledAndValidUntil() {
         command.execute(context, request);
-
         verify(context, times(1)).execute(eq("MarkVmAsZombie"),
                 any(Function.class), eq(Void.class));
         verify(context, times(1)).execute(eq("MarkVmAsRemoved"),
@@ -114,5 +127,18 @@ public class Vps4MoveOutTest {
     public void pausesPanoptaMonitoring() {
         command.execute(context, request);
         verify(context, times(1)).execute(eq(PausePanoptaMonitoring.class), eq(request.vmId));
+    }
+
+    @Test
+    public void setValidUntilOnIpAddresses() {
+        command.execute(context, request);
+        verify(context, times(1)).execute(
+                eq("MarkIpDeleted-" + request.addressIds.get(0).toString()),
+                any(Function.class),
+                eq(Void.class));
+        verify(context, times(1)).execute(
+                eq("MarkIpDeleted-" + request.addressIds.get(1).toString()),
+                any(Function.class),
+                eq(Void.class));
     }
 }

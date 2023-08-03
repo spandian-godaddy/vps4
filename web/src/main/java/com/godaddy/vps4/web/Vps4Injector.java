@@ -6,6 +6,7 @@ import java.util.List;
 import javax.inject.Singleton;
 
 import com.godaddy.vps4.jsd.JsdModule;
+import com.godaddy.vps4.move.VmMoveModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -129,6 +130,7 @@ public class Vps4Injector {
         modules.add(new OhModule());
         modules.add(new JsdModule());
         modules.add(new Vps4SsoModule());
+        modules.add(new VmMoveModule());
         modules.add(binder -> {
             binder.bind(ObjectMapper.class).toProvider(ObjectMapperProvider.class);
         });

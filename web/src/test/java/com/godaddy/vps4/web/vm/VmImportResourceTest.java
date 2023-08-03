@@ -1,7 +1,6 @@
 package com.godaddy.vps4.web.vm;
 
 import com.godaddy.hfs.config.Config;
-import com.godaddy.hfs.vm.Vm;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.network.IpAddress;
@@ -35,7 +34,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import static com.godaddy.vps4.vm.VirtualMachineService.ImportVirtualMachineParameters;
+import com.godaddy.vps4.vm.InsertVirtualMachineParameters;
 import static com.godaddy.vps4.web.vm.VmImportResource.ImportVmIpAddress;
 import static com.godaddy.vps4.web.vm.VmImportResource.ImportVmRequest;
 import static org.junit.Assert.assertEquals;
@@ -68,7 +67,7 @@ public class VmImportResourceTest {
     private Vps4User vps4User;
     private Project project;
     private VirtualMachine virtualMachine;
-    private ArgumentCaptor<ImportVirtualMachineParameters> argument;
+    private ArgumentCaptor<InsertVirtualMachineParameters> argument;
 
     @Before
     public void setupTest() {
@@ -111,7 +110,7 @@ public class VmImportResourceTest {
         spec = new ServerSpec();
         when(virtualMachineService.getSpec(credit.getTier(), ServerType.Platform.OPTIMIZED_HOSTING.getplatformId())).thenReturn(spec);
 
-        vps4User = new Vps4User(123, credit.getShopperId(), credit.getCustomerId());
+        vps4User = new Vps4User(123, credit.getShopperId(), credit.getCustomerId(), "1");
         when(vps4UserService.getOrCreateUserForShopper(user.getShopperId(), credit.getResellerId(), credit.getCustomerId())).thenReturn(vps4User);
 
         project = new Project(1, "testProject", "testSgid", Instant.now(), Instant.MAX, 321);
@@ -119,7 +118,7 @@ public class VmImportResourceTest {
 
         virtualMachine = new VirtualMachine();
         virtualMachine.vmId = UUID.randomUUID();
-        argument = ArgumentCaptor.forClass(ImportVirtualMachineParameters.class);
+        argument = ArgumentCaptor.forClass(InsertVirtualMachineParameters.class);
         when(virtualMachineService.importVirtualMachine(anyObject())).thenReturn(virtualMachine);
 
         VmAction result = new VmAction();
@@ -170,7 +169,7 @@ public class VmImportResourceTest {
         vmImportResource.importVm(importVmRequest);
 
         verify(virtualMachineService, times(1)).importVirtualMachine(argument.capture());
-        ImportVirtualMachineParameters parameters = argument.getValue();
+        InsertVirtualMachineParameters parameters = argument.getValue();
         assertEquals(importVmRequest.hfsVmId, parameters.hfsVmId);
         assertEquals(importVmRequest.entitlementId, parameters.orionGuid);
         assertEquals(importVmRequest.name, parameters.name);
@@ -221,7 +220,7 @@ public class VmImportResourceTest {
         vmImportResource.importVm(importVmRequest);
 
         verify(virtualMachineService, times(1)).importVirtualMachine(argument.capture());
-        ImportVirtualMachineParameters parameters = argument.getValue();
+        InsertVirtualMachineParameters parameters = argument.getValue();
         assertEquals(importVmRequest.hfsVmId, parameters.hfsVmId);
         assertEquals(importVmRequest.entitlementId, parameters.orionGuid);
         assertEquals(importVmRequest.name, parameters.name);
@@ -251,7 +250,7 @@ public class VmImportResourceTest {
         assertEquals(virtualMachine.vmId, action.virtualMachineId);
 
         verify(virtualMachineService, times(1)).importVirtualMachine(argument.capture());
-        ImportVirtualMachineParameters parameters = argument.getValue();
+        InsertVirtualMachineParameters parameters = argument.getValue();
         assertEquals(importVmRequest.hfsVmId, parameters.hfsVmId);
         assertEquals(importVmRequest.entitlementId, parameters.orionGuid);
         assertEquals(importVmRequest.ip, parameters.name);

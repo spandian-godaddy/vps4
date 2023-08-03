@@ -95,7 +95,7 @@ public class Vps4ReviveZombieVmTest{
 
         PanoptaDetail panoptaDetail = new PanoptaDetail(job.vmId, "partnerCustomerKey",
                                                         "customerKey", 3, "serverKey",
-                                                        Instant.now(), Instant.MAX);
+                                                        Instant.now(), Instant.MAX, null);
         when(panoptaDataService.getPanoptaDetails(job.vmId)).thenReturn(panoptaDetail);
 
         injector = Guice.createInjector(binder -> {

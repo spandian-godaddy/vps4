@@ -27,21 +27,21 @@ public class JdbcVps4UserService implements Vps4UserService {
 
     @Override
     public Vps4User getUser(String shopperId) {
-        return Sql.with(dataSource).exec("SELECT vps4_user_id, shopper_id, customer_id FROM vps4_user WHERE shopper_id=?",
+        return Sql.with(dataSource).exec("SELECT vps4_user_id, shopper_id, customer_id, reseller_id FROM vps4_user WHERE shopper_id=?",
                 Sql.nextOrNull(this::mapUser),
                 shopperId);
     }
 
     @Override
     public Vps4User getUser(long userId) {
-        return Sql.with(dataSource).exec("SELECT vps4_user_id, shopper_id, customer_id FROM vps4_user WHERE vps4_user_id=?",
+        return Sql.with(dataSource).exec("SELECT vps4_user_id, shopper_id, customer_id, reseller_id FROM vps4_user WHERE vps4_user_id=?",
                 Sql.nextOrNull(this::mapUser),
                 userId);
     }
 
     @Override
     public Vps4User getUser(UUID customerId) {
-        return Sql.with(dataSource).exec("SELECT vps4_user_id, shopper_id, customer_id FROM vps4_user WHERE customer_id=?",
+        return Sql.with(dataSource).exec("SELECT vps4_user_id, shopper_id, customer_id, reseller_id FROM vps4_user WHERE customer_id=?",
                 Sql.nextOrNull(this::mapUser),
                 customerId);
     }
@@ -83,8 +83,9 @@ public class JdbcVps4UserService implements Vps4UserService {
         String shopperId = rs.getString("shopper_id");
         String customerIdString = rs.getString("customer_id");
         UUID customerId = customerIdString == null ? null : UUID.fromString(rs.getString("customer_id"));
+        String resellerId = rs.getString("reseller_id");
 
-        return new Vps4User(userId, shopperId, customerId);
+        return new Vps4User(userId, shopperId, customerId, resellerId);
     }
 
 }

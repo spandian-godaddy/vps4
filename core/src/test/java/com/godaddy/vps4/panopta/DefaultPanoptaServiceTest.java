@@ -127,7 +127,7 @@ public class DefaultPanoptaServiceTest {
         serverKey = "someServerKey";
         panoptaDetail = new PanoptaDetail(vmId, partnerCustomerKey,
                                           customerKey, serverId, serverKey,
-                                          Instant.now(), Instant.MAX);
+                                          Instant.now(), Instant.MAX, null);
         setupPanoptaServers();
         setupGraphIdLists();
         setupGraphs();

@@ -163,4 +163,9 @@ public class JdbcSnapshotActionService implements ActionService {
     public List<String> getVmActionTypes(UUID vmId) {
         throw new UnsupportedOperationException("Not yet implemented for snapshots");
     }
+
+    @Override
+    public long insertAction(UUID vmId, Action action) {
+        throw new UnsupportedOperationException("Not yet implemented for snapshots");
+    }
 }

@@ -89,6 +89,16 @@ public class JdbcImageService implements ImageService {
                 (platform == null) ? "" : platform.name());
     }
 
+    @Override
+    public Image getImage(long id) {
+        return Sql.with(dataSource).exec("SELECT image_id, name, hfs_name, control_panel_id, os_type_id," +
+                        "st.server_type_id, st.server_type, st.platform " +
+                        "FROM " + tableName + " AS image " +
+                        "JOIN server_type AS st USING(server_type_id) " +
+                        "WHERE image_id=?",
+                Sql.nextOrNull(this::mapImage), id);
+    }
+
     private Image mapImage(ResultSet rs) throws SQLException {
         if (rs == null)
             return null;

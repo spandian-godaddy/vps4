@@ -19,4 +19,5 @@ public interface ImageService {
 
     List<Image> getImages(OperatingSystem os, ControlPanel controlPanel, String hfsName, Platform platform);
 
+    Image getImage(long id);
 }

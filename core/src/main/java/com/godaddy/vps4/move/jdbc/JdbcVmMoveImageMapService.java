@@ -18,10 +18,10 @@ public class JdbcVmMoveImageMapService implements VmMoveImageMapService {
     public JdbcVmMoveImageMapService(DataSource dataSource) { this.dataSource = dataSource; }
 
     @Override
-    public VmMoveImageMap getVmMoveImageMap(int originalImageId, ServerType.Platform toPlatform) {
+    public VmMoveImageMap getVmMoveImageMap(long originalImageId, ServerType.Platform toPlatform) {
         return Sql.with(dataSource).exec("SELECT id, from_image_id, to_image_id from vm_move_image_map m " +
-                "join virtual_machine_spec s on m.from_spec_id = s.spec_id " +
-                "where m.from_spec_id = ? and s.server_type_id = ?",
+                "join image i on m.to_image_id = i.image_id " +
+                "where m.from_image_id = ? and i.server_type_id = ?",
                 Sql.nextOrNull(this::mapGetVmMoveImageMap), originalImageId, toPlatform.getplatformId());
     }
 

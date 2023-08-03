@@ -4,5 +4,5 @@ import com.godaddy.vps4.vm.ServerType;
 
 public interface VmMoveImageMapService {
 
-    VmMoveImageMap getVmMoveImageMap(int originalImageId, ServerType.Platform toPlatform);
+    VmMoveImageMap getVmMoveImageMap(long originalImageId, ServerType.Platform toPlatform);
 }

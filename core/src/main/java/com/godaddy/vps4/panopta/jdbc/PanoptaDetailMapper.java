@@ -19,6 +19,7 @@ public class PanoptaDetailMapper {
                 rs.getString("server_key"),
                 rs.getTimestamp("created").toInstant(),
                 rs.getTimestamp("destroyed") == null ? null :
-                        rs.getTimestamp("destroyed", TimestampUtils.utcCalendar).toInstant());
+                rs.getTimestamp("destroyed", TimestampUtils.utcCalendar).toInstant(),
+                rs.getString("template_id"));
     }
 }

@@ -18,102 +18,19 @@ public interface VirtualMachineService {
 
     ServerSpec getSpec(int tier, int serverTypeId);
 
+    ServerSpec getSpec(int specId);
+
     Map<Integer, Integer> getActiveServerCountByTiers();
 
     Map<Integer, Integer> getZombieServerCountByTiers();
-
-    /**
-     * @param vmId - the VM ID from the VM Vertical Service
-     * @param projectId
-     * @param spec
-     * @param name
-     * @return
-     */
-//    VirtualMachine createVirtualMachine(long vmId, long projectId, String spec, String name);
-
-    // updateStatus(long vmId, int newStatus)
 
     void setVmRemoved(UUID vmId);
 
     VirtualMachine provisionVirtualMachine(ProvisionVirtualMachineParameters vmProvisionParameters);
 
-    public class ImportVirtualMachineParameters {
-        public ImportVirtualMachineParameters(long hfsVmId, UUID orionGuid, String name, long projectId, int tier, long imageId, int dataCenterId) {
-            this.hfsVmId = hfsVmId;
-            this.orionGuid = orionGuid;
-            this.name = name;
-            this.projectId = projectId;
-            this.specId = tier;
-            this.imageId = imageId;
-            this.dataCenterId = dataCenterId;
-        }
+    VirtualMachine importVirtualMachine(InsertVirtualMachineParameters insertVirtualMachineParameters);
 
-        public long hfsVmId;
-        public UUID orionGuid;
-        public String name;
-        public long projectId;
-        public int specId;
-        public long imageId;
-        public int dataCenterId;
-    }
-
-    VirtualMachine importVirtualMachine(ImportVirtualMachineParameters importVirtualMachineParameters);
-
-    public class ProvisionVirtualMachineParameters {
-        public ProvisionVirtualMachineParameters(long vps4UserId, int dataCenterId, String sgidPrefix, UUID orionGuid, String name, int tier,
-                int managedLevel, String image) {
-            this.vps4UserId = vps4UserId;
-            this.dataCenterId = dataCenterId;
-            this.sgidPrefix = sgidPrefix;
-            this.orionGuid = orionGuid;
-            this.name = name;
-            this.tier = tier;
-            this.managedLevel = managedLevel;
-            this.imageHfsName = image;
-
-        }
-
-        private long vps4UserId;
-        private int dataCenterId;
-        private String sgidPrefix;
-        private UUID orionGuid;
-        private String name;
-        private int tier;
-        private int managedLevel;
-        private String imageHfsName;
-
-        public long getVps4UserId() {
-            return vps4UserId;
-        }
-
-        public int getDataCenterId() {
-            return dataCenterId;
-        }
-
-        public String getSgidPrefix() {
-            return sgidPrefix;
-        }
-
-        public UUID getOrionGuid() {
-            return orionGuid;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public int getTier() {
-            return tier;
-        }
-
-        public int getManagedLevel() {
-            return managedLevel;
-        }
-
-        public String getImageHfsName() {
-            return imageHfsName;
-        }
-    }
+    VirtualMachine insertVirtualMachine(InsertVirtualMachineParameters insertVirtualMachineParameters);
 
     void addHfsVmIdToVirtualMachine(UUID vmId, long hfsVmId);
 

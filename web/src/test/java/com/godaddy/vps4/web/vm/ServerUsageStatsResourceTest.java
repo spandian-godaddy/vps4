@@ -96,9 +96,15 @@ public class ServerUsageStatsResourceTest {
         serverUsageStatsResource = injector.getInstance(ServerUsageStatsResource.class);
         spyResource = spy(serverUsageStatsResource);
         vm = createTestVm();
-        panoptaDetail = new PanoptaDetail(vm.vmId, "partnerCustomerKey",
-                                          "customerKey", 42, "serverKey",
-                                          Instant.now(), Instant.MAX);
+        panoptaDetail = new PanoptaDetail(
+                vm.vmId,
+                "partnerCustomerKey",
+                "customerKey",
+                42,
+                "serverKey",
+                Instant.now(),
+                Instant.MAX,
+                "templateId");
         cpu = Math.random() * 100;
         mem = Math.random() * 100;
         disk = Math.random() * 100;

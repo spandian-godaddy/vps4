@@ -16,7 +16,7 @@ import com.godaddy.vps4.vm.ServerSpec;
 import com.godaddy.vps4.vm.ServerType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
-import com.godaddy.vps4.vm.VirtualMachineService.ImportVirtualMachineParameters;
+import com.godaddy.vps4.vm.InsertVirtualMachineParameters;
 import com.godaddy.vps4.vm.VmAction;
 import com.godaddy.vps4.vm.VmUserService;
 import com.godaddy.vps4.web.Vps4Api;
@@ -129,13 +129,14 @@ public class VmImportResource {
 
         String importName = importVmRequest.name == null ? importVmRequest.ip : importVmRequest.name;
 
-        ImportVirtualMachineParameters parameters = new ImportVirtualMachineParameters(importVmRequest.hfsVmId,
+        InsertVirtualMachineParameters parameters = new InsertVirtualMachineParameters(importVmRequest.hfsVmId,
                                                                                        importVmRequest.entitlementId,
                                                                                        importName,
                                                                                        project.getProjectId(),
                                                                                        serverSpec.specId,
                                                                                        imageId,
-                                                                                       dataCenterId);
+                                                                                       dataCenterId,
+                                                                                       null);
 
         VirtualMachine virtualMachine = virtualMachineService.importVirtualMachine(parameters);
 

@@ -14,9 +14,12 @@ public class PanoptaDetail {
     private String serverKey;
     private Instant serverCreated;
     private Instant serverDestroyed;
+    private String templateId;
+
+    public PanoptaDetail() {}
 
     public PanoptaDetail(UUID vmId, String partnerCustomerKey, String customerKey,
-            long serverId, String serverKey, Instant created, Instant destroyed) {
+            long serverId, String serverKey, Instant created, Instant destroyed, String templateId) {
         this.vmId = vmId;
         this.partnerCustomerKey = partnerCustomerKey;
         this.customerKey = customerKey;
@@ -24,6 +27,7 @@ public class PanoptaDetail {
         this.serverKey = serverKey;
         this.serverCreated = created;
         this.serverDestroyed = destroyed;
+        this.templateId = templateId;
     }
 
     public UUID getVmId() {
@@ -53,6 +57,8 @@ public class PanoptaDetail {
     public Instant getServerDestroyed() {
         return serverDestroyed;
     }
+
+    public String getTemplateId() { return templateId; }
 
     public String toString() {
         return ReflectionToStringBuilder.toString(this, ToStringStyle.MULTI_LINE_STYLE);

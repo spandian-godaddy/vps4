@@ -9,6 +9,8 @@ import com.godaddy.vps4.vm.DataCenter;
 import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.Image.ControlPanel;
 import com.godaddy.vps4.vm.Image.OperatingSystem;
+import com.godaddy.vps4.vm.InsertVirtualMachineParameters;
+import com.godaddy.vps4.vm.ProvisionVirtualMachineParameters;
 import com.godaddy.vps4.vm.ServerSpec;
 import com.godaddy.vps4.vm.ServerType;
 import com.godaddy.vps4.vm.VirtualMachine;
@@ -61,7 +63,7 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
                         "valid_on as spec_valid_on, valid_until as spec_valid_until, ip_address_count, " +
                         "st.server_type_id, st.server_type, st.platform " +
                 "FROM virtual_machine_spec " +
-                "JOIN server_type st USING(server_type_id)" +
+                "JOIN server_type st USING(server_type_id) " +
                 "WHERE spec_name=? ",
                 Sql.nextOrNull(this::mapServerSpec), name);
     }
@@ -76,6 +78,18 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
                 "JOIN server_type st USING(server_type_id) " +
                 "WHERE valid_until > now_utc() AND tier=? AND server_type_id=?",
                 Sql.nextOrNull(this::mapServerSpec), tier, serverTypeId);
+    }
+
+    @Override
+    public ServerSpec getSpec(int specId) {
+        return Sql.with(dataSource).exec(
+                "SELECT spec_id, name as spec_vps4_name, spec_name, tier, cpu_core_count, memory_mib, disk_gib, " +
+                        "valid_on as spec_valid_on, valid_until as spec_valid_until, ip_address_count, " +
+                        "st.server_type_id, st.server_type, st.platform " +
+                        "FROM virtual_machine_spec " +
+                        "JOIN server_type st USING(server_type_id) " +
+                        "WHERE spec_id=? ",
+                Sql.nextOrNull(this::mapServerSpec), specId);
     }
 
     @Override
@@ -202,21 +216,28 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     }
 
     @Override
-    public VirtualMachine importVirtualMachine(ImportVirtualMachineParameters importVirtualMachineParameters) {
+    public VirtualMachine importVirtualMachine(InsertVirtualMachineParameters insertVirtualMachineParameters) {
+        VirtualMachine vm = insertVirtualMachine(insertVirtualMachineParameters);
+        Sql.with(dataSource).exec("INSERT INTO imported_vm (vm_id) VALUES (?)", null, vm.vmId);
+        return vm;
+    }
+
+    @Override
+    public VirtualMachine insertVirtualMachine(InsertVirtualMachineParameters insertVirtualMachineParameters) {
         UUID vmId = UUID.randomUUID();
-        Sql.with(dataSource).exec("INSERT INTO virtual_machine (vm_id, hfs_vm_id, orion_guid, name, project_id, spec_id, managed_level, image_id, data_center_id)" +
-                                          "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                                  null,
-                                  vmId,
-                                  importVirtualMachineParameters.hfsVmId,
-                                  importVirtualMachineParameters.orionGuid,
-                                  importVirtualMachineParameters.name,
-                                  importVirtualMachineParameters.projectId,
-                                  importVirtualMachineParameters.specId,
-                                  0,
-                                  importVirtualMachineParameters.imageId,
-                                  importVirtualMachineParameters.dataCenterId);
-        Sql.with(dataSource).exec("INSERT INTO imported_vm (vm_id) VALUES (?)", null, vmId);
+        Sql.with(dataSource).exec("INSERT INTO virtual_machine (vm_id, hfs_vm_id, orion_guid, name, project_id, spec_id, managed_level, image_id, data_center_id, hostname)" +
+                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                null,
+                vmId,
+                insertVirtualMachineParameters.hfsVmId,
+                insertVirtualMachineParameters.orionGuid,
+                insertVirtualMachineParameters.name,
+                insertVirtualMachineParameters.projectId,
+                insertVirtualMachineParameters.specId,
+                0,
+                insertVirtualMachineParameters.imageId,
+                insertVirtualMachineParameters.dataCenterId,
+                insertVirtualMachineParameters.hostname);
         return getVirtualMachine(vmId);
     }
 

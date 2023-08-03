@@ -4,12 +4,14 @@ import java.time.Instant;
 
 public class Project {
 
-    private final long projectId;
-    private final String name;
-    private final String vhfsSgid;
-    private final Instant validOn;
-    private final Instant validUntil;
-    private final long vps4UserId;
+    private long projectId;
+    private String name;
+    private String vhfsSgid;
+    private Instant validOn;
+    private Instant validUntil;
+    private long vps4UserId;
+
+    public Project() {}
     
     public Project(long projectId,
                    String name,
