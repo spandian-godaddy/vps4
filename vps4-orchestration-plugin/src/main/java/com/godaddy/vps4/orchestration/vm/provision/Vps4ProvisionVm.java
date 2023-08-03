@@ -138,6 +138,8 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
 
         generateAndSetHostname(hfsVmId, primaryIpAddress, hfsVm.resourceId);
 
+        requestIpv6Address(request.vmInfo.vmId, request.vmInfo.sgid, request.zone, hfsVmId);
+
         configureControlPanel(hfsVmId, primaryIpAddress);
 
         createPTRRecord(hfsVm.resourceId);
@@ -154,7 +156,6 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
 
         setupAutomaticBackupSchedule(request.vmInfo.vmId, request.shopperId);
 
-        requestIpv6Address(request.vmInfo.vmId, request.vmInfo.sgid, request.zone, hfsVmId);
 
         sendSetupEmail(request, primaryIpAddress);
 
