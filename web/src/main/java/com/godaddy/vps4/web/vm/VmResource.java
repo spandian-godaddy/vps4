@@ -72,6 +72,7 @@ import static com.godaddy.vps4.web.util.RequestValidation.validateServerIsActive
 import static com.godaddy.vps4.web.util.RequestValidation.validateServerIsStoppedOrUnknown;
 import static com.godaddy.vps4.web.util.RequestValidation.validateUserIsShopper;
 import static com.godaddy.vps4.web.util.RequestValidation.validateVmExists;
+import static com.godaddy.vps4.web.util.RequestValidation.getAndValidateCreditE2S;
 import static com.godaddy.vps4.web.util.VmHelper.createActionAndExecute;
 
 @Vps4Api
@@ -137,7 +138,9 @@ public class VmResource {
         validateVmExists(vmId, virtualMachine, user);
         logger.debug(String.format("VM valid until: %s | %s", virtualMachine.validUntil, Instant.now()));
 
-        if (user.isShopper()) {
+        if(user.isEmployeeToShopper()) {
+            getAndValidateCreditE2S(creditService, virtualMachine.orionGuid, user.getShopperId());
+        } else if (user.isShopper()) {
             getAndValidateUserAccountCredit(creditService, virtualMachine.orionGuid, user.getShopperId());
         }
         return virtualMachine;

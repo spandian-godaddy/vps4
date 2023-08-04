@@ -232,15 +232,7 @@ public class RequestValidation {
         }
     }
 
-    public static VirtualMachineCredit getAndValidateUserAccountCredit(
-            CreditService creditService, UUID orionGuid, String ssoShopperId) {
-
-        VirtualMachineCredit vmCredit = creditService.getVirtualMachineCredit(orionGuid);
-        if (vmCredit == null) {
-            throw new Vps4Exception("CREDIT_NOT_FOUND",
-                    String.format("The virtual machine credit for orion guid %s was not found", orionGuid));
-        }
-
+    public static void validateAccountIsActive(VirtualMachineCredit vmCredit, UUID orionGuid) {
         if (vmCredit.isAccountSuspended()) {
             throw new Vps4Exception("ACCOUNT_SUSPENDED",
                     String.format("The virtual machine account for orion guid %s was SUSPENDED", orionGuid));
@@ -249,12 +241,37 @@ public class RequestValidation {
         if (vmCredit.isAccountRemoved()) {
             throw new Vps4Exception("ACCOUNT_REMOVED", String.format("The virtual machine account for orion guid %s was REMOVED", orionGuid));
         }
+    }
+
+    public static void validateCreditOwnedByShopper(VirtualMachineCredit vmCredit, UUID orionGuid, String ssoShopperId) {
+        if (vmCredit == null) {
+            throw new Vps4Exception("CREDIT_NOT_FOUND",
+                    String.format("The virtual machine credit for orion guid %s was not found", orionGuid));
+        }
 
         if (!vmCredit.isOwnedByShopper(ssoShopperId)) {
             throw new AuthorizationException(
                     String.format("Shopper %s does not have privilege for vm request with orion guid %s",
                             ssoShopperId, vmCredit.getOrionGuid()));
         }
+    }
+
+    public static VirtualMachineCredit getAndValidateCreditE2S(
+            CreditService creditService, UUID orionGuid, String ssoShopperId) {
+        VirtualMachineCredit vmCredit = creditService.getVirtualMachineCredit(orionGuid);
+
+        validateCreditOwnedByShopper(vmCredit, orionGuid, ssoShopperId);
+
+        return vmCredit;
+    }
+
+    public static VirtualMachineCredit getAndValidateUserAccountCredit(
+            CreditService creditService, UUID orionGuid, String ssoShopperId) {
+
+        VirtualMachineCredit vmCredit = creditService.getVirtualMachineCredit(orionGuid);
+
+        validateCreditOwnedByShopper(vmCredit, orionGuid, ssoShopperId);
+        validateAccountIsActive(vmCredit, orionGuid);
 
         return vmCredit;
     }

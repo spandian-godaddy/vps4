@@ -39,6 +39,7 @@ import java.util.stream.Collectors;
 
 import static com.godaddy.vps4.web.util.RequestValidation.getAndValidateUserAccountCredit;
 import static com.godaddy.vps4.web.util.RequestValidation.validateVmExists;
+import static com.godaddy.vps4.web.util.RequestValidation.getAndValidateCreditE2S;
 
 @Vps4Api
 @Api(tags = {"vms"})
@@ -138,7 +139,9 @@ public class SnapshotScheduleResource {
     private VirtualMachine getVirtualMachine(UUID vmId) {
         VirtualMachine virtualMachine = virtualMachineService.getVirtualMachine(vmId);
         validateVmExists(vmId, virtualMachine, user);
-        if (user.isShopper()) {
+        if(user.isEmployeeToShopper()) {
+            getAndValidateCreditE2S(creditService, virtualMachine.orionGuid, user.getShopperId());
+        } else if (user.isShopper()) {
             getAndValidateUserAccountCredit(creditService, virtualMachine.orionGuid, user.getShopperId());
         }
         return virtualMachine;

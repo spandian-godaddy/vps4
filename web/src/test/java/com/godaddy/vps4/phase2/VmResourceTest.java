@@ -244,6 +244,38 @@ public class VmResourceTest {
         Assert.assertEquals(expectedGuid, vm.orionGuid);
     }
 
+    @Test
+    public void testE2SGetVM() {
+        VirtualMachine vm = createTestVm();
+        UUID expectedGuid = vm.orionGuid;
+
+        user = GDUserMock.createEmployee2Shopper();
+        vm = getVmResource().getVm(vm.vmId);
+        Assert.assertEquals(expectedGuid, vm.orionGuid);
+    }
+
+    @Test
+    public void testE2SGetSuspendedVM() {
+        Phase2ExternalsModule.mockVmCredit(AccountStatus.SUSPENDED);
+        VirtualMachine vm = createTestVm();
+        UUID expectedGuid = vm.orionGuid;
+
+        user = GDUserMock.createEmployee2Shopper();
+        vm = getVmResource().getVm(vm.vmId);
+        Assert.assertEquals(expectedGuid, vm.orionGuid);
+    }
+
+    @Test
+    public void testE2SGetZombiedVM() {
+        VirtualMachine vm = createTestVm();
+        virtualMachineService.setVmZombie(vm.vmId);
+        UUID expectedGuid = vm.orionGuid;
+
+        user = GDUserMock.createEmployee2Shopper();
+        vm = getVmResource().getVm(vm.vmId);
+        Assert.assertEquals(expectedGuid, vm.orionGuid);
+    }
+
     // === startVm Tests ===
     public void startVm() {
         VirtualMachine vm = createTestVm();
