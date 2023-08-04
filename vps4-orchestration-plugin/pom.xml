@@ -110,6 +110,12 @@
             <groupId>com.godaddy.hosting</groupId>
             <artifactId>orchestration-api</artifactId>
             <version>${orchestration-version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.godaddy.hfs</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>

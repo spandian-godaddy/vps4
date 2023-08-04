@@ -28,6 +28,12 @@
             <groupId>com.godaddy.hosting</groupId>
             <artifactId>orchestration-web</artifactId>
             <version>${orchestration-version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.godaddy.hfs</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
     </dependencies>
 </project>
