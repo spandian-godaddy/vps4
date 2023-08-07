@@ -268,7 +268,7 @@ public class VmResourceTest {
     @Test
     public void testE2SGetZombiedVM() {
         VirtualMachine vm = createTestVm();
-        virtualMachineService.setVmZombie(vm.vmId);
+        virtualMachineService.setVmCanceled(vm.vmId);
         UUID expectedGuid = vm.orionGuid;
 
         user = GDUserMock.createEmployee2Shopper();
@@ -553,7 +553,7 @@ public class VmResourceTest {
     @Test
     public void testShopperGetZombieVirtualMachines() {
         VirtualMachine vm = createTestVm();
-        virtualMachineService.setVmZombie(vm.vmId);
+        virtualMachineService.setVmCanceled(vm.vmId);
 
         user = GDUserMock.createShopper();
         List<VirtualMachine> vms = getVmResource().getVirtualMachines(VirtualMachineType.ZOMBIE, user.getShopperId(), null, null, null, null, null, null);

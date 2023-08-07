@@ -116,7 +116,7 @@ public class Vps4ProcessAccountCancellation extends ActionCommand<Vps4ProcessAcc
 
     private void markVmAsZombie(UUID vmId) {
         context.execute("MarkVmAsZombie", ctx -> {
-            virtualMachineService.setVmZombie(vmId);
+            virtualMachineService.setVmCanceled(vmId);
             return null;
         }, void.class);
     }

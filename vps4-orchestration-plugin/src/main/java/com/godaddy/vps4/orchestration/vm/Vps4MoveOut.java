@@ -98,7 +98,7 @@ public class Vps4MoveOut extends ActionCommand<Vps4MoveOut.Request, Void> {
 
     private void setVmCanceledAndValidUntil(UUID vmId) {
         context.execute("MarkVmAsZombie", ctx -> {
-            virtualMachineService.setVmZombie(vmId);
+            virtualMachineService.setVmCanceled(vmId);
             return null;
         }, Void.class);
 

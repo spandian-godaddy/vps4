@@ -188,7 +188,7 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     }
 
     @Override
-    public void setVmZombie(UUID vmId) {
+    public void setVmCanceled(UUID vmId) {
         Sql.with(dataSource).exec("UPDATE virtual_machine vm SET canceled=now_utc() WHERE vm_id=?", null, vmId);
     }
 

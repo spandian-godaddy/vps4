@@ -11,6 +11,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.UUID;
+import java.util.function.Function;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
@@ -50,7 +51,9 @@ public class Vps4MoveInTest {
 
         command.execute(context, request);
 
-        verify(creditService, times(1)).updateProductMeta(eq(request.vm.orionGuid), any());
+        verify(context, times(1)).execute(eq("UpdateProdMeta"), any(Function.class), eq(Void.class));
         verify(context, times(1)).execute(eq(ResumePanoptaMonitoring.class), eq(request.vm));
+        verify(context, times(1)).execute(eq("MoveInActions"), any(Function.class), eq(Void.class));
+
     }
 }

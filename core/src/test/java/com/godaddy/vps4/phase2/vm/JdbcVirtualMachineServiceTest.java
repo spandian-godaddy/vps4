@@ -293,8 +293,8 @@ public class JdbcVirtualMachineServiceTest {
             vmCredits.add(UUID.randomUUID());
         }
         virtualMachineService.setVmRemoved(virtualMachines.get(1).vmId);
-        virtualMachineService.setVmZombie(virtualMachines.get(0).vmId);
-        virtualMachineService.setVmZombie(virtualMachines.get(2).vmId);
+        virtualMachineService.setVmCanceled(virtualMachines.get(0).vmId);
+        virtualMachineService.setVmCanceled(virtualMachines.get(2).vmId);
 
 
         List<VirtualMachine> vms = virtualMachineService.getVirtualMachines(VirtualMachineType.ZOMBIE, vps4User.getId(), null, null, null, null, null);
@@ -379,12 +379,12 @@ public class JdbcVirtualMachineServiceTest {
     }
 
     @Test
-    public void testSetVmZombie() {
+    public void testSetVmCanceled() {
         VirtualMachine expectedVm = SqlTestData.insertTestVm(orionGuid, dataSource, vps4User.getId());
         virtualMachines.add(expectedVm);
 
         Instant maxPsqlTimestamp = expectedVm.canceled;
-        virtualMachineService.setVmZombie(expectedVm.vmId);
+        virtualMachineService.setVmCanceled(expectedVm.vmId);
         VirtualMachine actualVm = virtualMachineService.getVirtualMachine(expectedVm.vmId);
 
         Assert.assertTrue("VM Canceled not set properly", actualVm.canceled.isBefore(maxPsqlTimestamp));
@@ -395,7 +395,7 @@ public class JdbcVirtualMachineServiceTest {
     @Test
     public void testReviveZombie() {
         VirtualMachine expectedVm = SqlTestData.insertTestVm(orionGuid, dataSource, vps4User.getId());
-        virtualMachineService.setVmZombie(expectedVm.vmId);
+        virtualMachineService.setVmCanceled(expectedVm.vmId);
         virtualMachines.add(expectedVm);
 
         UUID newOrionGuid = UUID.randomUUID();
@@ -425,8 +425,8 @@ public class JdbcVirtualMachineServiceTest {
             VirtualMachine testVm = SqlTestData.insertTestVm(UUID.randomUUID(), dataSource, vps4User.getId());
             virtualMachines.add(testVm);
         }
-        virtualMachineService.setVmZombie(virtualMachines.get(0).vmId);
-        virtualMachineService.setVmZombie(virtualMachines.get(1).vmId);
+        virtualMachineService.setVmCanceled(virtualMachines.get(0).vmId);
+        virtualMachineService.setVmCanceled(virtualMachines.get(1).vmId);
 
         Map<Integer, Integer> zombieServerCount = virtualMachineService.getZombieServerCountByTiers();
         assertEquals(2, zombieServerCount.get(10).intValue());

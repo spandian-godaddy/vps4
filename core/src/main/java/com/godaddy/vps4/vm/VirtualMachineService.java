@@ -58,7 +58,7 @@ public interface VirtualMachineService {
 
     boolean hasControlPanel(UUID vmId);
 
-    void setVmZombie(UUID vmId);
+    void setVmCanceled(UUID vmId);
 
     void reviveZombieVm(UUID vmId, UUID newOrionGuid);
 
