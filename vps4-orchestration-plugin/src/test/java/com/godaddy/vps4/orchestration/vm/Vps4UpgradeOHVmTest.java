@@ -13,6 +13,7 @@ import static org.mockito.Mockito.atLeastOnce;
 import java.util.UUID;
 import java.util.function.Function;
 
+import com.godaddy.vps4.vm.Image;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -45,6 +46,8 @@ public class Vps4UpgradeOHVmTest {
         vm.vmId = UUID.randomUUID();
         vm.orionGuid = UUID.randomUUID();
         vm.hfsVmId = 111L;
+        vm.image = mock(Image.class);
+        vm.image.operatingSystem = Image.OperatingSystem.LINUX;
         request.virtualMachine = vm;
         request.newTier = 41;
 
@@ -60,16 +63,35 @@ public class Vps4UpgradeOHVmTest {
 
     @Test
     public void testAppendsCtForImportedContainerWhenExecutingRestoreVmCommand() {
+        when(virtualMachineService.getVirtualMachine(vm.vmId)).thenReturn(vm);
         when(virtualMachineService.getImportedVm(vm.vmId)).thenReturn(vm.vmId);
         ArgumentCaptor<ResizeOHVm.Request> argument = ArgumentCaptor.forClass(ResizeOHVm.Request.class);
 
         command.executeWithAction(context, request);
+
         verify(virtualMachineService, atLeastOnce()).getImportedVm(vm.vmId);
         verify(virtualMachineService, atLeastOnce()).getSpec(request.newTier, ServerType.Platform.OPTIMIZED_HOSTING.getplatformId());
 
         verify(context).execute(eq(ResizeOHVm.class), argument.capture());
         ResizeOHVm.Request restoreReq = argument.getValue();
         assertEquals(restoreReq.newSpecName, "oh.hosting.c4.r16.d200.ct");
+    }
+
+    @Test
+    public void testDoesNotAppendCtForImportedWindowsVMs() {
+        vm.image.operatingSystem = Image.OperatingSystem.WINDOWS;
+        when(virtualMachineService.getVirtualMachine(vm.vmId)).thenReturn(vm);
+        when(virtualMachineService.getImportedVm(vm.vmId)).thenReturn(vm.vmId);
+        ArgumentCaptor<ResizeOHVm.Request> argument = ArgumentCaptor.forClass(ResizeOHVm.Request.class);
+
+        command.executeWithAction(context, request);
+
+        verify(virtualMachineService, atLeastOnce()).getImportedVm(vm.vmId);
+        verify(virtualMachineService, atLeastOnce()).getSpec(request.newTier, ServerType.Platform.OPTIMIZED_HOSTING.getplatformId());
+
+        verify(context).execute(eq(ResizeOHVm.class), argument.capture());
+        ResizeOHVm.Request restoreReq = argument.getValue();
+        assertEquals(restoreReq.newSpecName, "oh.hosting.c4.r16.d200");
     }
 
     @Test

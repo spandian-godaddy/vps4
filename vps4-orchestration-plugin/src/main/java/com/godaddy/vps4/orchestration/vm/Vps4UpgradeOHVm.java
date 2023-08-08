@@ -3,9 +3,11 @@ package com.godaddy.vps4.orchestration.vm;
 import static com.godaddy.vps4.credit.ECommCreditService.ProductMetaField.PLAN_CHANGE_PENDING;
 
 import java.util.Collections;
+import java.util.UUID;
 
 import javax.inject.Inject;
 
+import com.godaddy.vps4.vm.Image;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,9 +50,14 @@ public class Vps4UpgradeOHVm extends ActionCommand<Vps4UpgradeOHVm.Request, Void
         this.context = context;
         this.request = request;
 
-        boolean imported = virtualMachineService.getImportedVm(request.virtualMachine.vmId) != null;
+        UUID importedUUID = virtualMachineService.getImportedVm(request.virtualMachine.vmId);
         String specName = virtualMachineService.getSpec(request.newTier, ServerType.Platform.OPTIMIZED_HOSTING.getplatformId()).specName;
-        if (imported) specName = specName + ".ct";
+
+        boolean isImported = importedUUID != null;
+        if (isImported) {
+            VirtualMachine vm = virtualMachineService.getVirtualMachine(importedUUID);
+            if (vm.image.operatingSystem != Image.OperatingSystem.WINDOWS) specName = specName + ".ct";
+        }
 
         ResizeOHVm.Request resizeOHVmRequest= new ResizeOHVm.Request(request.virtualMachine.hfsVmId, specName);
         context.execute(ResizeOHVm.class, resizeOHVmRequest);
