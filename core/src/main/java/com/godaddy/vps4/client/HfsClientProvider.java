@@ -15,16 +15,25 @@ import com.godaddy.vps4.sso.Vps4SsoService;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 
-public class CertJwtAuthServiceProvider<T> extends HttpServiceProvider<T> implements Provider<T> {
+/*
+ * This class is a direct duplicate of CertJwtAuthServiceProvider but extending ClientCertAuthServiceProvider instead of
+ * HttpServiceProvider. This is needed until HFS fully switches to cert-JWT auth. Until then, they still require client
+ * certs which this class provides.
+ */
+
+public class HfsClientProvider<T> extends ClientCertAuthServiceProvider<T> implements Provider<T> {
+    private static final String CLIENT_CERTIFICATE_KEY_PATH = "hfs.client.keyPath";
+    private static final String CLIENT_CERTIFICATE_PATH = "hfs.client.certPath";
+
     private final CertJwtApi certJwtApi;
 
     @Inject CacheManager cacheManager;
     @Inject Map<CertJwtApi, Vps4SsoService> ssoServiceMap;
 
-    public CertJwtAuthServiceProvider(String baseUrlConfigPropName,
-                                      Class<T> serviceClass,
-                                      CertJwtApi certJwtApi) {
-        super(baseUrlConfigPropName, serviceClass);
+    public HfsClientProvider(String baseUrlConfigPropName,
+                             Class<T> serviceClass,
+                             CertJwtApi certJwtApi) {
+        super(baseUrlConfigPropName, serviceClass, CLIENT_CERTIFICATE_KEY_PATH, CLIENT_CERTIFICATE_PATH);
         this.certJwtApi = certJwtApi;
     }
 
