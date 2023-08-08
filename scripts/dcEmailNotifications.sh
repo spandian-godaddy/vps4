@@ -97,6 +97,16 @@ do
     echo "$COUNTER: Sending $emailType message for $vmid"
 
     case $emailType in
+    failover)
+        if [ $dryRun != 'true' ]; then
+            curl -X POST -sH "Authorization: sso-jwt $jwt" -H "Content-Type: application/json" $vps4Api/vms/$vmid/messaging/$emailType
+        fi
+        ;;
+    failoverComplete)
+        if [ $dryRun != 'true' ]; then
+             curl -X POST -sH "Authorization: sso-jwt $jwt" -H "Content-Type: application/json" $vps4Api/vms/$vmid/messaging/$emailType
+        fi
+        ;;
     patching)
         if [ $dryRun != 'true' ]; then
             curl -X POST -sH "Authorization: sso-jwt $jwt" -H "Content-Type: application/json" -d "{\"startTime\":\"$startTime\",\"durationMinutes\":$duration}" $vps4Api/vms/$vmid/messaging/$emailType
