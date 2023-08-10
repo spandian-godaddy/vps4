@@ -31,7 +31,7 @@ public class ClientUtilsTest {
     @Mock private MultivaluedMap<String,Object> headers;
     @Mock private Vps4SsoToken vps4SsoToken;
 
-    private final CertJwtApi certJwtApi = CertJwtApi.MESSAGING;
+    private final CertJwtApi certJwtApi = CertJwtApi.MESSAGING_API;
     private final String jwt = "test-token";
 
     @Before

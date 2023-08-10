@@ -74,14 +74,4 @@ public class ClientUtils {
                                                                                   CertJwtApi certJwtApi) {
         return new CertJwtAuthServiceProvider<>(baseUrlConfigPropName, serviceClass, certJwtApi);
     }
-
-    /*
-     * This is a temporary method until HFS fully switches over to cert-JWT auth. Until then, they still require client
-     * certs, which this provides (on top of a cert-JWT token).
-     */
-    public static <T> HfsClientProvider<T> getHfsClientProvider(Class<T> serviceClass,
-                                                                String baseUrlConfigPropName,
-                                                                CertJwtApi certJwtApi) {
-        return new HfsClientProvider<>(baseUrlConfigPropName, serviceClass, certJwtApi);
-    }
 }

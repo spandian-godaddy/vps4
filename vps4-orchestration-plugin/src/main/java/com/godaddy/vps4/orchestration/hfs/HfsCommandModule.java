@@ -99,7 +99,7 @@ public class HfsCommandModule extends AbstractModule {
         // MailRelay
         bind(SetMailRelayQuota.class);
 
-        // DNS
+        // dns
         bind(CreateDnsPtrRecord.class);
         bind(WaitForDnsAction.class);
     }
