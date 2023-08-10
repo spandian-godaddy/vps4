@@ -11,7 +11,6 @@ import java.util.List;
 import java.util.UUID;
 
 public class MoveOutInfo {
-    public VirtualMachine virtualMachine;
     public UUID entitlementId;
     public String serverName;
     public String specName;

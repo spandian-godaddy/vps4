@@ -127,7 +127,6 @@ public class PlatformMigrationResource {
 
     private MoveOutInfo getInfo(VirtualMachine vm) {
         MoveOutInfo info = new MoveOutInfo();
-        info.virtualMachine = vm;
         info.entitlementId = vm.orionGuid;
         info.serverName = vm.name;
         info.specName = vm.spec.name;
@@ -180,7 +179,7 @@ public class PlatformMigrationResource {
                     vps4User.getId(),
                     moveInInfo.sgid);
 
-            vm = insertVirtualMachine(moveInInfo, moveOutInfo, moveOutInfo.entitlementId, dataCenterId, project);
+            vm = insertVirtualMachine(moveInInfo, moveOutInfo, dataCenterId, project);
 
             addresses = insertIpAddresses(moveOutInfo, vm);
 
@@ -203,14 +202,14 @@ public class PlatformMigrationResource {
         panoptaDataService.setPanoptaServerDestroyed(vm.vmId);
     }
 
-    private VirtualMachine insertVirtualMachine(MoveInInfo moveInInfo, MoveOutInfo moveOutInfo, UUID entitlementId, int dataCenterId, Project project) {
+    private VirtualMachine insertVirtualMachine(MoveInInfo moveInInfo, MoveOutInfo moveOutInfo, int dataCenterId, Project project) {
         ServerSpec fromSpec = virtualMachineService.getSpec(moveOutInfo.specName);
         ServerSpec toSpec = virtualMachineService.getSpec(vmMoveSpecMapService.getVmMoveSpecMap(fromSpec.specId, moveInInfo.platform).toSpecId);
         Image fromImage = imageService.getImageByHfsName(moveOutInfo.hfsImageName);
         Image toImage = imageService.getImage(vmMoveImageMapService.getVmMoveImageMap(fromImage.imageId, moveInInfo.platform).toImageId);
         InsertVirtualMachineParameters parameters = new InsertVirtualMachineParameters(
                 moveInInfo.hfsVmId,
-                entitlementId,
+                moveOutInfo.entitlementId,
                 moveOutInfo.serverName,
                 project.getProjectId(),
                 toSpec.specId,
