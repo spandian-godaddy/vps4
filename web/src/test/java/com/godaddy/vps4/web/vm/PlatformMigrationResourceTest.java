@@ -88,6 +88,7 @@ public class PlatformMigrationResourceTest {
     private Action moveOutAction = mock(Action.class);
     private MoveOutInfo moveOutInfo;
     private MoveInInfo moveInInfo;
+    private MoveInRequest moveInRequest;
     @Captor private ArgumentCaptor<InsertVirtualMachineParameters> insertVirtualMachineParametersCaptor;
 
     private final Injector injector = Guice.createInjector(
@@ -147,6 +148,10 @@ public class PlatformMigrationResourceTest {
         moveInInfo.hfsVmId = 132;
 
         moveOutAction.commandId = UUID.randomUUID();;
+
+        moveInRequest = new MoveInRequest();
+        moveInRequest.moveOutInfo = moveOutInfo;
+        moveInRequest.moveInInfo = moveInInfo;
 
         when(actionService.getAction(anyLong())).thenReturn(moveOutAction);
         when(commandService.executeCommand(anyObject())).thenReturn(new CommandState());
@@ -243,21 +248,27 @@ public class PlatformMigrationResourceTest {
         assertEquals(vps4User, result.vps4User);
     }
 
-    @Test public void moveInInsertsDatabaseRecords() {
-        MoveInRequest moveInRequest = new MoveInRequest();
-        moveInRequest.moveOutInfo = moveOutInfo;
-        moveInRequest.moveInInfo = moveInInfo;
-
+    @Test public void moveInInsertsUser() {
         getPlatformMigrationResource().moveIn(moveInRequest);
 
         verify(vps4UserService, times(1)).getOrCreateUserForShopper(
                 moveOutInfo.vps4User.getShopperId(),
                 moveOutInfo.vps4User.getResellerId(),
                 moveOutInfo.vps4User.getCustomerId());
+    }
+
+    @Test public void moveInCreatesProject() {
+        getPlatformMigrationResource().moveIn(moveInRequest);
+
         verify(projectService, times(1)).createProject(
                 moveOutInfo.entitlementId.toString(),
                 vps4User.getId(),
                 moveInInfo.sgid);
+    }
+
+    @Test public void moveInInsertsVirtualMachine() {
+        getPlatformMigrationResource().moveIn(moveInRequest);
+
         verify(virtualMachineService, times(1))
                 .insertVirtualMachine(insertVirtualMachineParametersCaptor.capture());
         InsertVirtualMachineParameters params = insertVirtualMachineParametersCaptor.getValue();
@@ -269,6 +280,11 @@ public class PlatformMigrationResourceTest {
         assertEquals(vm.image.imageId, params.imageId);
         assertEquals(1, params.dataCenterId);
         assertEquals(moveOutInfo.hostname, params.hostname);
+    }
+
+    @Test public void moveInInsertsIpAddresses() {
+        getPlatformMigrationResource().moveIn(moveInRequest);
+
         verify(networkService, times(1))
                 .createIpAddress(
                         0,
@@ -277,8 +293,23 @@ public class PlatformMigrationResourceTest {
                         IpAddress.IpAddressType.PRIMARY);
         verify(networkService, times(additionalIps.size()))
                 .createIpAddress(anyLong(), any(), anyString(), eq(IpAddress.IpAddressType.SECONDARY));
+    }
+
+    @Test public void moveInInsertsVmUser() {
+        getPlatformMigrationResource().moveIn(moveInRequest);
+
         verify(vmUserService, times(1)).createUser(moveOutInfo.vmUser.username, vm.vmId);
+    }
+
+    @Test public void moveInInsertsActions() {
+        getPlatformMigrationResource().moveIn(moveInRequest);
+
         verify(actionService, times(actions.size())).insertAction(eq(vm.vmId), any());
+    }
+
+    @Test public void moveInInsertsPanoptaRecords() {
+        getPlatformMigrationResource().moveIn(moveInRequest);
+
         verify(panoptaDataService, times(1))
                 .createOrUpdatePanoptaCustomer(
                         moveOutInfo.panoptaDetail.getPartnerCustomerKey(),
@@ -294,10 +325,6 @@ public class PlatformMigrationResourceTest {
 
     @Test
     public void moveInCreatesMoveInCommand() {
-        MoveInRequest moveInRequest = new MoveInRequest();
-        moveInRequest.moveOutInfo = moveOutInfo;
-        moveInRequest.moveInInfo = moveInInfo;
-
         getPlatformMigrationResource().moveIn(moveInRequest);
 
         verify(actionService, times(1))
