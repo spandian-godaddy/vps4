@@ -17,7 +17,6 @@ public class Plan {
     public OperatingSystem os;
     @JsonIgnore
     public int termMonths;
-    @JsonIgnore
     public int tier;
     @JsonIgnore
     public ControlPanel controlPanel;

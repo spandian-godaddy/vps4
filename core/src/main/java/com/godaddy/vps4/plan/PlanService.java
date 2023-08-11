@@ -8,6 +8,8 @@ public interface PlanService {
 
     Plan getPlan(int pfid);
 
+    Plan getCurrentPlan(VirtualMachine vm, int termMonths);
+
     List<Plan> getPlanList();
 
     List<Plan> getAdjacentPlanList(VirtualMachine vm);

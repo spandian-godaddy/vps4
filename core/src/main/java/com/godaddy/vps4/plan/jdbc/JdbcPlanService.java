@@ -94,4 +94,15 @@ public class JdbcPlanService implements PlanService {
     public List<Plan> getPlanList() {
         return plans;
     }
+
+    @Override
+    public Plan getCurrentPlan(VirtualMachine vm, int termMonths) {
+        return plans.stream()
+                .filter(p -> p.tier == vm.spec.tier
+                        && p.os == vm.image.operatingSystem
+                        && p.controlPanel == vm.image.controlPanel
+                        && p.termMonths == termMonths)
+                .findFirst()
+                .orElse(null);
+    }
 }

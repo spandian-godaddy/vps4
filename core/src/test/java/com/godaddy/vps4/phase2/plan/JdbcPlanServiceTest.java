@@ -1,9 +1,5 @@
 package com.godaddy.vps4.phase2.plan;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -25,6 +21,8 @@ import com.godaddy.vps4.vm.ServerSpec;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+
+import static org.junit.Assert.*;
 
 public class JdbcPlanServiceTest {
 
@@ -131,5 +129,32 @@ public class JdbcPlanServiceTest {
         assertTrue(adjacentPackages.contains("test_plan_tier_4_myh"));
         assertTrue(adjacentPackages.contains("test_plan_tier_4_disabled"));
         assertFalse(adjacentPackages.contains("test_plan_tier_3_windows"));
+    }
+
+    @Test
+    public void testGetCurrentPlan() {
+        VirtualMachine vm = new VirtualMachine();
+        vm.spec = new ServerSpec();
+        vm.spec.tier = 10;
+        vm.image = new Image();
+        vm.image.operatingSystem = OperatingSystem.LINUX;
+        vm.image.controlPanel = ControlPanel.CPANEL;
+        Plan currentPlan = planService.getCurrentPlan(vm, 1);
+
+        assertEquals(1215721, currentPlan.pfid);
+        assertEquals("vps4_managed_lin_cpanel_tier1_001mo", currentPlan.packageId);
+    }
+
+    @Test
+    public void testGetCurrentPlanReturnsNullForUnknownTier() {
+        VirtualMachine vm = new VirtualMachine();
+        vm.spec = new ServerSpec();
+        vm.spec.tier = 11;
+        vm.image = new Image();
+        vm.image.operatingSystem = OperatingSystem.LINUX;
+        vm.image.controlPanel = ControlPanel.CPANEL;
+        Plan currentPlan = planService.getCurrentPlan(vm, 1);
+
+        assertNull(currentPlan);
     }
 }
