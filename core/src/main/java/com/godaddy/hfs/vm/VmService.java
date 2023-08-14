@@ -73,6 +73,10 @@ public interface VmService {
     @Path("/{vmId}/reboot")
     VmAction rebootVm(@PathParam("vmId") long vmId);
 
+    @GET
+    @Path("/{vmId}/bootscript")
+    Bootscript getBootscript(@PathParam("vmId") long vmId, @QueryParam("hostname") String hostname, @QueryParam("nydus_reinstall_only") boolean nydusReinstallOnly);
+
     @POST
     @Path("/{vmId}/rebuild")
     VmAction rebuildVm(@PathParam("vmId") long vmId, RebuildVmRequest request);
