@@ -1,29 +1,50 @@
 package com.godaddy.vps4.hfs;
 
-import javax.inject.Singleton;
+import static com.godaddy.vps4.client.ClientUtils.getHfsClientProvider;
 
 import com.godaddy.hfs.cpanel.CPanelService;
 import com.godaddy.hfs.dns.HfsDnsService;
 import com.godaddy.hfs.mailrelay.MailRelayService;
 import com.godaddy.hfs.vm.VmService;
+import com.godaddy.vps4.sso.CertJwtApi;
 import com.google.inject.AbstractModule;
+import com.google.inject.Singleton;
 
 import gdg.hfs.vhfs.ecomm.ECommService;
 import gdg.hfs.vhfs.network.NetworkServiceV2;
 import gdg.hfs.vhfs.plesk.PleskService;
+import gdg.hfs.vhfs.snapshot.SnapshotService;
 import gdg.hfs.vhfs.sysadmin.SysAdminService;
 
 public class HfsClientModule extends AbstractModule {
-
     @Override
     public void configure() {
-        bind(VmService.class).toProvider(new HfsClientProvider<>(VmService.class)).in(Singleton.class);
-        bind(CPanelService.class).toProvider(new HfsClientProvider<>(CPanelService.class)).in(Singleton.class);
-        bind(PleskService.class).toProvider(new HfsClientProvider<>(PleskService.class)).in(Singleton.class);
-        bind(SysAdminService.class).toProvider(new HfsClientProvider<>(SysAdminService.class)).in(Singleton.class);
-        bind(MailRelayService.class).toProvider(new HfsClientProvider<>(MailRelayService.class)).in(Singleton.class);
-        bind(ECommService.class).toProvider(new HfsClientProvider<>(ECommService.class)).in(Singleton.class);
-        bind(NetworkServiceV2.class).toProvider(new HfsClientProvider<>(NetworkServiceV2.class)).in(Singleton.class);
-        bind(HfsDnsService.class).toProvider(new HfsClientProvider<>(HfsDnsService.class)).in(Singleton.class);
+        bind(VmService.class)
+                .toProvider(getHfsClientProvider(VmService.class, "hfs.base.url", CertJwtApi.HFS))
+                .in(Singleton.class);
+        bind(CPanelService.class)
+                .toProvider(getHfsClientProvider(CPanelService.class, "hfs.base.url", CertJwtApi.HFS))
+                .in(Singleton.class);
+        bind(PleskService.class)
+                .toProvider(getHfsClientProvider(PleskService.class, "hfs.base.url", CertJwtApi.HFS))
+                .in(Singleton.class);
+        bind(SysAdminService.class)
+                .toProvider(getHfsClientProvider(SysAdminService.class, "hfs.base.url", CertJwtApi.HFS))
+                .in(Singleton.class);
+        bind(MailRelayService.class)
+                .toProvider(getHfsClientProvider(MailRelayService.class, "hfs.base.url", CertJwtApi.HFS))
+                .in(Singleton.class);
+        bind(ECommService.class)
+                .toProvider(getHfsClientProvider(ECommService.class, "hfs.base.url", CertJwtApi.HFS))
+                .in(Singleton.class);
+        bind(NetworkServiceV2.class)
+                .toProvider(getHfsClientProvider(NetworkServiceV2.class, "hfs.base.url", CertJwtApi.HFS))
+                .in(Singleton.class);
+        bind(HfsDnsService.class)
+                .toProvider(getHfsClientProvider(HfsDnsService.class, "hfs.base.url", CertJwtApi.HFS))
+                .in(Singleton.class);
+        bind(SnapshotService.class)
+                .toProvider(getHfsClientProvider(SnapshotService.class, "hfs.base.url", CertJwtApi.HFS))
+                .in(Singleton.class);
     }
 }
