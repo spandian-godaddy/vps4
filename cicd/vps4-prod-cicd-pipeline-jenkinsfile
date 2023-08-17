@@ -137,7 +137,7 @@ pipeline {
             }
         }
         /*
-        teporarily disabling due to timeout errors for openstack image
+        temporarily disabling due to timeout errors for openstack image
         stage("Prod A2 Smoke Test") {
             options {
                 timeout(time:45, unit:'MINUTES')

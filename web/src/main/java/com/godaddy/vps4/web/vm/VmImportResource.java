@@ -171,11 +171,6 @@ public class VmImportResource {
     }
 
     private VmAction createReturnAction(VirtualMachine virtualMachine) {
-        VmAction action = new VmAction();
-        action.type = ActionType.IMPORT_VM;
-        action.virtualMachineId = virtualMachine.vmId;
-        action.created = action.completed = Instant.now();
-
         long actionId = actionService.createAction(virtualMachine.vmId, ActionType.IMPORT_VM, null, "EMEA Migrations");
         actionService.completeAction(actionId, null, null);
 

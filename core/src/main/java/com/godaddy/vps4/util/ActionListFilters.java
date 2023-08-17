@@ -22,37 +22,45 @@ public class ActionListFilters {
     private long limit = -1; // Default no limit
     private long offset;
 
-    public void byResourceId(UUID resourceId) {
+    public ActionListFilters byResourceId(UUID resourceId) {
         this.resourceId = resourceId;
+        return this;
     }
 
-    public void byStatus(ActionStatus... statuses) {
-        statusList = Arrays.asList(statuses);
+    public ActionListFilters byStatus(ActionStatus... statuses) {
+        this.statusList = Arrays.asList(statuses);
+        return this;
     }
 
-    public void byStatus(Collection<ActionStatus> statuses) {
+    public ActionListFilters byStatus(Collection<ActionStatus> statuses) {
         this.statusList = new ArrayList<>(statuses);
+        return this;
     }
 
-    public void byType(ActionType... types) {
-        typeList = Arrays.asList(types);
+    public ActionListFilters byType(ActionType... types) {
+        this.typeList = Arrays.asList(types);
+        return this;
     }
 
-    public void byType(Collection<ActionType> types) {
+    public ActionListFilters byType(Collection<ActionType> types) {
         this.typeList = new ArrayList<>(types);
+        return this;
     }
 
-    public void byDateRange(Instant start, Instant end) {
+    public ActionListFilters byDateRange(Instant start, Instant end) {
         this.start = start;
         this.end = end;
+        return this;
     }
 
-    public void setLimit(long limit) {
+    public ActionListFilters setLimit(long limit) {
         this.limit = limit;
+        return this;
     }
 
-    public void setOffset(long offset) {
+    public ActionListFilters setOffset(long offset) {
         this.offset = offset;
+        return this;
     }
 
     public UUID getResourceId() {

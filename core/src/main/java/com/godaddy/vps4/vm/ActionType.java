@@ -69,7 +69,8 @@ public enum ActionType {
     SET_SUPPORT_USER_PASSWORD(60),
     ADD_ADDON_DOMAIN(61),
     MOVE_OUT(62),
-    MOVE_IN(63);
+    MOVE_IN(63),
+    INTERVENTION(64);
 
     private final int typeId;
 
