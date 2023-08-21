@@ -12,7 +12,6 @@ import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
-import com.godaddy.vps4.security.jdbc.AuthorizationException;
 import com.godaddy.vps4.snapshot.SnapshotModule;
 import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.VirtualMachine;
@@ -33,6 +32,7 @@ import org.mockito.Mockito;
 
 import javax.inject.Inject;
 import javax.sql.DataSource;
+import javax.ws.rs.ForbiddenException;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
@@ -113,7 +113,7 @@ public class NetworkResourceUserTest {
         testAddIp();
     }
 
-    @Test(expected=AuthorizationException.class)
+    @Test(expected=ForbiddenException.class)
     public void testUnauthorizedShopperAddIp() {
         user = GDUserMock.createShopper("shopperX");
         testAddIp();
@@ -143,7 +143,7 @@ public class NetworkResourceUserTest {
         testRemoveIp();
     }
 
-    @Test(expected=AuthorizationException.class)
+    @Test(expected=ForbiddenException.class)
     public void testUnauthorizedShopperRemoveIp() {
         user = GDUserMock.createShopper("shopperX");
         testRemoveIp();
@@ -176,7 +176,7 @@ public class NetworkResourceUserTest {
         testListIps();
     }
 
-    @Test(expected=AuthorizationException.class)
+    @Test(expected=ForbiddenException.class)
     public void testUnauthorizedShopperListIps() {
         user = GDUserMock.createShopper("shopperX");
         testListIps();
@@ -207,7 +207,7 @@ public class NetworkResourceUserTest {
         testGet1Ip();
     }
 
-    @Test(expected=AuthorizationException.class)
+    @Test(expected=ForbiddenException.class)
     public void testUnauthorizedShopperGetIp() {
         user = GDUserMock.createShopper("shopperX");
         testGet1Ip();

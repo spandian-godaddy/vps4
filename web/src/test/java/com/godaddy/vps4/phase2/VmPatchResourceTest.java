@@ -11,7 +11,6 @@ import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
-import com.godaddy.vps4.security.jdbc.AuthorizationException;
 import com.godaddy.vps4.security.jdbc.JdbcPrivilegeService;
 import com.godaddy.vps4.snapshot.SnapshotModule;
 import com.godaddy.vps4.vm.Action;
@@ -40,6 +39,7 @@ import org.mockito.Mockito;
 
 import javax.inject.Inject;
 import javax.sql.DataSource;
+import javax.ws.rs.ForbiddenException;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -143,7 +143,7 @@ public class VmPatchResourceTest {
         testValidServerName("NewVmName");
     }
 
-    @Test(expected=AuthorizationException.class)
+    @Test(expected=ForbiddenException.class)
     public void testUnauthShopperUpdateName() {
         user = GDUserMock.createShopper("shopperX");
         testValidServerName("NewVmName");

@@ -13,6 +13,7 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 import javax.sql.DataSource;
+import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.NotFoundException;
 
 import com.godaddy.vps4.project.ProjectService;
@@ -30,7 +31,6 @@ import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
-import com.godaddy.vps4.security.jdbc.AuthorizationException;
 import com.godaddy.vps4.snapshot.SnapshotModule;
 import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.ActionType;
@@ -144,7 +144,7 @@ public class VmResourceTest {
         Assert.assertEquals(expectedGuid, vm.orionGuid);
     }
 
-    @Test(expected = AuthorizationException.class)
+    @Test(expected = ForbiddenException.class)
     public void testUnauthorizedShopperGetVm() {
         VirtualMachine vm = createTestVm();
 
@@ -290,7 +290,7 @@ public class VmResourceTest {
         startVm();
     }
 
-    @Test(expected=AuthorizationException.class)
+    @Test(expected=ForbiddenException.class)
     public void testUnauthorizedShopperStartVm() {
         user = GDUserMock.createShopper("shopperX");
         Phase2ExternalsModule.mockHfsVm("STOPPED");
@@ -346,7 +346,7 @@ public class VmResourceTest {
         testStopVm();
     }
 
-    @Test(expected=AuthorizationException.class)
+    @Test(expected=ForbiddenException.class)
     public void testUnauthorizedShopperStopVm() {
         user = GDUserMock.createShopper("shopperX");
         testStopVm();
@@ -400,7 +400,7 @@ public class VmResourceTest {
         testRestartVm();
     }
 
-    @Test(expected=AuthorizationException.class)
+    @Test(expected=ForbiddenException.class)
     public void testUnauthorizedShopperRestartVm() {
         user = GDUserMock.createShopper("shopperX");
         testRestartVm();
@@ -501,7 +501,7 @@ public class VmResourceTest {
         testDestroyVm();
     }
 
-    @Test(expected=AuthorizationException.class)
+    @Test(expected=ForbiddenException.class)
     public void testUnauthorizedShopperDestroyVm() {
         user = GDUserMock.createShopper("shopperX");
         testDestroyVm();

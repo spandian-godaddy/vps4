@@ -6,6 +6,7 @@ import com.godaddy.vps4.security.Vps4User;
 
 import javax.inject.Inject;
 import javax.sql.DataSource;
+import javax.ws.rs.ForbiddenException;
 import java.util.UUID;
 
 
@@ -26,7 +27,7 @@ public class JdbcPrivilegeService implements PrivilegeService {
                         "ON virtual_machine.project_id = project.project_id " +
                         "AND virtual_machine.vm_id = ?; ",
                 Sql.nextOrNull(rs -> rs.getLong(1) == user.getId()), id)) {
-            throw new AuthorizationException(user.getShopperId() + " does not have privilege for vm " + id);
+            throw new ForbiddenException(user.getShopperId() + " does not have privilege for vm " + id);
         }
     }
 
@@ -34,7 +35,7 @@ public class JdbcPrivilegeService implements PrivilegeService {
     @Override
     public void requireAnyPrivilegeToProjectId(Vps4User user, long projectId) {
         if (!checkAnyPrivilegeToProjectId(user, projectId)) {
-            throw new AuthorizationException(
+            throw new ForbiddenException(
                     user.getShopperId() + " does not have privilege on service group " + projectId);
         }
     }

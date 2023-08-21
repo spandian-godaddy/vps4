@@ -7,7 +7,6 @@ import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
-import com.godaddy.vps4.security.jdbc.AuthorizationException;
 import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
@@ -27,6 +26,7 @@ import org.json.simple.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
 
+import javax.ws.rs.ForbiddenException;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -147,7 +147,7 @@ public class VmShopperMergeResourceTest {
         }
     }
 
-    @Test(expected = AuthorizationException.class)
+    @Test(expected = ForbiddenException.class)
     public void ifNewShopperDoesNotOwnCreditThrowException() {
         when(creditService.getVirtualMachineCredit(orionGuid)).thenReturn(notShopperCredit);
         testShopperMergeResource.mergeTwoShopperAccounts(vmId, createVmShopperMergeRequest(user.getShopperId()));

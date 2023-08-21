@@ -10,7 +10,6 @@ import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
-import com.godaddy.vps4.security.jdbc.AuthorizationException;
 import com.godaddy.vps4.snapshot.SnapshotModule;
 import com.godaddy.vps4.util.PollerTimedOutException;
 import com.godaddy.vps4.vm.AccountStatus;
@@ -32,6 +31,7 @@ import org.mockito.Mockito;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.sql.DataSource;
+import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.NotAcceptableException;
 import javax.ws.rs.core.HttpHeaders;
 import java.util.Arrays;
@@ -108,7 +108,7 @@ public class PleskResourceTest {
         Mockito.verify(pleskServ).getPleskSsoUrl(vm.hfsVmId, "1.2.3.4");
     }
 
-    @Test(expected=AuthorizationException.class)
+    @Test(expected=ForbiddenException.class)
     public void testUnauthorizedShopperGetPleskSession(){
         user = GDUserMock.createShopper("shopperX");
         getPleskResource().getPleskSessionUrl(vm.vmId, "1.2.3.4", null, null);
@@ -171,7 +171,7 @@ public class PleskResourceTest {
         getPleskResource().listPleskAccounts(vm.vmId);
     }
 
-    @Test(expected=AuthorizationException.class)
+    @Test(expected=ForbiddenException.class)
     public void testUnauthorizedShopperGetPleskAccounts() {
         user = GDUserMock.createShopper("shopperX");
         getPleskResource().listPleskAccounts(vm.vmId);

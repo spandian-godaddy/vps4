@@ -5,7 +5,6 @@ import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
-import com.godaddy.vps4.security.jdbc.AuthorizationException;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionStatus;
@@ -39,6 +38,7 @@ import org.mockito.Captor;
 import org.mockito.MockitoAnnotations;
 
 import javax.sql.DataSource;
+import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.UriInfo;
 import java.lang.reflect.Method;
@@ -140,7 +140,7 @@ public class VmActionResourceTest {
         Assert.assertEquals(false, vmAction.isRequesterEmployee);
     }
 
-    @Test(expected=AuthorizationException.class)
+    @Test(expected=ForbiddenException.class)
     public void testUnauthorizedShopperGetVmAction() {
         VirtualMachine vm = createTestVm(user.getShopperId());
         Action action = createTestVmAction(vm.vmId, ActionType.CREATE_VM);
@@ -217,7 +217,7 @@ public class VmActionResourceTest {
         Assert.assertTrue(commandIds.contains(action2.commandId));
     }
 
-    @Test(expected=AuthorizationException.class)
+    @Test(expected=ForbiddenException.class)
     public void testUnauthorizedShopperListActions() {
         VirtualMachine vm = createTestVm(user.getShopperId());
         createTestVmAction(vm.vmId, ActionType.CREATE_VM);

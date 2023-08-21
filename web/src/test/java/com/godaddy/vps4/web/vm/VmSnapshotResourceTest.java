@@ -35,7 +35,6 @@ import com.godaddy.vps4.oh.backups.OhBackupService;
 import com.godaddy.vps4.scheduler.api.core.SchedulerJobDetail;
 import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.godaddy.vps4.security.GDUserMock;
-import com.godaddy.vps4.security.jdbc.AuthorizationException;
 import com.godaddy.vps4.snapshot.Snapshot;
 import com.godaddy.vps4.snapshot.SnapshotAction;
 import com.godaddy.vps4.snapshot.SnapshotService;
@@ -50,13 +49,14 @@ import com.godaddy.vps4.vm.ServerSpec;
 import com.godaddy.vps4.vm.ServerType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.web.Vps4Exception;
-import com.godaddy.vps4.web.Vps4NoShopperException;
 import com.godaddy.vps4.web.security.GDUser;
 import com.google.inject.Provider;
 
 import gdg.hfs.orchestration.CommandGroupSpec;
 import gdg.hfs.orchestration.CommandService;
 import gdg.hfs.orchestration.CommandState;
+
+import javax.ws.rs.ForbiddenException;
 
 @RunWith(MockitoJUnitRunner.class)
 public class VmSnapshotResourceTest {
@@ -238,10 +238,10 @@ public class VmSnapshotResourceTest {
                 .createSnapshot(anyLong(), any(UUID.class), anyString(), any(SnapshotType.class));
     }
 
-    @Test(expected = AuthorizationException.class)
+    @Test(expected = ForbiddenException.class)
     public void abortsIfAuthCheckFails() {
         VmSnapshotResource.VmSnapshotRequest request = createSnapshotRequest();
-        when(vmResource.getVm(vm.vmId)).thenThrow(new AuthorizationException("test"));
+        when(vmResource.getVm(vm.vmId)).thenThrow(new ForbiddenException("test"));
         resource.createSnapshot(vm.vmId, request);
     }
 

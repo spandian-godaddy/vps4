@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
+import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.NotFoundException;
 
 import com.godaddy.hfs.vm.Vm;
@@ -19,7 +20,6 @@ import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.godaddy.vps4.security.PrivilegeService;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
-import com.godaddy.vps4.security.jdbc.AuthorizationException;
 import com.godaddy.vps4.snapshot.Snapshot;
 import com.godaddy.vps4.snapshot.SnapshotService;
 import com.godaddy.vps4.snapshot.SnapshotStatus;
@@ -250,7 +250,7 @@ public class RequestValidation {
         }
 
         if (!vmCredit.isOwnedByShopper(ssoShopperId)) {
-            throw new AuthorizationException(
+            throw new ForbiddenException(
                     String.format("Shopper %s does not have privilege for vm request with orion guid %s",
                             ssoShopperId, vmCredit.getOrionGuid()));
         }
@@ -318,7 +318,7 @@ public class RequestValidation {
             String shopperId, UUID vmId) {
         Vps4User vps4User = userService.getUser(shopperId);
         if (vps4User == null) {
-            throw new AuthorizationException(shopperId + "does not have privilege for vm " + vmId);
+            throw new ForbiddenException(shopperId + "does not have privilege for vm " + vmId);
         }
         privilegeService.requireAnyPrivilegeToVmId(vps4User, vmId);
     }

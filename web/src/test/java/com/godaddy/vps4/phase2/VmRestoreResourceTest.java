@@ -8,6 +8,7 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 import javax.sql.DataSource;
+import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.NotFoundException;
 
 import org.json.simple.JSONObject;
@@ -31,7 +32,6 @@ import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
-import com.godaddy.vps4.security.jdbc.AuthorizationException;
 import com.godaddy.vps4.snapshot.Snapshot;
 import com.godaddy.vps4.snapshot.SnapshotModule;
 import com.godaddy.vps4.snapshot.SnapshotService;
@@ -205,7 +205,7 @@ public class VmRestoreResourceTest {
         verifySuccessfulVmRestorationByAdmin();
     }
 
-    @Test(expected = AuthorizationException.class)
+    @Test(expected = ForbiddenException.class)
     public void failRestoreVmForNonAdminUsers() {
         user = them;
         verifySuccessfulVmRestoration();
@@ -288,7 +288,7 @@ public class VmRestoreResourceTest {
         getVmRestoreResource().restore(ourVm.vmId, getRequestPayload(ourSnapshot.id, goodPassword));
     }
 
-    @Test(expected = AuthorizationException.class)
+    @Test(expected = ForbiddenException.class)
     public void theyCantRestoreOurVM() {
         user = them;
         getVmRestoreResource().restore(ourVm.vmId, getRequestPayload(theirSnapshot.id, goodPassword));

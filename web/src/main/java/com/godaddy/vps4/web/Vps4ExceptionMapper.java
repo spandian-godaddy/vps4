@@ -10,8 +10,6 @@ import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.godaddy.vps4.security.jdbc.AuthorizationException;
-
 @Provider
 public class Vps4ExceptionMapper implements ExceptionMapper<Throwable> {
 
@@ -57,20 +55,6 @@ public class Vps4ExceptionMapper implements ExceptionMapper<Throwable> {
                     || ve.getId().equals("SNAPSHOT_DC_LIMIT_REACHED"))
                 status = Response.Status.CONFLICT;
             return Response.status(status)
-                    .type(MediaType.APPLICATION_JSON)
-                    .entity(json.toJSONString())
-                    .build();
-        }
-
-        if (t instanceof AuthorizationException) {
-            AuthorizationException ae = (AuthorizationException) t;
-
-            logger.warn("writing response for Authorization exception", ae);
-
-            JSONObject json = new JSONObject();
-            json.put("id", "NOT_FOUND");
-
-            return Response.status(Response.Status.NOT_FOUND)
                     .type(MediaType.APPLICATION_JSON)
                     .entity(json.toJSONString())
                     .build();

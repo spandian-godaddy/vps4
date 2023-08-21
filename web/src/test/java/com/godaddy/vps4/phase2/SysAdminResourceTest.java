@@ -9,7 +9,6 @@ import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4User;
 import com.godaddy.vps4.security.Vps4UserService;
-import com.godaddy.vps4.security.jdbc.AuthorizationException;
 import com.godaddy.vps4.snapshot.SnapshotModule;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VmModule;
@@ -32,6 +31,7 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 import javax.sql.DataSource;
+import javax.ws.rs.ForbiddenException;
 import java.util.UUID;
 
 import static org.mockito.Mockito.mock;
@@ -137,7 +137,7 @@ public class SysAdminResourceTest {
         }
     }
 
-    @Test(expected=AuthorizationException.class)
+    @Test(expected=ForbiddenException.class)
     public void testUnauthorizedShopperSetPassword() {
         UpdatePasswordRequest request = new UpdatePasswordRequest();
         request.username = username;
@@ -208,7 +208,7 @@ public class SysAdminResourceTest {
         getSysAdminResource().setHostname(vm.vmId, request);
     }
 
-    @Test(expected=AuthorizationException.class)
+    @Test(expected=ForbiddenException.class)
     public void testUnauthorizedShopperSetHostname() {
         SetHostnameRequest request = new SetHostnameRequest();
         request.hostname = "newhostname.test.tst";
@@ -286,7 +286,7 @@ public class SysAdminResourceTest {
         getSysAdminResource().enableUserAdmin(vm.vmId, request);
     }
 
-    @Test(expected=AuthorizationException.class)
+    @Test(expected=ForbiddenException.class)
     public void testUnauthorizedShopperEnableUserAdmin() {
         SetAdminRequest request = new SetAdminRequest();
         request.username = username;
@@ -356,7 +356,7 @@ public class SysAdminResourceTest {
         getSysAdminResource().disableUserAdmin(vm.vmId, request);
     }
 
-    @Test(expected=AuthorizationException.class)
+    @Test(expected=ForbiddenException.class)
     public void testUnauthorizedShopperDisableUserAdmin(){
         SetAdminRequest request = new SetAdminRequest();
         request.username = username;

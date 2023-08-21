@@ -12,6 +12,7 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 import javax.sql.DataSource;
+import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.NotFoundException;
 
 import org.json.simple.JSONObject;
@@ -35,7 +36,6 @@ import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.security.SecurityModule;
 import com.godaddy.vps4.security.Vps4User;
-import com.godaddy.vps4.security.jdbc.AuthorizationException;
 import com.godaddy.vps4.snapshot.SnapshotModule;
 import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.ActionService;
@@ -229,7 +229,7 @@ public class VmRebuildResourceTest {
         verifySuccessfulDedicatedRebuildByAdmin();
     }
 
-    @Test(expected = AuthorizationException.class)
+    @Test(expected = ForbiddenException.class)
     public void failRebuildDedicatedForNonAdminUsers() {
         user = them;
         verifySuccessfulDedicatedRebuild();
@@ -266,7 +266,7 @@ public class VmRebuildResourceTest {
         verifySuccessfulVmRebuildByAdmin();
     }
 
-    @Test(expected = AuthorizationException.class)
+    @Test(expected = ForbiddenException.class)
     public void failRebuildVmForNonAdminUsers() {
         user = them;
         verifySuccessfulVmRebuild();
@@ -338,7 +338,7 @@ public class VmRebuildResourceTest {
         getVmRebuildResource().rebuild(ourVm.vmId, getRequestPayload(goodPassword, imageName));
     }
 
-    @Test(expected = AuthorizationException.class)
+    @Test(expected = ForbiddenException.class)
     public void theyCannotRebuildOurVM() {
         user = them;
         getVmRebuildResource().rebuild(ourVm.vmId, getRequestPayload(goodPassword, imageName));
