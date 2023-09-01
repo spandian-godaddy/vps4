@@ -15,7 +15,6 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
-import com.godaddy.hfs.vm.Extended;
 import com.godaddy.hfs.vm.Vm;
 import com.godaddy.hfs.vm.VmExtendedInfo;
 import com.godaddy.vps4.credit.CreditService;
@@ -132,7 +131,7 @@ public class VmDetailsResource {
             scheduledZombieCleanupJobs.add(scheduledZombieCleanupJob);
         });
 
-        List<IpAddress> additionalIps = networkService.getVmSecondaryAddress(virtualMachine.hfsVmId);
+        List<IpAddress> additionalIps = networkService.getVmActiveSecondaryAddresses(virtualMachine.hfsVmId);
 
         return new VirtualMachineWithDetails(virtualMachine,
                 new VirtualMachineDetails(vm),

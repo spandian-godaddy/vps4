@@ -236,11 +236,11 @@ public class Vps4DestroyVmTest {
         IpAddress removedIp = new IpAddress(3,1113, vmId, "1.2.3.4", IpAddress.IpAddressType.SECONDARY,
                 Instant.now(), Instant.now().plus(24, ChronoUnit.HOURS), 4);
 
-        List<IpAddress> secondaryIps = new ArrayList<IpAddress>();
+        List<IpAddress> secondaryIps = new ArrayList<>();
         secondaryIps.add(primaryIp);
         secondaryIps.add(secondaryIp);
         secondaryIps.add(removedIp);
-        when(networkService.getVmSecondaryAddress(vm.hfsVmId)).thenReturn(secondaryIps);
+        when(networkService.getVmActiveSecondaryAddresses(vm.hfsVmId)).thenReturn(secondaryIps);
         command.execute(context, request);
         for (IpAddress ip : secondaryIps) {
             verify(context).execute(eq("RemoveIp-" + ip.addressId), eq(Vps4RemoveIp.class), any());
@@ -257,11 +257,11 @@ public class Vps4DestroyVmTest {
                 Instant.now(), Instant.now().minus(24, ChronoUnit.HOURS), 4);
 
         MockitoAnnotations.initMocks(this);
-        List<IpAddress> secondaryIps = new ArrayList<IpAddress>();
+        List<IpAddress> secondaryIps = new ArrayList<>();
         secondaryIps.add(primaryIp);
         secondaryIps.add(secondaryIp);
         secondaryIps.add(removedIp);
-        when(networkService.getVmSecondaryAddress(vm.hfsVmId)).thenReturn(secondaryIps);
+        when(networkService.getVmActiveSecondaryAddresses(vm.hfsVmId)).thenReturn(secondaryIps);
         command.execute(context, request);
         for (IpAddress ip : secondaryIps) {
             verify(context).execute(eq("MarkIpDeleted-" + ip.addressId), lambda.capture(), eq(Void.class));
@@ -272,7 +272,7 @@ public class Vps4DestroyVmTest {
 
     @Test
     public void doesNotRunDeleteAdditionalIpsIfThereAreNone() {
-        when(networkService.getVmSecondaryAddress(vm.hfsVmId)).thenReturn(null);
+        when(networkService.getVmActiveSecondaryAddresses(vm.hfsVmId)).thenReturn(null);
         command.execute(context, request);
         verify(context, times(1)).execute(startsWith("RemoveIp-"), eq(Vps4RemoveIp.class), any());
         verify(context, times(1)).execute(startsWith("MarkIpDeleted-"),

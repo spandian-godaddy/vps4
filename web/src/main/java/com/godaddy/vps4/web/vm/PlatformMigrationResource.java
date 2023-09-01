@@ -7,6 +7,7 @@ import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.vm.Vps4MoveIn;
 import com.godaddy.vps4.orchestration.vm.Vps4MoveOut;
+import com.godaddy.vps4.orchestration.vm.Vps4MoveBack;
 import com.godaddy.vps4.panopta.PanoptaDataService;
 import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.ProjectService;
@@ -123,6 +124,28 @@ public class PlatformMigrationResource {
         return info;
     }
 
+    @POST
+    @RequiresRole(roles = { GDUser.Role.ADMIN })
+    @Path("/move/in")
+    public VmAction moveIn(MoveInRequest moveInRequest) {
+        int dataCenterId = Integer.parseInt(config.get("imported.datacenter.defaultId"));
+
+        VirtualMachine vm = insertDatabaseRecords(moveInRequest.moveInInfo, moveInRequest.moveOutInfo, dataCenterId);
+
+        return runMoveInCommand(moveInRequest.moveOutInfo, vm);
+    }
+
+    @POST
+    @RequiresRole(roles = { GDUser.Role.ADMIN })
+    @Path("/{vmId}/move/back")
+    public VmAction moveBack(@PathParam("vmId") UUID vmId) {
+        Vps4MoveBack.Request moveBackRequest = new Vps4MoveBack.Request();
+        moveBackRequest.vmId = vmId;
+
+        return createActionAndExecute(actionService, commandService, vmId, ActionType.MOVE_BACK, moveBackRequest,
+                "Vps4MoveBack", gdUser);
+    }
+
     private MoveOutInfo getInfo(VirtualMachine vm) {
         MoveOutInfo info = new MoveOutInfo();
         info.entitlementId = vm.orionGuid;
@@ -131,7 +154,7 @@ public class PlatformMigrationResource {
         info.hfsImageName = vm.image.hfsName;
         info.hostname = vm.hostname;
         info.primaryIpAddress = vm.primaryIpAddress;
-        info.additionalIps = networkService.getVmSecondaryAddress(vm.hfsVmId);
+        info.additionalIps = networkService.getVmActiveSecondaryAddresses(vm.hfsVmId);
         info.actions = getActions(vm.vmId);
         info.panoptaDetail = panoptaDataService.getPanoptaDetails(vm.vmId);
         info.vmUser = vmUserService.getPrimaryCustomer(vm.vmId);
@@ -148,16 +171,6 @@ public class PlatformMigrationResource {
                 null, null, Long.MAX_VALUE, 0);
     }
 
-    @POST
-    @RequiresRole(roles = { GDUser.Role.ADMIN })
-    @Path("/move/in")
-    public VmAction moveIn(MoveInRequest moveInRequest) {
-        int dataCenterId = Integer.parseInt(config.get("imported.datacenter.defaultId"));
-
-        VirtualMachine vm = insertDatabaseRecords(moveInRequest.moveInInfo, moveInRequest.moveOutInfo, dataCenterId);
-
-        return runMoveInCommand(moveInRequest.moveOutInfo, vm);
-    }
 
     private VirtualMachine insertDatabaseRecords(MoveInInfo moveInInfo, MoveOutInfo moveOutInfo, int dataCenterId) {
         VirtualMachine vm = null;
@@ -230,7 +243,7 @@ public class PlatformMigrationResource {
             panoptaDataService.setPanoptaServerDestroyed(vm.vmId);
 
             if (vm.primaryIpAddress != null) networkService.destroyIpAddress(vm.primaryIpAddress.addressId);
-            List<IpAddress> additionalIps = networkService.getVmSecondaryAddress(vm.hfsVmId);
+            List<IpAddress> additionalIps = networkService.getVmActiveSecondaryAddresses(vm.hfsVmId);
             if (additionalIps != null && !additionalIps.isEmpty()) {
                 for (IpAddress ipAddress : additionalIps) {
                     networkService.destroyIpAddress(ipAddress.addressId);

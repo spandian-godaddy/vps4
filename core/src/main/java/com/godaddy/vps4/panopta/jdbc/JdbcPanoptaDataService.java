@@ -71,6 +71,12 @@ public class JdbcPanoptaDataService implements PanoptaDataService {
     }
 
     @Override
+    public void setPanoptaServerActive(UUID vmId) {
+        Sql.with(dataSource)
+           .exec("UPDATE panopta_server SET destroyed = 'infinity' WHERE vm_id = ?", null, vmId);
+    }
+
+    @Override
     public void deletePanoptaServer(UUID vmId) {
         Sql.with(dataSource)
            .exec("DELETE FROM panopta_server WHERE vm_id = ?", null, vmId);

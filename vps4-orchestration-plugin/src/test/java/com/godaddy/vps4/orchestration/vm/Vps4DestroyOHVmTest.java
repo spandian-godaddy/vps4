@@ -32,7 +32,7 @@ public class Vps4DestroyOHVmTest extends Vps4DestroyVmTest {
     @Override
     @Test
     public void doesNotRunDeleteAdditionalIpsIfThereAreNone() {
-        when(networkService.getVmSecondaryAddress(vm.hfsVmId)).thenReturn(null);
+        when(networkService.getVmActiveSecondaryAddresses(vm.hfsVmId)).thenReturn(null);
         command.execute(context, request);
         verify(context, times(1)).execute(anyString(), eq(Vps4RemoveIp.class), any());
         verify(context, times(1)).execute(startsWith("MarkIpDeleted-"),

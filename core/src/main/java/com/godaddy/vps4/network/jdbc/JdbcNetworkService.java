@@ -37,6 +37,12 @@ public class JdbcNetworkService implements NetworkService {
     }
 
     @Override
+    public void activateIpAddress(long addressId) {
+        Sql.with(dataSource).exec("UPDATE ip_address SET valid_until = 'infinity' WHERE address_id = ?",
+                null, addressId);
+    }
+
+    @Override
     public IpAddress getIpAddress(long addressId) {
         return Sql.with(dataSource).exec(
                 "SELECT ip.*, family(ip.ip_address) FROM ip_address ip " + " WHERE address_id = ?",
@@ -65,10 +71,18 @@ public class JdbcNetworkService implements NetworkService {
     }
 
     @Override
-    public List<IpAddress> getVmSecondaryAddress(long hfsVmId) {
+    public List<IpAddress> getVmActiveSecondaryAddresses(long hfsVmId) {
         return Sql.with(dataSource).exec(
                 "SELECT ip.*, family(ip.ip_address) FROM ip_address ip JOIN virtual_machine vm on ip.vm_id = vm.vm_id WHERE vm.hfs_vm_id=?" +
                         " AND ip.ip_address_type_id = ? and ip.valid_until > now_utc()",
+                Sql.listOf(IpAddressMapper::mapIpAddress), hfsVmId, IpAddress.IpAddressType.SECONDARY.getId());
+    }
+
+    @Override
+    public List<IpAddress> getAllVmSecondaryAddresses(long hfsVmId) {
+        return Sql.with(dataSource).exec(
+                "SELECT ip.*, family(ip.ip_address) FROM ip_address ip JOIN virtual_machine vm on ip.vm_id = vm.vm_id WHERE vm.hfs_vm_id=?" +
+                        " AND ip.ip_address_type_id = ?",
                 Sql.listOf(IpAddressMapper::mapIpAddress), hfsVmId, IpAddress.IpAddressType.SECONDARY.getId());
     }
 

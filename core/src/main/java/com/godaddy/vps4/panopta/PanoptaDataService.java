@@ -18,6 +18,7 @@ public interface PanoptaDataService {
     PanoptaDetail getPanoptaDetails(UUID vmId);
     void insertPanoptaServerFromKey(UUID vmId, String partnerCustomerKey, long serverId, String serverKey, String templateId);
     void setPanoptaServerDestroyed(UUID vmId);
+    void setPanoptaServerActive(UUID vmId);
     void deletePanoptaServer(UUID vmId);
     void setAllPanoptaServersOfCustomerDestroyed(String shopperId);
     boolean checkAndSetPanoptaCustomerDestroyed(String shopperId);

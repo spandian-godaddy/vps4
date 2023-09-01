@@ -26,6 +26,8 @@ public interface VirtualMachineService {
 
     void setVmRemoved(UUID vmId);
 
+    void setVmActive(UUID vmId);
+
     VirtualMachine provisionVirtualMachine(ProvisionVirtualMachineParameters vmProvisionParameters);
 
     VirtualMachine importVirtualMachine(InsertVirtualMachineParameters insertVirtualMachineParameters);
@@ -59,6 +61,8 @@ public interface VirtualMachineService {
     boolean hasControlPanel(UUID vmId);
 
     void setVmCanceled(UUID vmId);
+
+    void clearVmCanceled(UUID vmId);
 
     void reviveZombieVm(UUID vmId, UUID newOrionGuid);
 

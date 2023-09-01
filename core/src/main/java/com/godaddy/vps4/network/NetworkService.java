@@ -11,6 +11,8 @@ public interface NetworkService {
 
     void destroyIpAddress(long addressId);
 
+    void activateIpAddress(long addressId);
+
     IpAddress getIpAddress(long addressId);
 
     List<IpAddress> getVmIpAddresses(UUID vmId);
@@ -19,7 +21,9 @@ public interface NetworkService {
 
     IpAddress getVmPrimaryAddress(long hfsVmId);
 
-    List<IpAddress> getVmSecondaryAddress(long hfsVmId);
+    List<IpAddress> getVmActiveSecondaryAddresses(long hfsVmId);
+
+    List<IpAddress> getAllVmSecondaryAddresses(long hfsVmId);
 
     List<IpAddress> getActiveIpAddresses(long hfsVmId, int internetProtocolVersion);
 

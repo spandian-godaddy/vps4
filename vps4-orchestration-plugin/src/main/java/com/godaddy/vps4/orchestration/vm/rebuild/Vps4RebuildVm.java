@@ -135,7 +135,7 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Void> {
 
     private void getAndRemoveAdditionalIps(long oldHfsId) {
         List<IpAddress> additionalIps;
-        additionalIps = networkService.getVmSecondaryAddress(oldHfsId);
+        additionalIps = networkService.getVmActiveSecondaryAddresses(oldHfsId);
         if (additionalIps != null) {
             for (IpAddress ip : additionalIps) {
                 context.execute("RemoveIp-" + ip.addressId, Vps4RemoveIp.class, ip);

@@ -254,7 +254,7 @@ public class VmDetailsResourceTest {
         secondIp.ipAddressType = IpAddress.IpAddressType.SECONDARY;
         additionalIps.add(secondIp);
 
-        when(networkService.getVmSecondaryAddress(hfsVmId)).thenReturn(additionalIps);
+        when(networkService.getVmActiveSecondaryAddresses(hfsVmId)).thenReturn(additionalIps);
 
         VirtualMachineWithDetails withDetails = vmDetailsResource.getVirtualMachineWithDetails(vmId);
 

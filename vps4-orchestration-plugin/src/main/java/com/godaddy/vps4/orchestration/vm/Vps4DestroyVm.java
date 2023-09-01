@@ -135,7 +135,7 @@ public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4Dest
     }
     private void getAndRemoveAdditionalIps() {
         List<IpAddress> additionalIps;
-        additionalIps = networkService.getVmSecondaryAddress(vm.hfsVmId);
+        additionalIps = networkService.getVmActiveSecondaryAddresses(vm.hfsVmId);
         if (additionalIps != null) {
             for (IpAddress ip : additionalIps) {
                 context.execute("RemoveIp-" + ip.addressId, Vps4RemoveIp.class, ip);

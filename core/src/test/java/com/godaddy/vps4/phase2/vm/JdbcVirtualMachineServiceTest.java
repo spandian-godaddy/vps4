@@ -58,6 +58,7 @@ public class JdbcVirtualMachineServiceTest {
     Vps4UserService vps4UserService = new JdbcVps4UserService(dataSource);
 
     private UUID orionGuid = UUID.randomUUID();
+    private final String INFINITY = "+292278994-08-16T23:00:00Z";
     List<VirtualMachine> virtualMachines;
     List<UUID> vmCredits;
     Vps4User vps4User = vps4UserService.getOrCreateUserForShopper("TestUser", "1", UUID.randomUUID());
@@ -173,7 +174,7 @@ public class JdbcVirtualMachineServiceTest {
         VirtualMachine testVm = SqlTestData.insertTestVmWithIp(orionGuid, dataSource, vps4User.getId());
         SqlTestData.insertSecondaryIpToVm(testVm.vmId, dataSource);
         virtualMachines.add(testVm);
-        IpAddress additionalIp = networkService.getVmSecondaryAddress(testVm.hfsVmId).get(0);
+        IpAddress additionalIp = networkService.getVmActiveSecondaryAddresses(testVm.hfsVmId).get(0);
         VirtualMachine actualVm = virtualMachineService.getVirtualMachines(null, null, additionalIp.ipAddress , null, null, null, null).get(0);
         assertEquals(testVm.hfsVmId, actualVm.hfsVmId);
     }
@@ -282,6 +283,22 @@ public class JdbcVirtualMachineServiceTest {
         for (UUID vm : createdVms)
             assertTrue(vmGuids.contains(vm));
         assertEquals(virtualMachines.size()-1, vms.size());
+    }
+
+    @Test
+    public void testSetVmActive() {
+        List<UUID> createdVms = new ArrayList<>();
+        for (int i = 0; i < 3; i++) {
+            createdVms.add(UUID.randomUUID());
+            virtualMachines.add(SqlTestData.insertTestVm(createdVms.get(i), dataSource, vps4User.getId()));
+            vmCredits.add(UUID.randomUUID());
+        }
+
+        virtualMachineService.setVmRemoved(virtualMachines.get(0).vmId);
+        virtualMachineService.setVmRemoved(virtualMachines.get(1).vmId);
+        virtualMachineService.setVmActive(virtualMachines.get(0).vmId);
+        List<VirtualMachine> vms = virtualMachineService.getVirtualMachines(VirtualMachineType.ACTIVE, vps4User.getId(), null, null, null, null, null);
+        assertEquals(2, vms.size());
     }
 
     @Test
@@ -402,8 +419,20 @@ public class JdbcVirtualMachineServiceTest {
         virtualMachineService.reviveZombieVm(expectedVm.vmId, newOrionGuid);
         VirtualMachine actualVm = virtualMachineService.getVirtualMachine(expectedVm.vmId);
 
-        Assert.assertEquals("+292278994-08-16T23:00:00Z", actualVm.canceled.toString());
+        Assert.assertEquals(INFINITY, actualVm.canceled.toString());
         Assert.assertEquals(newOrionGuid, actualVm.orionGuid);
+    }
+
+    @Test
+    public void testReviveZombieVmWithoutNewCredit() {
+        VirtualMachine expectedVm = SqlTestData.insertTestVm(orionGuid, dataSource, vps4User.getId());
+        virtualMachineService.setVmCanceled(expectedVm.vmId);
+        virtualMachines.add(expectedVm);
+
+        virtualMachineService.clearVmCanceled(expectedVm.vmId);
+        VirtualMachine actualVm = virtualMachineService.getVirtualMachine(expectedVm.vmId);
+
+        Assert.assertEquals(INFINITY, actualVm.canceled.toString());
     }
 
     @Test

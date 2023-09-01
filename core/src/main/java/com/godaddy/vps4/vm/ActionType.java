@@ -70,7 +70,8 @@ public enum ActionType {
     ADD_ADDON_DOMAIN(61),
     MOVE_OUT(62),
     MOVE_IN(63),
-    INTERVENTION(64);
+    INTERVENTION(64),
+    MOVE_BACK(65);
 
     private final int typeId;
 

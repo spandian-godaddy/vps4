@@ -67,8 +67,8 @@ public class Vps4MoveOutTest {
         request.backupJobId = UUID.randomUUID();
         request.hfsVmId = 42L;
         request.addressIds = new ArrayList<>();
-        request.addressIds.add(123456l);
-        request.addressIds.add(552364l);
+        request.addressIds.add(123456L);
+        request.addressIds.add(552364L);
 
         vm = new VirtualMachine();
         vm.backupJobId = UUID.randomUUID();

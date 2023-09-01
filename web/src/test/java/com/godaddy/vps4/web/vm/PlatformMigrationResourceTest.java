@@ -1,7 +1,6 @@
 package com.godaddy.vps4.web.vm;
 
 import com.godaddy.hfs.config.Config;
-import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.move.VmMoveImageMap;
 import com.godaddy.vps4.move.VmMoveImageMapService;
 import com.godaddy.vps4.move.VmMoveSpecMap;
@@ -72,21 +71,20 @@ public class PlatformMigrationResourceTest {
     private final VmUserService vmUserService = mock(VmUserService.class);
     private final Vps4UserService vps4UserService = mock(Vps4UserService.class);
     private final Config config = mock(Config.class);
-    private final CreditService creditService = mock(CreditService.class);
     private final VmMoveImageMapService vmMoveImageMapService = mock(VmMoveImageMapService.class);
     private final VmMoveSpecMapService vmMoveSpecMapService = mock(VmMoveSpecMapService.class);
     private final ImageService imageService = mock(ImageService.class);
 
+    private final UUID vmId = UUID.randomUUID();
+    private final List<IpAddress> additionalIps = new ArrayList<>();
+    private final List<Action> actions = new ArrayList<>();
+    private final PanoptaDetail panoptaDetail = mock(PanoptaDetail.class);
+    private final VmUser vmUser = mock(VmUser.class);
+    private final Action moveOutAction = mock(Action.class);
     private GDUser gdUser;
-    private UUID vmId = UUID.randomUUID();
     private VirtualMachine vm;
     private Project project;
-    private List<IpAddress> additionalIps = new ArrayList<>();
-    private List<Action> actions = new ArrayList<>();
-    private PanoptaDetail panoptaDetail = mock(PanoptaDetail.class);
-    private VmUser vmUser = mock(VmUser.class);
     private Vps4User vps4User;
-    private Action moveOutAction = mock(Action.class);
     private MoveOutInfo moveOutInfo;
     private MoveInInfo moveInInfo;
     private MoveInRequest moveInRequest;
@@ -106,7 +104,6 @@ public class PlatformMigrationResourceTest {
                     bind(VmUserService.class).toInstance(vmUserService);
                     bind(Vps4UserService.class).toInstance(vps4UserService);
                     bind(Config.class).toInstance(config);
-                    bind(CreditService.class).toInstance(creditService);
                     bind(VmMoveImageMapService.class).toInstance(vmMoveImageMapService);
                     bind(VmMoveSpecMapService.class).toInstance(vmMoveSpecMapService);
                     bind(ImageService.class).toInstance(imageService);
@@ -152,7 +149,7 @@ public class PlatformMigrationResourceTest {
         moveInInfo.sgid = "testMoveIn";
         moveInInfo.hfsVmId = 132;
 
-        moveOutAction.commandId = UUID.randomUUID();;
+        moveOutAction.commandId = UUID.randomUUID();
 
         moveInRequest = new MoveInRequest();
         moveInRequest.moveOutInfo = moveOutInfo;
@@ -162,7 +159,7 @@ public class PlatformMigrationResourceTest {
         when(commandService.executeCommand(anyObject())).thenReturn(new CommandState());
         when(virtualMachineService.getVirtualMachine(vmId)).thenReturn(vm);
         when(projectService.getProject(vm.projectId)).thenReturn(project);
-        when(networkService.getVmSecondaryAddress(vm.hfsVmId)).thenReturn(additionalIps);
+        when(networkService.getVmActiveSecondaryAddresses(vm.hfsVmId)).thenReturn(additionalIps);
         when(actionResource.getActionList(null, null, null, null, null,
                 null, Long.MAX_VALUE, 0)).thenReturn(actions);
         when(panoptaDataService.getPanoptaDetails(vmId)).thenReturn(panoptaDetail);
@@ -219,15 +216,10 @@ public class PlatformMigrationResourceTest {
         getPlatformMigrationResource().moveOut(vmId);
 
         verify(virtualMachineService, atLeastOnce()).getVirtualMachine(vmId);
-        verify(networkService, atLeastOnce()).getVmSecondaryAddress(vm.hfsVmId);
+        verify(networkService, atLeastOnce()).getVmActiveSecondaryAddresses(vm.hfsVmId);
         verify(panoptaDataService, atLeastOnce()).getPanoptaDetails(vmId);
         verify(vmUserService, atLeastOnce()).getPrimaryCustomer(vmId);
         verify(vps4UserService, atLeastOnce()).getUser(gdUser.getShopperId());
-    }
-
-    @Test
-    public void moveOutCallsInterventionEndpoint() {
-        // TODO: Implement
     }
 
     @Test
@@ -357,7 +349,8 @@ public class PlatformMigrationResourceTest {
     }
 
     @Test
-    public void moveInEndsIntervention() {
-        // TODO: Implement
+    public void moveBackCreatesMoveBackCommand() {
+        getPlatformMigrationResource().moveBack(vmId);
+        verify(actionService, times(1)).createAction(eq(vmId), eq(ActionType.MOVE_BACK), anyString(), anyString());
     }
 }

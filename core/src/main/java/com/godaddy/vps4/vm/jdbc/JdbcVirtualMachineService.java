@@ -187,9 +187,18 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
         Sql.with(dataSource).exec("UPDATE virtual_machine vm SET valid_until=now_utc() WHERE vm_id=?", null, vmId);
     }
 
+    public void setVmActive(UUID vmId) {
+        Sql.with(dataSource).exec("UPDATE virtual_machine vm SET valid_until = 'infinity' WHERE vm_id=?", null, vmId);
+    }
+
     @Override
     public void setVmCanceled(UUID vmId) {
         Sql.with(dataSource).exec("UPDATE virtual_machine vm SET canceled=now_utc() WHERE vm_id=?", null, vmId);
+    }
+
+    @Override
+    public void clearVmCanceled(UUID vmId) {
+        Sql.with(dataSource).exec("UPDATE virtual_machine vm SET canceled = 'infinity' WHERE vm_id=?", null, vmId);
     }
 
     @Override
