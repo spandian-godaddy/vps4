@@ -3,6 +3,7 @@ package com.godaddy.vps4.orchestration.vm;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.panopta.PausePanoptaMonitoring;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4RemoveSupportUser;
+import com.godaddy.vps4.panopta.jdbc.JdbcPanoptaDataService;
 import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VirtualMachine;
@@ -39,6 +40,7 @@ public class Vps4MoveOutTest {
     private VmUserService vmUserService;
     private SchedulerWebService schedulerWebService;
     private NetworkService networkService;
+    private JdbcPanoptaDataService panoptaDataService;
     private Vps4MoveOut command;
 
     private Vps4MoveOut.Request request;
@@ -57,7 +59,8 @@ public class Vps4MoveOutTest {
         vmUserService = mock(VmUserService.class);
         schedulerWebService = mock(SchedulerWebService.class);
         networkService = mock(NetworkService.class);
-        command = new Vps4MoveOut(actionService, virtualMachineService, vmUserService, schedulerWebService, networkService);
+        panoptaDataService = mock(JdbcPanoptaDataService.class);
+        command = new Vps4MoveOut(actionService, virtualMachineService, vmUserService, schedulerWebService, networkService, panoptaDataService);
 
         request = new Vps4MoveOut.Request();
         request.vmId = UUID.randomUUID();

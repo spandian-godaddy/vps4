@@ -19,10 +19,12 @@ public class JdbcVmMoveImageMapService implements VmMoveImageMapService {
 
     @Override
     public VmMoveImageMap getVmMoveImageMap(long originalImageId, ServerType.Platform toPlatform) {
-        return Sql.with(dataSource).exec("SELECT id, from_image_id, to_image_id from vm_move_image_map m " +
+        VmMoveImageMap vmMoveImageMap = Sql.with(dataSource).exec("SELECT id, from_image_id, to_image_id from vm_move_image_map m " +
                 "join image i on m.to_image_id = i.image_id " +
                 "where m.from_image_id = ? and i.server_type_id = ?",
                 Sql.nextOrNull(this::mapGetVmMoveImageMap), originalImageId, toPlatform.getplatformId());
+        if (vmMoveImageMap == null) throw new IllegalArgumentException("A mapping does not exist for this image: " + originalImageId);
+        return vmMoveImageMap;
     }
 
     private VmMoveImageMap mapGetVmMoveImageMap(ResultSet resultSet) throws SQLException {

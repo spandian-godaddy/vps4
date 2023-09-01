@@ -80,8 +80,8 @@ public class PanoptaDataServiceTest {
 
     @After
     public void tearDown() {
-        Sql.with(dataSource).exec("DELETE FROM panopta_additional_fqdns WHERE server_id = ?", null, fakeServerId);
-        Sql.with(dataSource).exec("DELETE FROM panopta_additional_fqdns WHERE server_id = ?", null, fakeServerId2);
+        Sql.with(dataSource).exec("DELETE FROM panopta_additional_fqdns paf USING panopta_server ps WHERE ps.server_id = ? AND ps.id = paf.id", null, fakeServerId);
+        Sql.with(dataSource).exec("DELETE FROM panopta_additional_fqdns paf USING panopta_server ps WHERE ps.server_id = ? AND ps.id = paf.id", null, fakeServerId2);
         Sql.with(dataSource).exec("DELETE FROM panopta_server WHERE vm_id = ?", null, vm.vmId);
         Sql.with(dataSource).exec("DELETE FROM panopta_server WHERE vm_id = ?", null, vm2.vmId);
         Sql.with(dataSource).exec("DELETE FROM panopta_customer WHERE partner_customer_key = ?", null, fakePartnerCustomerKey);
@@ -107,10 +107,22 @@ public class PanoptaDataServiceTest {
     public void updatePanoptaCustomerIfExists() {
         panoptaDataService.createOrUpdatePanoptaCustomer(fakeShopperId, fakeCustomerKey);
 
-        panoptaDataService.createOrUpdatePanoptaCustomer(fakeShopperId, fakeCustomerKey);
         PanoptaCustomerDetails panoptaCustomerDetails = panoptaDataService.getPanoptaCustomerDetails(fakeShopperId);
         assertNotNull(panoptaCustomerDetails);
         assertEquals(fakePartnerCustomerKey, panoptaCustomerDetails.getPartnerCustomerKey());
+        assertEquals(fakeCustomerKey, panoptaCustomerDetails.getCustomerKey());
+        assertNotNull(panoptaCustomerDetails.getCreated());
+        assertFalse(panoptaCustomerDetails.getDestroyed().isBefore(Instant.now()));
+    }
+
+    @Test
+    public void createOrUpdatePanoptaCustomerFromKeyDoesNotAddExtraPrefix() {
+        panoptaDataService.createOrUpdatePanoptaCustomerFromKey(fakePartnerCustomerKey, fakeCustomerKey);
+
+        PanoptaCustomerDetails panoptaCustomerDetails = panoptaDataService.getPanoptaCustomerDetails(fakeShopperId);
+        assertNotNull(panoptaCustomerDetails);
+        assertEquals(fakePartnerCustomerKey, panoptaCustomerDetails.getPartnerCustomerKey());
+        assertEquals(fakePartnerCustomerKey.split("gdtest_").length - 1, 1);
         assertEquals(fakeCustomerKey, panoptaCustomerDetails.getCustomerKey());
         assertNotNull(panoptaCustomerDetails.getCreated());
         assertFalse(panoptaCustomerDetails.getDestroyed().isBefore(Instant.now()));
@@ -129,6 +141,17 @@ public class PanoptaDataServiceTest {
         assertNotNull(panoptaCustomerDetails);
         assertEquals(fakePartnerCustomerKey, panoptaCustomerDetails.getPartnerCustomerKey());
         assertEquals(fakeCustomerKey, panoptaCustomerDetails.getCustomerKey());
+    }
+
+    @Test
+    public void deletePanoptaServer() {
+        panoptaDataService.createOrUpdatePanoptaCustomer(fakeShopperId, fakeCustomerKey);
+        panoptaDataService.createPanoptaServer(vm.vmId, fakeShopperId, fakeTemplateId, panoptaServer);
+
+        panoptaDataService.deletePanoptaServer(vm.vmId);
+
+        PanoptaServerDetails panoptaServerDetails = panoptaDataService.getPanoptaServerDetails(vm.vmId);
+        assertNull(panoptaServerDetails);
     }
 
     @Test

@@ -31,6 +31,11 @@ public class JdbcPanoptaDataService implements PanoptaDataService {
     @Override
     public void createOrUpdatePanoptaCustomer(String shopperId, String customerKey) {
         String partnerCustomerKey = getPartnerCustomerKey(shopperId);
+        createOrUpdatePanoptaCustomerFromKey(partnerCustomerKey, customerKey);
+    }
+
+    @Override
+    public void createOrUpdatePanoptaCustomerFromKey(String partnerCustomerKey, String customerKey) {
         Sql.with(dataSource)
            .exec("INSERT INTO panopta_customer (partner_customer_key, customer_key) values (?,?) " +
                          "ON CONFLICT (partner_customer_key) DO UPDATE SET customer_key = ?, created = now_utc(), " +
@@ -52,17 +57,23 @@ public class JdbcPanoptaDataService implements PanoptaDataService {
     }
 
     @Override
-    public void insertPanoptaServer(UUID vmId, String shopperId, long serverId, String serverKey, String templateId) {
+    public void insertPanoptaServerFromKey(UUID vmId, String partnerCustomerKey, long serverId, String serverKey, String templateId) {
         Sql.with(dataSource)
                 .exec("INSERT INTO panopta_server (partner_customer_key, vm_id, server_id, server_key, template_id) " +
                                 "values (?,?,?,?,?)",
-                        null, getPartnerCustomerKey(shopperId), vmId, serverId, serverKey, templateId);
+                        null, partnerCustomerKey, vmId, serverId, serverKey, templateId);
     }
 
     @Override
     public void setPanoptaServerDestroyed(UUID vmId) {
         Sql.with(dataSource)
-           .exec("UPDATE panopta_server SET destroyed = now_utc() WHERE vm_id = ? ", null, vmId);
+           .exec("UPDATE panopta_server SET destroyed = now_utc() WHERE vm_id = ?", null, vmId);
+    }
+
+    @Override
+    public void deletePanoptaServer(UUID vmId) {
+        Sql.with(dataSource)
+           .exec("DELETE FROM panopta_server WHERE vm_id = ?", null, vmId);
     }
 
     @Override
@@ -121,7 +132,7 @@ public class JdbcPanoptaDataService implements PanoptaDataService {
         return Sql.with(dataSource).exec(
                 "SELECT partner_customer_key, vm_Id, server_id, server_key, created, destroyed " +
                         " FROM panopta_server " +
-                        " WHERE vm_id = ?  and destroyed = 'infinity' ",
+                        " WHERE vm_id = ? and destroyed = 'infinity' ",
                 Sql.nextOrNull(this::mapPanoptaServerDetails), vmId);
     }
 
@@ -149,7 +160,8 @@ public class JdbcPanoptaDataService implements PanoptaDataService {
 
     @Override
     public UUID getVmId(String serverKey) {
-        return Sql.with(dataSource).exec("SELECT vm_id FROM panopta_server WHERE server_key = ?;",
+        return Sql.with(dataSource).exec("SELECT vm_id FROM panopta_server WHERE server_key = ? " +
+                        "AND destroyed = 'infinity';",
                 Sql.nextOrNull(rs -> UUID.fromString(rs.getString("vm_id"))), serverKey);
     }
 
@@ -157,27 +169,32 @@ public class JdbcPanoptaDataService implements PanoptaDataService {
     public List<String> getPanoptaActiveAdditionalFqdns(UUID vmId) {
         return Sql.with(dataSource).exec(
                 "SELECT paf.fqdn " +
-                        " FROM panopta_additional_fqdns paf " +
-                        " JOIN panopta_server ps USING (server_id) " +
-                        " WHERE ps.vm_id = ?  AND paf.valid_until = 'infinity' ",
+                        "FROM panopta_additional_fqdns paf " +
+                        "JOIN panopta_server ps USING (id) " +
+                        "WHERE ps.vm_id = ? AND ps.destroyed = 'infinity' " +
+                        "AND paf.valid_until = 'infinity';",
                 Sql.listOf(rs -> rs.getString("fqdn")), vmId);
     }
 
     @Override
     public void addPanoptaAdditionalFqdn(String fqdn, long panoptaServerId) {
         Sql.with(dataSource)
-                .exec("INSERT INTO panopta_additional_fqdns (server_id, fqdn) " +
-                                "values (?,?) ",
-                        null, panoptaServerId,
-                        fqdn);
+                .exec("INSERT INTO panopta_additional_fqdns (id, fqdn) " +
+                                "SELECT id, ? " +
+                                "FROM panopta_server ps " +
+                                "WHERE ps.server_id = ? AND ps.destroyed = 'infinity';",
+                        null, fqdn,
+                        panoptaServerId);
     }
 
     @Override
     public boolean activeAdditionalFqdnExistsForServer(String fqdn, long panoptaServerId) {
         return Sql.with(dataSource).exec(
-            "SELECT Count(*)"
-                    + " FROM panopta_additional_fqdns"
-                    + " WHERE server_id=? AND fqdn=? AND valid_until = 'infinity'", this::mapFqdnExists, panoptaServerId, fqdn);
+            "SELECT Count(*) " +
+                    "FROM panopta_additional_fqdns paf " +
+                    "JOIN panopta_server ps USING (id) " +
+                    "WHERE ps.server_id = ? AND ps.destroyed = 'infinity' " +
+                    "AND paf.fqdn = ? AND paf.valid_until = 'infinity';", this::mapFqdnExists, panoptaServerId, fqdn);
     }
 
     private boolean mapFqdnExists(ResultSet rs) throws SQLException {
@@ -187,8 +204,11 @@ public class JdbcPanoptaDataService implements PanoptaDataService {
     @Override
     public void deletePanoptaAdditionalFqdn(String fqdn, long panoptaServerId) {
         Sql.with(dataSource)
-                .exec("UPDATE panopta_additional_fqdns SET valid_until = now_utc()"
-                                + " WHERE server_id=? AND fqdn=? AND valid_until = 'infinity'",
+                .exec("UPDATE panopta_additional_fqdns paf " +
+                                "SET valid_until = now_utc() " +
+                                "FROM panopta_server ps " +
+                                "WHERE ps.server_id = ? AND ps.destroyed = 'infinity' " +
+                                "AND paf.fqdn = ? AND paf.valid_until = 'infinity';",
                         null, panoptaServerId,
                         fqdn);
     }
@@ -196,11 +216,11 @@ public class JdbcPanoptaDataService implements PanoptaDataService {
     @Override
     public void deleteVirtualMachineAdditionalFqdns(UUID vmId) {
         Sql.with(dataSource)
-                .exec("UPDATE panopta_additional_fqdns set valid_until = now_utc()" +
-                                " WHERE additional_fqdn_id in" +
-                                " (select paf.additional_fqdn_id from panopta_additional_fqdns paf" +
-                                " join panopta_server ps on paf.server_id = ps.server_id" +
-                                " where ps.vm_id=?);",
+                .exec("UPDATE panopta_additional_fqdns SET valid_until = now_utc() " +
+                                "WHERE additional_fqdn_id in " +
+                                "(SELECT paf.additional_fqdn_id FROM panopta_additional_fqdns paf " +
+                                "JOIN panopta_server ps ON paf.id = ps.id " +
+                                "WHERE ps.vm_id = ? AND ps.destroyed = 'infinity');",
                         null, vmId);
     }
 
@@ -208,9 +228,10 @@ public class JdbcPanoptaDataService implements PanoptaDataService {
     public Map<String, Instant> getPanoptaAdditionalFqdnWithValidOn(UUID vmId) {
         return Sql.with(dataSource).exec(
                 "SELECT paf.fqdn, paf.valid_on " +
-                        " FROM panopta_additional_fqdns paf " +
-                        " JOIN panopta_server ps USING (server_id) " +
-                        " WHERE ps.vm_id = ?  AND paf.valid_until = 'infinity' ",
+                        "FROM panopta_additional_fqdns paf " +
+                        "JOIN panopta_server ps USING (id) " +
+                        "WHERE ps.vm_id = ? AND ps.destroyed = 'infinity' " +
+                        "AND paf.valid_until = 'infinity';",
                 Sql.mapOf(rs -> (rs.getTimestamp("valid_on", TimestampUtils.utcCalendar).toInstant()),
                           rs -> rs.getString("fqdn").toLowerCase()), vmId);
     }

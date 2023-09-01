@@ -4,7 +4,6 @@ import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.move.jdbc.JdbcVmMoveImageMapService;
 import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.ImageService;
-import com.godaddy.vps4.vm.ServerType;
 import com.godaddy.vps4.vm.jdbc.JdbcImageService;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -14,6 +13,7 @@ import org.junit.Test;
 import javax.sql.DataSource;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 public class VmMoveImageMapServiceTest {
 
@@ -35,5 +35,12 @@ public class VmMoveImageMapServiceTest {
         Image ohImage = imageService.getImageByHfsName("hfs-centos7");
         VmMoveImageMap map = vmMoveImageMapService.getVmMoveImageMap(osImage.imageId, ohImage.serverType.platform);
         assertEquals(ohImage.imageId, map.toImageId);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetMapThrowsExceptionIfNull() {
+        Image ohImage = imageService.getImageByHfsName("hfs-centos7");
+        vmMoveImageMapService.getVmMoveImageMap(ohImage.imageId, ohImage.serverType.platform);
+        fail("Expected exception to be thrown.");
     }
 }

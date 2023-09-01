@@ -19,10 +19,12 @@ public class JdbcVmMoveSpecMapService implements VmMoveSpecMapService {
 
     @Override
     public VmMoveSpecMap getVmMoveSpecMap(int originalSpecId, ServerType.Platform toPlatform) {
-        return Sql.with(dataSource).exec("SELECT id, from_spec_id, to_spec_id from vm_move_spec_map m " +
+        VmMoveSpecMap vmMoveSpecMap = Sql.with(dataSource).exec("SELECT id, from_spec_id, to_spec_id from vm_move_spec_map m " +
                 "join virtual_machine_spec s on m.to_spec_id = s.spec_id " +
                 "where m.from_spec_id = ? and s.server_type_id = ?",
                 Sql.nextOrNull(this::mapGetVmMoveSpecMap), originalSpecId, toPlatform.getplatformId());
+        if (vmMoveSpecMap == null) throw new IllegalArgumentException("A mapping does not exist for this spec: " + originalSpecId);
+        return vmMoveSpecMap;
     }
 
     private VmMoveSpecMap mapGetVmMoveSpecMap(ResultSet resultSet) throws SQLException {

@@ -25,16 +25,16 @@ import com.godaddy.vps4.vm.ServerSpec;
 import com.godaddy.vps4.vm.ServerType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
-import com.godaddy.vps4.vm.VmAction;
 import com.godaddy.vps4.vm.VmUser;
 import com.godaddy.vps4.vm.VmUserService;
+import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.action.ActionResource;
 import com.godaddy.vps4.web.security.GDUser;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Provides;
-import gdg.hfs.orchestration.CommandGroupSpec;
+
 import gdg.hfs.orchestration.CommandService;
 import gdg.hfs.orchestration.CommandState;
 import org.junit.Before;
@@ -49,6 +49,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyObject;
@@ -131,7 +132,11 @@ public class PlatformMigrationResourceTest {
         vm.orionGuid = UUID.randomUUID();
         vm.name = "mock-vm";
         vm.spec = mock(ServerSpec.class);
+        vm.spec.serverType = mock(ServerType.class);
+        vm.spec.serverType.platform = ServerType.Platform.OPENSTACK;
         vm.image = mock(Image.class);
+        vm.image.serverType = mock(ServerType.class);
+        vm.image.serverType.platform = ServerType.Platform.OPENSTACK;
         vm.hostname = "fake-hostname";
         vm.projectId = 12345L;
         vm.primaryIpAddress = mock(IpAddress.class);
@@ -143,7 +148,7 @@ public class PlatformMigrationResourceTest {
 
         getMoveOutInfo();
         moveInInfo = new MoveInInfo();
-        moveInInfo.platform = ServerType.Platform.OPTIMIZED_HOSTING;
+        moveInInfo.platform = ServerType.Platform.OPENSTACK;
         moveInInfo.sgid = "testMoveIn";
         moveInInfo.hfsVmId = 132;
 
@@ -174,7 +179,7 @@ public class PlatformMigrationResourceTest {
         vmMoveImageMap.fromImageId = vm.image.imageId;
         vmMoveImageMap.toImageId = vm.image.imageId + 10;
         vmMoveImageMap.id = 1;
-        when(vmMoveImageMapService.getVmMoveImageMap(vm.image.imageId, ServerType.Platform.OPTIMIZED_HOSTING))
+        when(vmMoveImageMapService.getVmMoveImageMap(vm.image.imageId, ServerType.Platform.OPENSTACK))
                 .thenReturn(vmMoveImageMap);
         when(imageService.getImageByHfsName(vm.image.hfsName)).thenReturn(vm.image);
         when(imageService.getImage(vmMoveImageMap.toImageId)).thenReturn(vm.image);
@@ -183,7 +188,7 @@ public class PlatformMigrationResourceTest {
         vmMoveSpecMap.fromSpecId = vm.spec.specId;
         vmMoveSpecMap.toSpecId = vm.spec.specId + 5;
         vmMoveSpecMap.id = 1;
-        when(vmMoveSpecMapService.getVmMoveSpecMap(vm.spec.specId, ServerType.Platform.OPTIMIZED_HOSTING))
+        when(vmMoveSpecMapService.getVmMoveSpecMap(vm.spec.specId, ServerType.Platform.OPENSTACK))
                 .thenReturn(vmMoveSpecMap);
         when(virtualMachineService.getSpec(vm.spec.specName)).thenReturn(vm.spec);
         when(virtualMachineService.getSpec(vmMoveSpecMap.toSpecId)).thenReturn(vm.spec);
@@ -311,11 +316,11 @@ public class PlatformMigrationResourceTest {
         getPlatformMigrationResource().moveIn(moveInRequest);
 
         verify(panoptaDataService, times(1))
-                .createOrUpdatePanoptaCustomer(
+                .createOrUpdatePanoptaCustomerFromKey(
                         moveOutInfo.panoptaDetail.getPartnerCustomerKey(),
                         moveOutInfo.panoptaDetail.getCustomerKey());
         verify(panoptaDataService, times(1))
-                .insertPanoptaServer(
+                .insertPanoptaServerFromKey(
                         vm.vmId,
                         moveOutInfo.panoptaDetail.getPartnerCustomerKey(),
                         moveOutInfo.panoptaDetail.getServerId(),
@@ -329,6 +334,26 @@ public class PlatformMigrationResourceTest {
 
         verify(actionService, times(1))
                 .createAction(eq(vmId), eq(ActionType.MOVE_IN), anyString(), anyString());
+    }
+
+    @Test(expected = Vps4Exception.class)
+    public void moveInThrowsExceptionIfUnmappedSpec() {
+        when(vmMoveSpecMapService.getVmMoveSpecMap(vm.spec.specId, ServerType.Platform.OPENSTACK))
+                .thenThrow(new IllegalArgumentException("A mapping does not exist for this spec: 0"));
+        getPlatformMigrationResource().moveIn(moveInRequest);
+
+        fail("Expected exception to be thrown.");
+    }
+
+    @Test(expected = Vps4Exception.class)
+    public void moveInThrowsExceptionIfUnmappedImage() {
+        when(vmMoveImageMapService.getVmMoveImageMap(vm.image.imageId, ServerType.Platform.OPENSTACK))
+                .thenThrow(new IllegalArgumentException("A mapping does not exist for this image: 0"));
+        when(imageService.getImageByHfsName(vm.image.hfsName)).thenReturn(vm.image);
+
+        getPlatformMigrationResource().moveIn(moveInRequest);
+
+        fail("Expected exception to be thrown.");
     }
 
     @Test

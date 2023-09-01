@@ -103,8 +103,6 @@ public class PlatformMigrationResource {
     @RequiresRole(roles = { GDUser.Role.ADMIN })
     @Path("/{vmId}/move/out")
     public MoveOutInfo moveOut(@PathParam("vmId") UUID vmId) {
-        // TODO: Call intervention endpoint
-
         VirtualMachine vm = virtualMachineService.getVirtualMachine(vmId);
         MoveOutInfo info = getInfo(vm);
 
@@ -129,8 +127,8 @@ public class PlatformMigrationResource {
         MoveOutInfo info = new MoveOutInfo();
         info.entitlementId = vm.orionGuid;
         info.serverName = vm.name;
-        info.specName = vm.spec.name;
-        info.hfsImageName = vm.image.imageName;
+        info.specName = vm.spec.specName;
+        info.hfsImageName = vm.image.hfsName;
         info.hostname = vm.hostname;
         info.primaryIpAddress = vm.primaryIpAddress;
         info.additionalIps = networkService.getVmSecondaryAddress(vm.hfsVmId);
@@ -158,16 +156,11 @@ public class PlatformMigrationResource {
 
         VirtualMachine vm = insertDatabaseRecords(moveInRequest.moveInInfo, moveInRequest.moveOutInfo, dataCenterId);
 
-        VmAction action = runMoveInCommand(moveInRequest.moveOutInfo, vm);
-
-        //TODO: End the intervention so the customer has access to the dashboard.
-
-        return action;
+        return runMoveInCommand(moveInRequest.moveOutInfo, vm);
     }
 
     private VirtualMachine insertDatabaseRecords(MoveInInfo moveInInfo, MoveOutInfo moveOutInfo, int dataCenterId) {
         VirtualMachine vm = null;
-        List<IpAddress> addresses = null;
         try {
             Vps4User vps4User = vps4UserService.getOrCreateUserForShopper(
                     moveOutInfo.vps4User.getShopperId(),
@@ -181,25 +174,15 @@ public class PlatformMigrationResource {
 
             vm = insertVirtualMachine(moveInInfo, moveOutInfo, dataCenterId, project);
 
-            addresses = insertIpAddresses(moveOutInfo, vm);
-
+            insertIpAddresses(moveOutInfo, vm);
             vmUserService.createUser(moveOutInfo.vmUser.username, vm.vmId);
-
             insertPanoptaRecords(moveOutInfo, vm);
         } catch (Exception e) {
-            MarkNewRecordsDeleted(vm, addresses);
-            throw new Vps4Exception("MOVE_IN_FAILED", "Failed to move in VM for entitlement: " + moveOutInfo.entitlementId, e);
+            markNewRecordsDeleted(vm);
+            String exceptionMessage = "Failed to move in VM for entitlement: " + moveOutInfo.entitlementId + " ";
+            throw new Vps4Exception("MOVE_IN_FAILED", exceptionMessage + e.getMessage());
         }
         return vm;
-    }
-
-    private void MarkNewRecordsDeleted(VirtualMachine vm, List<IpAddress> addresses) {
-        virtualMachineService.setVmCanceled(vm.vmId);
-        virtualMachineService.setVmRemoved(vm.vmId);
-        for (IpAddress address : addresses) {
-            networkService.destroyIpAddress(address.addressId);
-        }
-        panoptaDataService.setPanoptaServerDestroyed(vm.vmId);
     }
 
     private VirtualMachine insertVirtualMachine(MoveInInfo moveInInfo, MoveOutInfo moveOutInfo, int dataCenterId, Project project) {
@@ -207,6 +190,7 @@ public class PlatformMigrationResource {
         ServerSpec toSpec = virtualMachineService.getSpec(vmMoveSpecMapService.getVmMoveSpecMap(fromSpec.specId, moveInInfo.platform).toSpecId);
         Image fromImage = imageService.getImageByHfsName(moveOutInfo.hfsImageName);
         Image toImage = imageService.getImage(vmMoveImageMapService.getVmMoveImageMap(fromImage.imageId, moveInInfo.platform).toImageId);
+
         InsertVirtualMachineParameters parameters = new InsertVirtualMachineParameters(
                 moveInInfo.hfsVmId,
                 moveOutInfo.entitlementId,
@@ -219,14 +203,40 @@ public class PlatformMigrationResource {
         return virtualMachineService.insertVirtualMachine(parameters);
     }
 
+    private void insertIpAddresses(MoveOutInfo moveOutInfo, VirtualMachine virtualMachine) {
+        networkService.createIpAddress(0, virtualMachine.vmId, moveOutInfo.primaryIpAddress.ipAddress, IpAddress.IpAddressType.PRIMARY);
+        if (moveOutInfo.additionalIps != null && !moveOutInfo.additionalIps.isEmpty()) {
+            for (IpAddress ipAddress : moveOutInfo.additionalIps) {
+                networkService.createIpAddress(ipAddress.hfsAddressId, virtualMachine.vmId, ipAddress.ipAddress, IpAddress.IpAddressType.SECONDARY);
+            }
+        }
+    }
+
     private void insertPanoptaRecords(MoveOutInfo moveOutInfo, VirtualMachine vm) {
-        panoptaDataService.createOrUpdatePanoptaCustomer(moveOutInfo.panoptaDetail.getPartnerCustomerKey(), moveOutInfo.panoptaDetail.getCustomerKey());
-        panoptaDataService.insertPanoptaServer(
+        panoptaDataService.createOrUpdatePanoptaCustomerFromKey(moveOutInfo.panoptaDetail.getPartnerCustomerKey(), moveOutInfo.panoptaDetail.getCustomerKey());
+        panoptaDataService.insertPanoptaServerFromKey(
                 vm.vmId,
                 moveOutInfo.panoptaDetail.getPartnerCustomerKey(),
                 moveOutInfo.panoptaDetail.getServerId(),
                 moveOutInfo.panoptaDetail.getServerKey(),
                 moveOutInfo.panoptaDetail.getTemplateId());
+    }
+
+    private void markNewRecordsDeleted(VirtualMachine vm) {
+        if (vm != null) {
+            vm = virtualMachineService.getVirtualMachine(vm.vmId);
+            virtualMachineService.setVmCanceled(vm.vmId);
+            virtualMachineService.setVmRemoved(vm.vmId);
+            panoptaDataService.setPanoptaServerDestroyed(vm.vmId);
+
+            if (vm.primaryIpAddress != null) networkService.destroyIpAddress(vm.primaryIpAddress.addressId);
+            List<IpAddress> additionalIps = networkService.getVmSecondaryAddress(vm.hfsVmId);
+            if (additionalIps != null && !additionalIps.isEmpty()) {
+                for (IpAddress ipAddress : additionalIps) {
+                    networkService.destroyIpAddress(ipAddress.addressId);
+                }
+            }
+        }
     }
 
     private VmAction runMoveInCommand(MoveOutInfo moveOutInfo, VirtualMachine vm) {
@@ -242,16 +252,5 @@ public class PlatformMigrationResource {
                 moveInRequest,
                 "Vps4MoveIn",
                 gdUser);
-    }
-
-    private List<IpAddress> insertIpAddresses(MoveOutInfo moveOutInfo, VirtualMachine virtualMachine) {
-        List<IpAddress> addresses = new ArrayList<>();
-        addresses.add(networkService.createIpAddress(0, virtualMachine.vmId, moveOutInfo.primaryIpAddress.ipAddress, IpAddress.IpAddressType.PRIMARY));
-        if(moveOutInfo.additionalIps != null && !moveOutInfo.additionalIps.isEmpty()){
-            for (IpAddress ipAddress : moveOutInfo.additionalIps) {
-                addresses.add(networkService.createIpAddress(ipAddress.hfsAddressId, virtualMachine.vmId, ipAddress.ipAddress, IpAddress.IpAddressType.SECONDARY));
-            }
-        }
-        return addresses;
     }
 }

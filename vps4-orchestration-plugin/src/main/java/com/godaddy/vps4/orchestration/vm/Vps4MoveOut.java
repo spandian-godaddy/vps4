@@ -5,6 +5,7 @@ import com.godaddy.vps4.orchestration.ActionCommand;
 import com.godaddy.vps4.orchestration.Vps4ActionRequest;
 import com.godaddy.vps4.orchestration.panopta.PausePanoptaMonitoring;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4RemoveSupportUser;
+import com.godaddy.vps4.panopta.PanoptaDataService;
 import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VirtualMachineService;
@@ -33,6 +34,7 @@ public class Vps4MoveOut extends ActionCommand<Vps4MoveOut.Request, Void> {
     private final VmUserService vmUserService;
     private final SchedulerWebService schedulerWebService;
     private final NetworkService networkService;
+    private final PanoptaDataService panoptaDataService;
     private static final Logger logger = LoggerFactory.getLogger(Vps4MoveOut.class);
 
     @Inject
@@ -40,12 +42,14 @@ public class Vps4MoveOut extends ActionCommand<Vps4MoveOut.Request, Void> {
                        VirtualMachineService virtualMachineService,
                        VmUserService vmUserService,
                        SchedulerWebService schedulerWebService,
-                       NetworkService networkService) {
+                       NetworkService networkService,
+                       PanoptaDataService panoptaDataService) {
         super(actionService);
         this.virtualMachineService = virtualMachineService;
         this.vmUserService = vmUserService;
         this.schedulerWebService = schedulerWebService;
         this.networkService = networkService;
+        this.panoptaDataService = panoptaDataService;
     }
 
     public static class Request extends Vps4ActionRequest {
@@ -64,6 +68,7 @@ public class Vps4MoveOut extends ActionCommand<Vps4MoveOut.Request, Void> {
             pauseAutomaticBackups(request.backupJobId);
             setVmCanceledAndValidUntil(request.vmId);
             pausePanoptaMonitoring(request.vmId);
+            markPanoptaServerDestroyed(request.vmId);
             setIpsValidUntil(request.addressIds);
         } catch (Exception e) {
             String errorMessage = String.format("Move out failed for VM %s", request.vmId);
@@ -110,6 +115,13 @@ public class Vps4MoveOut extends ActionCommand<Vps4MoveOut.Request, Void> {
 
     private void pausePanoptaMonitoring(UUID vmId) {
         context.execute(PausePanoptaMonitoring.class, vmId);
+    }
+
+    private void markPanoptaServerDestroyed(UUID vmId) {
+        context.execute("MarkPanoptaServerDestroyed", ctx -> {
+            panoptaDataService.setPanoptaServerDestroyed(vmId);
+            return null;
+        }, Void.class);
     }
 
     private void setIpsValidUntil(List<Long> addressIds) {

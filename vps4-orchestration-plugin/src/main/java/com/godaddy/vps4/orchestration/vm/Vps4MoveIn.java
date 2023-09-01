@@ -23,7 +23,7 @@ import java.util.UUID;
 
 @CommandMetadata(
         name = "Vps4MoveIn",
-        requestType = Vps4MoveOut.Request.class,
+        requestType = Vps4MoveIn.Request.class,
         retryStrategy = CommandRetryStrategy.NEVER
 )
 
@@ -42,11 +42,10 @@ public class Vps4MoveIn extends ActionCommand<Vps4MoveIn.Request, Void> {
 
     @Override
     protected Void executeWithAction(CommandContext context, Request request) throws Exception {
-
         try {
             updateProdMeta(context, request);
             resumePanoptaMonitoring(context, request);
-            insertActionRecords(context, request.vmId, request.actions);
+            insertActionRecords(context, request.vm.vmId, request.actions);
         } catch (Exception e) {
             logger.error("Vps4MoveIn failed for vmId {}", request.vm.vmId);
             throw e;
