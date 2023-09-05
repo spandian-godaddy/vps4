@@ -140,6 +140,14 @@ public class VmActionsMonitorResource {
     }
 
     @GET
+    @Path("/pending/intervention")
+    @ApiOperation(value = "Find all VM id's that are pending intervention action for longer than m hours, default 48 hours",
+            notes = "Find all VM id's that are pending intervention action for longer than m hours, default 48 hours")
+    public List<VmActionData> getInterventionPendingVms(@QueryParam("thresholdInHours") @DefaultValue("48") long thresholdInHours) {
+        return filterOverdueInProgressActionsByType(thresholdInHours * 60, ActionType.INTERVENTION);
+    }
+
+    @GET
     @Path("/pending/libvirtStuckVms")
     @ApiOperation(value = "Find all VM IDs that have power actions pending for longer than m minutes, default 15, or that have failed " +
                           "power actions in the last 24 hours and task state is image_snapshot, or power_state is Paused",

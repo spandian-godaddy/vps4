@@ -126,7 +126,14 @@ public class VmActionsMonitorResourceTest {
     public void filtersVmsForPendingRestartEndpoint() {
         vmActionsMonitorResource.getRestartPendingVms(pendingThreshold);
         validateActionFilters(Arrays.asList(ActionType.RESTART_VM, ActionType.POWER_CYCLE),
-                Arrays.asList(ActionStatus.IN_PROGRESS));
+                              Arrays.asList(ActionStatus.IN_PROGRESS));
+    }
+
+    @Test
+    public void filtersVmsForPendingInterventionEndpoint() {
+        vmActionsMonitorResource.getInterventionPendingVms(pendingThreshold);
+        validateActionFilters(Collections.singletonList(ActionType.INTERVENTION),
+                              Collections.singletonList(ActionStatus.IN_PROGRESS));
     }
 
     @Test
