@@ -72,6 +72,7 @@ public class Vps4AccountMessageHandlerTest {
     private VirtualMachineCredit vmCredit;
 
     private final String DEFAULT_TIER = "10";
+    private final String DOWNGRADE_TIER = "5";
     private final String UPGRADED_TIER = "20";
     private final String DED4_TIER = "60";
     private final String DEFAULT_UNMANAGED = "0";
@@ -556,6 +557,15 @@ public class Vps4AccountMessageHandlerTest {
         callHandleMessage(createTestKafkaMessage("updated"));
 
         verify(creditServiceMock, times(1)).updateProductMeta(orionGuid, ProductMetaField.PLAN_CHANGE_PENDING, "true");
+    }
+
+    @Test
+    public void testHandleMessageIgnoresUnsupportedDowngrades() throws MessageHandlerException {
+        planFeatures.put(PlanFeatures.TIER.toString(), DOWNGRADE_TIER);
+        mockVmCredit(AccountStatus.ACTIVE, vm.vmId);
+        callHandleMessage(createTestKafkaMessage("updated"));
+
+        verify(creditServiceMock, times(0)).updateProductMeta(orionGuid, ProductMetaField.PLAN_CHANGE_PENDING, "true");
     }
 
     @Test

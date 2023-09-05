@@ -216,7 +216,7 @@ public class Vps4AccountMessageHandler implements MessageHandler {
 
     private void processPlanChange(VirtualMachineCredit credit, VirtualMachine vm) {
         if (vm != null) {
-            if (credit.getTier() != vm.spec.tier) {
+            if (credit.getTier() > vm.spec.tier) {
                 setPlanChangePendingInProductMeta(credit);
             }
 
