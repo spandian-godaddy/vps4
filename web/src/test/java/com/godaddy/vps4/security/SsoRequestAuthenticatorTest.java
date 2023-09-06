@@ -119,6 +119,19 @@ public class SsoRequestAuthenticatorTest {
     }
 
     @Test
+    public void testDevVertigoRole() {
+        SsoToken token = mockJomaxToken(Collections.singletonList("Dev-Vertigo"));
+        when(tokenExtractor.extractToken(request)).thenReturn(token);
+
+        GDUser user = authenticator.authenticate(request);
+        Assert.assertEquals(null, user.getShopperId());
+        Assert.assertEquals(false, user.isShopper());
+        Assert.assertEquals(true, user.isAdmin());
+        Assert.assertEquals(true, user.isEmployee());
+        Assert.assertEquals(Arrays.asList(Role.ADMIN), user.roles());
+    }
+
+    @Test
     public void testHostingSupportLead() {
         SsoToken token = mockJomaxToken(Collections.singletonList("HS_techleads"));
         when(tokenExtractor.extractToken(request)).thenReturn(token);

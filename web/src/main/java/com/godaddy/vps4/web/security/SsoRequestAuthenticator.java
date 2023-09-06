@@ -36,6 +36,7 @@ public class SsoRequestAuthenticator implements RequestAuthenticator<GDUser> {
     private final String MEDIA_TEMPLE_CS = "Media Temple - CS";
     private final String MIGRATION_TOOL = "Migration-Engine-SG";
     private final String CSM = "CSM";
+    private final String DEV_VERTIGO = "Dev-Vertigo";
 
     private final SsoTokenExtractor tokenExtractor;
     private Config config;
@@ -117,7 +118,8 @@ public class SsoRequestAuthenticator implements RequestAuthenticator<GDUser> {
     private void setPrivilegeByGroups(GDUser gdUser, List<String> groups) {
         List<Role> userRoles = new ArrayList<>();
         if (groups.contains(VPS4_TEAM) ||
-              groups.contains(DEV_PTGS)) {
+            groups.contains(DEV_PTGS) ||
+            groups.contains(DEV_VERTIGO)) {
             gdUser.isAdmin = true;
             userRoles.add(Role.ADMIN);
         } if (groups.contains(C3_HOSTING_SUPPORT_LEAD) ||
