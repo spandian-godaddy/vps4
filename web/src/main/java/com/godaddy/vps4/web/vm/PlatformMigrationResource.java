@@ -32,6 +32,7 @@ import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.security.RequiresRole;
 import gdg.hfs.orchestration.CommandService;
 import io.swagger.annotations.Api;
+import io.swagger.annotations.ApiParam;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -39,6 +40,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -138,9 +140,13 @@ public class PlatformMigrationResource {
     @POST
     @RequiresRole(roles = { GDUser.Role.ADMIN })
     @Path("/{vmId}/move/back")
-    public VmAction moveBack(@PathParam("vmId") UUID vmId) {
+    public VmAction moveBack(@PathParam("vmId") UUID vmId,
+                             @ApiParam(required = true) @QueryParam("orionGuid") UUID orionGuid) {
+        int dcId = Integer.parseInt(config.get("imported.datacenter.defaultId"));
         Vps4MoveBack.Request moveBackRequest = new Vps4MoveBack.Request();
         moveBackRequest.vmId = vmId;
+        moveBackRequest.dcId = dcId;
+        moveBackRequest.orionGuid = orionGuid;
 
         return createActionAndExecute(actionService, commandService, vmId, ActionType.MOVE_BACK, moveBackRequest,
                 "Vps4MoveBack", gdUser);

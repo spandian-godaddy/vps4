@@ -63,7 +63,6 @@ public class Vps4MoveIn extends ActionCommand<Vps4MoveIn.Request, Void> {
             creditService.updateProductMeta(request.vm.orionGuid, newProdMeta);
             return null;
         }, Void.class);
-
     }
 
     private static void resumePanoptaMonitoring(CommandContext context, Request request) {

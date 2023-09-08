@@ -1,5 +1,7 @@
 package com.godaddy.vps4.orchestration.vm;
 
+import com.godaddy.vps4.credit.CreditService;
+import com.godaddy.vps4.credit.ECommCreditService;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.panopta.ResumePanoptaMonitoring;
@@ -18,10 +20,14 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -36,6 +42,7 @@ public class Vps4MoveBackTest {
     @Mock private SchedulerWebService schedulerWebService;
     @Mock private NetworkService networkService;
     @Mock private PanoptaDataService panoptaDataService;
+    @Mock private CreditService creditService;
     private Vps4MoveBack command;
 
     private Vps4MoveBack.Request request;
@@ -48,14 +55,20 @@ public class Vps4MoveBackTest {
     @Captor ArgumentCaptor<Function<CommandContext, Void>> markVmAsActiveCaptor;
     @Captor ArgumentCaptor<Function<CommandContext, Void>> markPanoptaServerActiveCaptor;
     @Captor ArgumentCaptor<Function<CommandContext, Void>> markIpActivateCaptor;
+    @Captor ArgumentCaptor<Function<CommandContext, Void>> updateProductMetaCaptor;
+    @Captor ArgumentCaptor<Map<ECommCreditService.ProductMetaField, String>> productMetaCaptor;
+
 
     @Before
     public void setup() {
         MockitoAnnotations.initMocks(this);
-        command = new Vps4MoveBack(actionService, virtualMachineService, schedulerWebService, networkService, panoptaDataService);
+        command = new Vps4MoveBack(actionService, virtualMachineService, schedulerWebService, networkService,
+                panoptaDataService, creditService);
 
         request = new Vps4MoveBack.Request();
         request.vmId = UUID.randomUUID();
+        request.orionGuid = UUID.randomUUID();
+        request.dcId = 1;
         backupJobId = UUID.randomUUID();
         addresses = new ArrayList<>();
         addresses.add(new IpAddress());
@@ -140,5 +153,22 @@ public class Vps4MoveBackTest {
                 eq(Void.class));
         markIpActivateCaptor.getValue().apply(context);
         verify(networkService, times(1)).activateIpAddress(addresses.get(1).addressId);
+    }
+
+    @Test
+    public void updatesProdMeta() {
+        Instant preExecutionInstant = Instant.now();
+
+        command.execute(context, request);
+
+        verify(context, times(1)).execute(eq("UpdateProdMeta"),
+                updateProductMetaCaptor.capture(), eq(Void.class));
+        updateProductMetaCaptor.getValue().apply(context);
+        verify(creditService, times(1)).updateProductMeta(eq(request.orionGuid), productMetaCaptor.capture());
+
+        Map<ECommCreditService.ProductMetaField, String> capturedProdMeta = productMetaCaptor.getValue();
+        assertEquals(capturedProdMeta.get(ECommCreditService.ProductMetaField.DATA_CENTER), String.valueOf(request.dcId));
+        assertEquals(capturedProdMeta.get(ECommCreditService.ProductMetaField.PRODUCT_ID), request.vmId.toString());
+        assertTrue(preExecutionInstant.isBefore(Instant.parse(capturedProdMeta.get(ECommCreditService.ProductMetaField.PROVISION_DATE))));
     }
 }

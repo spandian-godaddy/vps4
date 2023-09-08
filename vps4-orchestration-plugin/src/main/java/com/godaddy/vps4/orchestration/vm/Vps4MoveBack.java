@@ -1,5 +1,7 @@
 package com.godaddy.vps4.orchestration.vm;
 
+import com.godaddy.vps4.credit.CreditService;
+import com.godaddy.vps4.credit.ECommCreditService;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.ActionCommand;
@@ -17,8 +19,11 @@ import gdg.hfs.orchestration.CommandRetryStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.EnumMap;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -34,6 +39,8 @@ public class Vps4MoveBack extends ActionCommand<Vps4MoveBack.Request, Void> {
     private final SchedulerWebService schedulerWebService;
     private final NetworkService networkService;
     private final PanoptaDataService panoptaDataService;
+    private final CreditService creditService;
+
     private static final Logger logger = LoggerFactory.getLogger(Vps4MoveBack.class);
 
     @Inject
@@ -41,16 +48,20 @@ public class Vps4MoveBack extends ActionCommand<Vps4MoveBack.Request, Void> {
                         VirtualMachineService virtualMachineService,
                         SchedulerWebService schedulerWebService,
                         NetworkService networkService,
-                        PanoptaDataService panoptaDataService) {
+                        PanoptaDataService panoptaDataService,
+                        CreditService creditService) {
         super(actionService);
         this.virtualMachineService = virtualMachineService;
         this.schedulerWebService = schedulerWebService;
         this.networkService = networkService;
         this.panoptaDataService = panoptaDataService;
+        this.creditService = creditService;
     }
 
     public static class Request extends Vps4ActionRequest {
         public UUID vmId;
+        public UUID orionGuid;
+        public int dcId;
     }
 
     @Override
@@ -69,6 +80,7 @@ public class Vps4MoveBack extends ActionCommand<Vps4MoveBack.Request, Void> {
             resumeAutomaticBackups(vm.backupJobId);
             markPanoptaServerActive(request.vmId);
             resumePanoptaMonitoring(request.vmId);
+            updateProdMeta(request.dcId, request.vmId, request.orionGuid);
         } catch (Exception e) {
             String errorMessage = String.format("Move back failed for VM %s", request.vmId);
             logger.warn(errorMessage, e);
@@ -117,5 +129,16 @@ public class Vps4MoveBack extends ActionCommand<Vps4MoveBack.Request, Void> {
                 return null;
             }, Void.class);
         }
+    }
+
+    private void updateProdMeta(int dcId, UUID vmId, UUID orionGuid) {
+        Map<ECommCreditService.ProductMetaField, String> newProdMeta = new EnumMap<>(ECommCreditService.ProductMetaField.class);
+        newProdMeta.put(ECommCreditService.ProductMetaField.DATA_CENTER, String.valueOf(dcId));
+        newProdMeta.put(ECommCreditService.ProductMetaField.PROVISION_DATE, Instant.now().toString());
+        newProdMeta.put(ECommCreditService.ProductMetaField.PRODUCT_ID, vmId.toString());
+        context.execute("UpdateProdMeta", ctx -> {
+            creditService.updateProductMeta(orionGuid, newProdMeta);
+            return null;
+        }, Void.class);
     }
 }
