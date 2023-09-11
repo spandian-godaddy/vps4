@@ -198,8 +198,7 @@ public class PlatformMigrationResource {
             insertPanoptaRecords(moveOutInfo, vm);
         } catch (Exception e) {
             markNewRecordsDeleted(vm);
-            String exceptionMessage = "Failed to move in VM for entitlement: " + moveOutInfo.entitlementId + " ";
-            throw new Vps4Exception("MOVE_IN_FAILED", exceptionMessage + e.getMessage());
+            throw new Vps4Exception("MOVE_IN_FAILED", e.getMessage(), e);
         }
         return vm;
     }
