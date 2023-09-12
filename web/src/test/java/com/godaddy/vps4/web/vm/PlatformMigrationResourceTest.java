@@ -1,52 +1,5 @@
 package com.godaddy.vps4.web.vm;
 
-import com.godaddy.hfs.config.Config;
-import com.godaddy.vps4.move.VmMoveImageMap;
-import com.godaddy.vps4.move.VmMoveImageMapService;
-import com.godaddy.vps4.move.VmMoveSpecMap;
-import com.godaddy.vps4.move.VmMoveSpecMapService;
-import com.godaddy.vps4.network.IpAddress;
-import com.godaddy.vps4.network.NetworkService;
-import com.godaddy.vps4.panopta.PanoptaDataService;
-import com.godaddy.vps4.panopta.PanoptaDetail;
-import com.godaddy.vps4.project.Project;
-import com.godaddy.vps4.project.ProjectService;
-import com.godaddy.vps4.security.GDUserMock;
-import com.godaddy.vps4.security.Vps4User;
-import com.godaddy.vps4.security.Vps4UserService;
-import com.godaddy.vps4.vm.Action;
-import com.godaddy.vps4.vm.ActionService;
-import com.godaddy.vps4.vm.ActionType;
-import com.godaddy.vps4.vm.Image;
-import com.godaddy.vps4.vm.ImageService;
-import com.godaddy.vps4.vm.InsertVirtualMachineParameters;
-import com.godaddy.vps4.vm.ServerSpec;
-import com.godaddy.vps4.vm.ServerType;
-import com.godaddy.vps4.vm.VirtualMachine;
-import com.godaddy.vps4.vm.VirtualMachineService;
-import com.godaddy.vps4.vm.VmUser;
-import com.godaddy.vps4.vm.VmUserService;
-import com.godaddy.vps4.web.Vps4Exception;
-import com.godaddy.vps4.web.action.ActionResource;
-import com.godaddy.vps4.web.security.GDUser;
-import com.google.inject.AbstractModule;
-import com.google.inject.Guice;
-import com.google.inject.Injector;
-import com.google.inject.Provides;
-
-import gdg.hfs.orchestration.CommandService;
-import gdg.hfs.orchestration.CommandState;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.MockitoAnnotations;
-
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
@@ -59,6 +12,42 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.MockitoAnnotations;
+
+import com.godaddy.hfs.config.Config;
+import com.godaddy.vps4.credit.CreditService;
+import com.godaddy.vps4.credit.VirtualMachineCredit;
+import com.godaddy.vps4.move.VmMoveImageMap;
+import com.godaddy.vps4.move.VmMoveImageMapService;
+import com.godaddy.vps4.move.VmMoveSpecMap;
+import com.godaddy.vps4.move.VmMoveSpecMapService;
+import com.godaddy.vps4.network.IpAddress;
+import com.godaddy.vps4.network.NetworkService;
+import com.godaddy.vps4.panopta.PanoptaDataService;
+import com.godaddy.vps4.panopta.PanoptaDetail;
+import com.godaddy.vps4.project.Project;
+import com.godaddy.vps4.project.ProjectService;
+import com.godaddy.vps4.security.Vps4User;
+import com.godaddy.vps4.security.Vps4UserService;
+import com.godaddy.vps4.vm.*;
+import com.godaddy.vps4.web.Vps4Exception;
+import com.godaddy.vps4.web.action.ActionResource;
+import com.google.inject.AbstractModule;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+
+import gdg.hfs.orchestration.CommandService;
+import gdg.hfs.orchestration.CommandState;
 
 public class PlatformMigrationResourceTest {
     private final ActionService actionService = mock(ActionService.class);
@@ -74,6 +63,7 @@ public class PlatformMigrationResourceTest {
     private final VmMoveImageMapService vmMoveImageMapService = mock(VmMoveImageMapService.class);
     private final VmMoveSpecMapService vmMoveSpecMapService = mock(VmMoveSpecMapService.class);
     private final ImageService imageService = mock(ImageService.class);
+    private final CreditService creditService = mock(CreditService.class);
 
     private final UUID vmId = UUID.randomUUID();
     private final List<IpAddress> additionalIps = new ArrayList<>();
@@ -81,13 +71,14 @@ public class PlatformMigrationResourceTest {
     private final PanoptaDetail panoptaDetail = mock(PanoptaDetail.class);
     private final VmUser vmUser = mock(VmUser.class);
     private final Action moveOutAction = mock(Action.class);
-    private GDUser gdUser;
     private VirtualMachine vm;
     private Project project;
     private Vps4User vps4User;
     private MoveOutInfo moveOutInfo;
     private MoveInInfo moveInInfo;
     private MoveInRequest moveInRequest;
+    private VirtualMachineCredit credit;
+
     @Captor private ArgumentCaptor<InsertVirtualMachineParameters> insertVirtualMachineParametersCaptor;
 
     private final Injector injector = Guice.createInjector(
@@ -107,11 +98,7 @@ public class PlatformMigrationResourceTest {
                     bind(VmMoveImageMapService.class).toInstance(vmMoveImageMapService);
                     bind(VmMoveSpecMapService.class).toInstance(vmMoveSpecMapService);
                     bind(ImageService.class).toInstance(imageService);
-                }
-
-                @Provides
-                public GDUser provideUser() {
-                    return gdUser;
+                    bind(CreditService.class).toInstance(creditService);
                 }
             });
 
@@ -139,8 +126,7 @@ public class PlatformMigrationResourceTest {
         vm.primaryIpAddress = mock(IpAddress.class);
         vm.hfsVmId = 67890L;
 
-        gdUser = GDUserMock.createShopper();
-        vps4User = new Vps4User(12, gdUser.getShopperId(), UUID.randomUUID(), "1");
+        vps4User = new Vps4User(12, "test-vps4-shopper", UUID.randomUUID(), "1");
         project = new Project(vm.projectId, "testProject", "testSgid", Instant.now(), Instant.MAX, vps4User.getId());
 
         getMoveOutInfo();
@@ -155,6 +141,9 @@ public class PlatformMigrationResourceTest {
         moveInRequest.moveOutInfo = moveOutInfo;
         moveInRequest.moveInInfo = moveInInfo;
 
+        credit = mock(VirtualMachineCredit.class);
+        when(credit.getShopperId()).thenReturn(vps4User.getShopperId());
+
         when(actionService.getAction(anyLong())).thenReturn(moveOutAction);
         when(commandService.executeCommand(anyObject())).thenReturn(new CommandState());
         when(virtualMachineService.getVirtualMachine(vmId)).thenReturn(vm);
@@ -164,7 +153,7 @@ public class PlatformMigrationResourceTest {
                 null, Long.MAX_VALUE, 0)).thenReturn(actions);
         when(panoptaDataService.getPanoptaDetails(vmId)).thenReturn(panoptaDetail);
         when(vmUserService.getPrimaryCustomer(vmId)).thenReturn(vmUser);
-        when(vps4UserService.getUser(gdUser.getShopperId())).thenReturn(vps4User);
+        when(vps4UserService.getUser(vps4User.getShopperId())).thenReturn(vps4User);
         when(config.get("imported.datacenter.defaultId")).thenReturn("1");
         when(vps4UserService.getOrCreateUserForShopper(
                 moveOutInfo.vps4User.getShopperId(),
@@ -194,6 +183,8 @@ public class PlatformMigrationResourceTest {
                 .thenReturn(project);
 
         when(virtualMachineService.insertVirtualMachine(any(InsertVirtualMachineParameters.class))).thenReturn(vm);
+
+        when(creditService.getVirtualMachineCredit(vm.orionGuid)).thenReturn(credit);
     }
 
     private void getMoveOutInfo() {
@@ -219,7 +210,7 @@ public class PlatformMigrationResourceTest {
         verify(networkService, atLeastOnce()).getVmActiveSecondaryAddresses(vm.hfsVmId);
         verify(panoptaDataService, atLeastOnce()).getPanoptaDetails(vmId);
         verify(vmUserService, atLeastOnce()).getPrimaryCustomer(vmId);
-        verify(vps4UserService, atLeastOnce()).getUser(gdUser.getShopperId());
+        verify(vps4UserService, atLeastOnce()).getUser("test-vps4-shopper");
     }
 
     @Test

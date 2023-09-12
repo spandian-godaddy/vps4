@@ -1,6 +1,8 @@
 package com.godaddy.vps4.web.vm;
 
 import com.godaddy.hfs.config.Config;
+import com.godaddy.vps4.credit.CreditService;
+import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.move.VmMoveImageMapService;
 import com.godaddy.vps4.move.VmMoveSpecMapService;
 import com.godaddy.vps4.network.IpAddress;
@@ -70,6 +72,7 @@ public class PlatformMigrationResource {
     private final ImageService imageService;
     private final GDUser gdUser;
     private final Config config;
+    private final CreditService creditService;
 
     @Inject
     public PlatformMigrationResource(ActionService actionService,
@@ -85,7 +88,8 @@ public class PlatformMigrationResource {
                                      VmMoveImageMapService vmMoveImageMapService,
                                      ImageService imageService,
                                      GDUser gdUser,
-                                     Config config) {
+                                     Config config,
+                                     CreditService creditService) {
         this.actionService = actionService;
         this.commandService = commandService;
         this.virtualMachineService = virtualMachineService;
@@ -100,6 +104,7 @@ public class PlatformMigrationResource {
         this.imageService = imageService;
         this.gdUser = gdUser;
         this.config = config;
+        this.creditService = creditService;
     }
 
     @POST
@@ -164,7 +169,9 @@ public class PlatformMigrationResource {
         info.actions = getActions(vm.vmId);
         info.panoptaDetail = panoptaDataService.getPanoptaDetails(vm.vmId);
         info.vmUser = vmUserService.getPrimaryCustomer(vm.vmId);
-        info.vps4User = vps4UserService.getUser(gdUser.getShopperId());
+
+        VirtualMachineCredit credit = creditService.getVirtualMachineCredit(vm.orionGuid);
+        info.vps4User = vps4UserService.getUser(credit.getShopperId());
 
         return info;
     }
