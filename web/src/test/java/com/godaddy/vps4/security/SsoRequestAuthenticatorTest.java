@@ -268,6 +268,32 @@ public class SsoRequestAuthenticatorTest {
     }
 
     @Test
+    public void testVertigoMigrations() {
+        SsoToken token = mockJomaxToken(Collections.singletonList("Dev-Vertigo"));
+        when(tokenExtractor.extractToken(request)).thenReturn(token);
+
+        GDUser user = authenticator.authenticate(request);
+        Assert.assertEquals(null, user.getShopperId());
+        Assert.assertEquals(false, user.isShopper());
+        Assert.assertEquals(true, user.isAdmin());
+        Assert.assertEquals(true, user.isEmployee());
+        Assert.assertEquals(Arrays.asList(Role.ADMIN), user.roles());
+    }
+
+    @Test
+    public void testVps4ApiReadOnly() {
+        SsoToken token = mockJomaxToken(Collections.singletonList("VPS4-API-ReadOnly"));
+        when(tokenExtractor.extractToken(request)).thenReturn(token);
+
+        GDUser user = authenticator.authenticate(request);
+        Assert.assertEquals(null, user.getShopperId());
+        Assert.assertEquals(false, user.isShopper());
+        Assert.assertEquals(false, user.isAdmin());
+        Assert.assertEquals(true, user.isEmployee());
+        Assert.assertEquals(Arrays.asList(Role.VPS4_API_READONLY), user.roles());
+    }
+
+    @Test
     public void testAdminWithShopperOverride() {
         when(request.getHeader("X-Shopper-Id")).thenReturn("shopperX");
         SsoToken token = mockJomaxToken(Collections.singletonList("Dev-VPS4"));
@@ -278,7 +304,7 @@ public class SsoRequestAuthenticatorTest {
         Assert.assertEquals(true, user.isShopper());
         Assert.assertEquals(true, user.isAdmin());
         Assert.assertEquals(true, user.isEmployee());
-        Assert.assertEquals(Arrays.asList(Role.ADMIN), user.roles());
+        Assert.assertEquals(Arrays.asList(Role.ADMIN, Role.CUSTOMER), user.roles());
     }
 
     @Test
@@ -305,7 +331,7 @@ public class SsoRequestAuthenticatorTest {
         Assert.assertEquals(true, user.isShopper());
         Assert.assertEquals(false, user.isAdmin());
         Assert.assertEquals(true,  user.isEmployee());
-        Assert.assertEquals(Arrays.asList(Role.EMPLOYEE_OTHER), user.roles());
+        Assert.assertEquals(Arrays.asList(Role.EMPLOYEE_OTHER, Role.CUSTOMER), user.roles());
     }
 
     @Test(expected=Vps4Exception.class)
