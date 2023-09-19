@@ -30,7 +30,6 @@ import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.security.GDUser;
 
-import com.godaddy.vps4.web.security.RequiresRole;
 import io.swagger.annotations.Api;
 
 @Vps4Api
@@ -91,7 +90,6 @@ public class VmDetailsResource {
     }
 
     @GET
-    @RequiresRole(roles = {GDUser.Role.ADMIN, GDUser.Role.CUSTOMER, GDUser.Role.VPS4_API_READONLY})
     @Path("/{vmId}/withDetails")
     public VirtualMachineWithDetails getVirtualMachineWithDetails(@PathParam("vmId") UUID vmId) {
         VirtualMachine virtualMachine = vmResource.getVm(vmId);

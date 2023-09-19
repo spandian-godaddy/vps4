@@ -55,8 +55,6 @@ public class CreditResource {
     }
 
     @GET
-    @RequiresRole(roles = {GDUser.Role.ADMIN, GDUser.Role.CUSTOMER, GDUser.Role.VPS4_API_READONLY,
-            GDUser.Role.SUSPEND_AUTH})
     @Path("/{orionGuid}")
     public VirtualMachineCredit getCredit(@PathParam("orionGuid") UUID orionGuid) {
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(orionGuid);

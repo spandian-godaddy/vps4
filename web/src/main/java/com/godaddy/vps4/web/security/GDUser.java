@@ -10,7 +10,7 @@ import com.godaddy.hfs.sso.token.SsoToken;
 public class GDUser {
     // Role that this user is assigned in the Vps4 app
     public enum Role {
-        ADMIN, CUSTOMER, EMPLOYEE_OTHER, HS_AGENT, HS_LEAD, SUSPEND_AUTH, C3_OTHER, MIGRATION, VPS4_API_READONLY
+        ADMIN, CUSTOMER, EMPLOYEE_OTHER, HS_AGENT, HS_LEAD, SUSPEND_AUTH, C3_OTHER, MIGRATION
     }
 
     SsoToken token;

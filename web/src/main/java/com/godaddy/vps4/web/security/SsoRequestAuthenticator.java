@@ -2,6 +2,7 @@ package com.godaddy.vps4.web.security;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
@@ -36,7 +37,6 @@ public class SsoRequestAuthenticator implements RequestAuthenticator<GDUser> {
     private final String MIGRATION_TOOL = "Migration-Engine-SG";
     private final String CSM = "CSM";
     private final String DEV_VERTIGO = "Dev-Vertigo";
-    private final String VPS4_API_READONLY = "VPS4-API-ReadOnly";
 
     private final SsoTokenExtractor tokenExtractor;
     private Config config;
@@ -138,12 +138,8 @@ public class SsoRequestAuthenticator implements RequestAuthenticator<GDUser> {
             userRoles.add(Role.C3_OTHER);
         } if (groups.contains(MIGRATION_TOOL)) {
             userRoles.add(Role.MIGRATION);
-        } if (groups.contains(VPS4_API_READONLY)) {
-            userRoles.add(Role.VPS4_API_READONLY);
-        } if (userRoles.isEmpty()) {
+        } if(userRoles.isEmpty()) {
             userRoles.add(Role.EMPLOYEE_OTHER);
-        } if (gdUser.isShopper()) {
-            userRoles.add(Role.CUSTOMER); // for employee impersonation
         }
         gdUser.roles = userRoles;
     }

@@ -33,7 +33,6 @@ import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.Vps4NoShopperException;
 import com.godaddy.vps4.web.Vps4UserNotFound;
 import com.godaddy.vps4.web.security.GDUser;
-import com.godaddy.vps4.web.security.RequiresRole;
 import com.godaddy.vps4.web.util.ResellerConfigHelper;
 import gdg.hfs.orchestration.CommandService;
 import io.swagger.annotations.Api;
@@ -357,8 +356,6 @@ public class VmResource {
     }
 
     @GET
-    @RequiresRole(roles = {GDUser.Role.ADMIN, GDUser.Role.CUSTOMER, GDUser.Role.SUSPEND_AUTH, GDUser.Role.HS_AGENT,
-            GDUser.Role.HS_LEAD, GDUser.Role.VPS4_API_READONLY, GDUser.Role.C3_OTHER})
     @Path("/")
     @ApiOperation(value = "Get VMs")
     public List<VirtualMachine> getVirtualMachines(
@@ -371,7 +368,6 @@ public class VmResource {
             @ApiParam(value = "DC ID associated with the VM", required = false) @QueryParam("dcId") Integer dcId,
             @ApiParam(value = "Customer ID of the user", required = false) @QueryParam("customerId") UUID customerId,
             @ApiParam(value = "Platform of the VM", required = false) @QueryParam("platform") ServerType.Platform platform) {
-
         if (user.isEmployee()) {
             return getVmsForEmployee(type, shopperId, customerId, ipAddress, orionGuid, hfsVmId, dcId, platform);
         }
