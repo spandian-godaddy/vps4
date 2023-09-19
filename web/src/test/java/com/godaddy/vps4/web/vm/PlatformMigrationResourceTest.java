@@ -154,7 +154,7 @@ public class PlatformMigrationResourceTest {
         when(panoptaDataService.getPanoptaDetails(vmId)).thenReturn(panoptaDetail);
         when(vmUserService.getPrimaryCustomer(vmId)).thenReturn(vmUser);
         when(vps4UserService.getUser(vps4User.getShopperId())).thenReturn(vps4User);
-        when(config.get("imported.datacenter.defaultId")).thenReturn("1");
+        when(config.get("vps4.datacenter.defaultId")).thenReturn("1");
         when(vps4UserService.getOrCreateUserForShopper(
                 moveOutInfo.vps4User.getShopperId(),
                 moveOutInfo.vps4User.getResellerId(),

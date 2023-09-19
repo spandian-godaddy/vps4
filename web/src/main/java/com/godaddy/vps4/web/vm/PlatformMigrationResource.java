@@ -135,7 +135,7 @@ public class PlatformMigrationResource {
     @RequiresRole(roles = { GDUser.Role.ADMIN })
     @Path("/move/in")
     public VmAction moveIn(MoveInRequest moveInRequest) {
-        int dataCenterId = Integer.parseInt(config.get("imported.datacenter.defaultId"));
+        int dataCenterId = Integer.parseInt(config.get("vps4.datacenter.defaultId"));
 
         VirtualMachine vm = insertDatabaseRecords(moveInRequest.moveInInfo, moveInRequest.moveOutInfo, dataCenterId);
 
@@ -147,7 +147,7 @@ public class PlatformMigrationResource {
     @Path("/{vmId}/move/back")
     public VmAction moveBack(@PathParam("vmId") UUID vmId,
                              @ApiParam(required = true) @QueryParam("orionGuid") UUID orionGuid) {
-        int dcId = Integer.parseInt(config.get("imported.datacenter.defaultId"));
+        int dcId = Integer.parseInt(config.get("vps4.datacenter.defaultId"));
         Vps4MoveBack.Request moveBackRequest = new Vps4MoveBack.Request();
         moveBackRequest.vmId = vmId;
         moveBackRequest.dcId = dcId;
