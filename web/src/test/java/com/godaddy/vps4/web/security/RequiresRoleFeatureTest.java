@@ -7,6 +7,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.godaddy.vps4.web.Vps4Api;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -21,6 +22,7 @@ import java.lang.reflect.Method;
 
 
 public class RequiresRoleFeatureTest {
+    @Vps4Api
     private static class TestClass {
 
         @RequiresRole(roles = {Role.ADMIN, Role.HS_AGENT, Role.HS_LEAD})
@@ -28,6 +30,11 @@ public class RequiresRoleFeatureTest {
         }
 
         public void methodTwo() {
+        }
+    }
+
+    private static class TestWrongClass {
+        public void methodThree() {
         }
     }
 
@@ -57,17 +64,17 @@ public class RequiresRoleFeatureTest {
     }
 
     @Test
-    public void filterNotAttachedToResourceMethodIfNotReqd() throws NoSuchMethodException{
+    public void filterAttachedToResourceMethodWithOnlyVps4ApiAnnotation() throws NoSuchMethodException{
         Method m = TestClass.class.getMethod("methodTwo");
         when(resourceInfo.getResourceMethod()).thenReturn(m);
         when(resourceInfo.getResourceClass()).thenReturn((Class) TestClass.class);
         feature.configure(resourceInfo, featureContext);
 
-        verify(featureContext, times(0)).register(any());
+        verify(featureContext, times(1)).register(eq(requiresRoleFilter));
     }
 
     @Test
-    public void filterAttachedToResourceMethodIfAnnotationPresent() throws NoSuchMethodException{
+    public void filterAttachedToResourceMethodWithRequiresRoleAnnotation() throws NoSuchMethodException{
         Method m = TestClass.class.getMethod("methodOne");
         when(resourceInfo.getResourceMethod()).thenReturn(m);
         when(resourceInfo.getResourceClass()).thenReturn((Class) TestClass.class);
@@ -77,7 +84,17 @@ public class RequiresRoleFeatureTest {
     }
 
     @Test
-    public void filterIsAssignedRolesToAllow() throws NoSuchMethodException{
+    public void filterNotAttachedToResourceMethodIfNotVps4Api() throws NoSuchMethodException{
+        Method m = TestWrongClass.class.getMethod("methodThree");
+        when(resourceInfo.getResourceMethod()).thenReturn(m);
+        when(resourceInfo.getResourceClass()).thenReturn((Class) TestWrongClass.class);
+        feature.configure(resourceInfo, featureContext);
+
+        verify(featureContext, times(0)).register(eq(requiresRoleFilter));
+    }
+
+    @Test
+    public void filterIsAssignedSpecificRolesToAllow() throws NoSuchMethodException{
         Method m = TestClass.class.getMethod("methodOne");
         when(resourceInfo.getResourceMethod()).thenReturn(m);
         when(resourceInfo.getResourceClass()).thenReturn((Class) TestClass.class);
@@ -87,4 +104,14 @@ public class RequiresRoleFeatureTest {
         verify(requiresRoleFilter, times(1)).setReqdRoles(eq(expectedRoles));
     }
 
+    @Test
+    public void filterIsAssignedDefaultRolesToAllow() throws NoSuchMethodException{
+        Method m = TestClass.class.getMethod("methodTwo");
+        when(resourceInfo.getResourceMethod()).thenReturn(m);
+        when(resourceInfo.getResourceClass()).thenReturn((Class) TestClass.class);
+        feature.configure(resourceInfo, featureContext);
+
+        Role[] expectedRoles = new Role[]{Role.ADMIN, Role.CUSTOMER};
+        verify(requiresRoleFilter, times(1)).setReqdRoles(eq(expectedRoles));
+    }
 }
