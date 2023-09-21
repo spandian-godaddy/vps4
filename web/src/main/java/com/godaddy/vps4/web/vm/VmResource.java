@@ -358,7 +358,7 @@ public class VmResource {
 
     @GET
     @RequiresRole(roles = {GDUser.Role.ADMIN, GDUser.Role.CUSTOMER, GDUser.Role.SUSPEND_AUTH, GDUser.Role.HS_AGENT,
-            GDUser.Role.HS_LEAD, GDUser.Role.VPS4_API_READONLY, GDUser.Role.C3_OTHER})
+            GDUser.Role.HS_LEAD, GDUser.Role.VPS4_API_READONLY, GDUser.Role.C3_OTHER, GDUser.Role.EMPLOYEE_OTHER})
     @Path("/")
     @ApiOperation(value = "Get VMs")
     public List<VirtualMachine> getVirtualMachines(
