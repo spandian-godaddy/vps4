@@ -60,7 +60,6 @@ public class Vps4MoveBack extends ActionCommand<Vps4MoveBack.Request, Void> {
 
     public static class Request extends Vps4ActionRequest {
         public UUID vmId;
-        public UUID orionGuid;
         public int dcId;
     }
 
@@ -80,7 +79,7 @@ public class Vps4MoveBack extends ActionCommand<Vps4MoveBack.Request, Void> {
             resumeAutomaticBackups(vm.backupJobId);
             markPanoptaServerActive(request.vmId);
             resumePanoptaMonitoring(request.vmId);
-            updateProdMeta(request.dcId, request.vmId, request.orionGuid);
+            updateProdMeta(request.dcId, request.vmId, vm.orionGuid);
         } catch (Exception e) {
             String errorMessage = String.format("Move back failed for VM %s", request.vmId);
             logger.warn(errorMessage, e);
@@ -134,7 +133,6 @@ public class Vps4MoveBack extends ActionCommand<Vps4MoveBack.Request, Void> {
     private void updateProdMeta(int dcId, UUID vmId, UUID orionGuid) {
         Map<ECommCreditService.ProductMetaField, String> newProdMeta = new EnumMap<>(ECommCreditService.ProductMetaField.class);
         newProdMeta.put(ECommCreditService.ProductMetaField.DATA_CENTER, String.valueOf(dcId));
-        newProdMeta.put(ECommCreditService.ProductMetaField.PROVISION_DATE, Instant.now().toString());
         newProdMeta.put(ECommCreditService.ProductMetaField.PRODUCT_ID, vmId.toString());
         context.execute("UpdateProdMeta", ctx -> {
             creditService.updateProductMeta(orionGuid, newProdMeta);

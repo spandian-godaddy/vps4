@@ -341,7 +341,7 @@ public class PlatformMigrationResourceTest {
 
     @Test
     public void moveBackCreatesMoveBackCommand() {
-        getPlatformMigrationResource().moveBack(vmId, vm.orionGuid);
+        getPlatformMigrationResource().moveBack(vmId);
         verify(actionService, times(1)).createAction(eq(vmId), eq(ActionType.MOVE_BACK), anyString(), anyString());
     }
 }

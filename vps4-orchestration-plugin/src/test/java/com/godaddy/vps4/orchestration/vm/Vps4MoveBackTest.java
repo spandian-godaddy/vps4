@@ -67,7 +67,6 @@ public class Vps4MoveBackTest {
 
         request = new Vps4MoveBack.Request();
         request.vmId = UUID.randomUUID();
-        request.orionGuid = UUID.randomUUID();
         request.dcId = 1;
         backupJobId = UUID.randomUUID();
         addresses = new ArrayList<>();
@@ -79,6 +78,7 @@ public class Vps4MoveBackTest {
         vm = new VirtualMachine();
         vm.backupJobId = backupJobId;
         vm.vmId = request.vmId;
+        vm.orionGuid = UUID.randomUUID();
         vm.hfsVmId = 42L;
         vm.primaryIpAddress = new IpAddress();
         vm.primaryIpAddress.addressId = 789012L;
@@ -164,11 +164,11 @@ public class Vps4MoveBackTest {
         verify(context, times(1)).execute(eq("UpdateProdMeta"),
                 updateProductMetaCaptor.capture(), eq(Void.class));
         updateProductMetaCaptor.getValue().apply(context);
-        verify(creditService, times(1)).updateProductMeta(eq(request.orionGuid), productMetaCaptor.capture());
+        verify(creditService, times(1)).updateProductMeta(eq(vm.orionGuid), productMetaCaptor.capture());
 
         Map<ECommCreditService.ProductMetaField, String> capturedProdMeta = productMetaCaptor.getValue();
+        assertEquals(2, capturedProdMeta.size());
         assertEquals(capturedProdMeta.get(ECommCreditService.ProductMetaField.DATA_CENTER), String.valueOf(request.dcId));
         assertEquals(capturedProdMeta.get(ECommCreditService.ProductMetaField.PRODUCT_ID), request.vmId.toString());
-        assertTrue(preExecutionInstant.isBefore(Instant.parse(capturedProdMeta.get(ECommCreditService.ProductMetaField.PROVISION_DATE))));
     }
 }

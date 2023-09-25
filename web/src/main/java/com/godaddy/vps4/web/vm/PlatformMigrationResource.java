@@ -134,24 +134,22 @@ public class PlatformMigrationResource {
     @POST
     @RequiresRole(roles = { GDUser.Role.ADMIN })
     @Path("/move/in")
-    public VmAction moveIn(MoveInRequest moveInRequest) {
+    public VmAction moveIn(MoveInRequest request) {
         int dataCenterId = Integer.parseInt(config.get("vps4.datacenter.defaultId"));
 
-        VirtualMachine vm = insertDatabaseRecords(moveInRequest.moveInInfo, moveInRequest.moveOutInfo, dataCenterId);
+        VirtualMachine vm = insertDatabaseRecords(request.moveInInfo, request.moveOutInfo, dataCenterId);
 
-        return runMoveInCommand(moveInRequest.moveOutInfo, vm);
+        return runMoveInCommand(request.moveOutInfo, vm);
     }
 
     @POST
     @RequiresRole(roles = { GDUser.Role.ADMIN })
     @Path("/{vmId}/move/back")
-    public VmAction moveBack(@PathParam("vmId") UUID vmId,
-                             @ApiParam(required = true) @QueryParam("orionGuid") UUID orionGuid) {
+    public VmAction moveBack(@PathParam("vmId") UUID vmId) {
         int dcId = Integer.parseInt(config.get("vps4.datacenter.defaultId"));
         Vps4MoveBack.Request moveBackRequest = new Vps4MoveBack.Request();
         moveBackRequest.vmId = vmId;
         moveBackRequest.dcId = dcId;
-        moveBackRequest.orionGuid = orionGuid;
 
         return createActionAndExecute(actionService, commandService, vmId, ActionType.MOVE_BACK, moveBackRequest,
                 "Vps4MoveBack", gdUser);

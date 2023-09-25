@@ -57,7 +57,6 @@ public class Vps4MoveIn extends ActionCommand<Vps4MoveIn.Request, Void> {
     private void updateProdMeta(CommandContext context, Request request) {
         Map<ECommCreditService.ProductMetaField, String> newProdMeta = new EnumMap<>(ECommCreditService.ProductMetaField.class);
         newProdMeta.put(ECommCreditService.ProductMetaField.DATA_CENTER, String.valueOf(request.vm.dataCenter.dataCenterId));
-        newProdMeta.put(ECommCreditService.ProductMetaField.PROVISION_DATE, Instant.now().toString());
         newProdMeta.put(ECommCreditService.ProductMetaField.PRODUCT_ID, request.vm.vmId.toString());
         context.execute("UpdateProdMeta", ctx -> {
             creditService.updateProductMeta(request.vm.orionGuid, newProdMeta);
