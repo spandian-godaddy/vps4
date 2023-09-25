@@ -35,7 +35,7 @@ public class WaitForOhJob implements Command<WaitForOhJob.Request, Void> {
         OhJob job;
 
         do {
-            job = Utils.runWithRetriesForServerErrorException(context,
+            job = Utils.runWithRetriesForServerAndProcessingErrorException(context,
                                                               logger,
                                                               () -> ohJobService.getJob(request.vmId, request.jobId));
         } while (job != null && (job.status == OhJobStatus.PENDING || job.status == OhJobStatus.STARTED));

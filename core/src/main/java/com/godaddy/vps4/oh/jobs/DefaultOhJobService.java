@@ -9,8 +9,11 @@ import com.godaddy.vps4.oh.jobs.models.OhJob;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.google.inject.Inject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DefaultOhJobService implements OhJobService {
+    private static final Logger logger = LoggerFactory.getLogger(DefaultOhJobService.class);
     private final Map<String, OhApiJobService> ohApiJobServices;
     private final VirtualMachineService virtualMachineService;
     private final VmService vmService;
@@ -26,6 +29,7 @@ public class DefaultOhJobService implements OhJobService {
 
     private Vm getHfsVm(UUID vmId) {
         VirtualMachine vm = virtualMachineService.getVirtualMachine(vmId);
+        logger.info("retrieved hfs vm ID {} from database with vm Id {} ", vm.hfsVmId, vmId);
         return vmService.getVm(vm.hfsVmId);
     }
 

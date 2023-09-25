@@ -3,6 +3,7 @@ package com.godaddy.vps4.orchestration.scheduler;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.ws.rs.ProcessingException;
 import javax.ws.rs.ServerErrorException;
 
 import org.slf4j.Logger;
@@ -47,6 +48,28 @@ public abstract class Utils {
             }
             catch (ServerErrorException e) {
                 logger.info("Caught Server Error. Attempting retry number: #{}", serverErrorRetries);
+                if (++serverErrorRetries >= maxRetries)
+                    throw e;
+            }
+        }
+        return null;
+    }
+
+
+    public static <T> T runWithRetriesForServerAndProcessingErrorException(CommandContext context, Logger logger, RetryActionHandler<T> handler) {
+        int serverErrorRetries = 0;
+        int maxRetries = 5;
+        while (serverErrorRetries < maxRetries) {
+            context.sleep(2000);
+            try {
+                return handler.handle();
+            }
+            catch (ServerErrorException e) {
+                logger.info("Caught Server Error. Attempting retry number: #{}", serverErrorRetries);
+                if (++serverErrorRetries >= maxRetries)
+                    throw e;
+            } catch (ProcessingException e) {
+                logger.info("Caught Processing Error. Attempting retry number: #{}", serverErrorRetries);
                 if (++serverErrorRetries >= maxRetries)
                     throw e;
             }
