@@ -1,6 +1,7 @@
 package com.godaddy.vps4.orchestration.vm;
 
 import com.godaddy.vps4.credit.CreditService;
+import com.godaddy.vps4.orchestration.panopta.ApplyPanoptaTemplates;
 import com.godaddy.vps4.orchestration.panopta.PausePanoptaMonitoring;
 import com.godaddy.vps4.orchestration.panopta.ResumePanoptaMonitoring;
 import com.godaddy.vps4.vm.ActionService;
@@ -54,6 +55,6 @@ public class Vps4MoveInTest {
         verify(context, times(1)).execute(eq("UpdateProdMeta"), any(Function.class), eq(Void.class));
         verify(context, times(1)).execute(eq(ResumePanoptaMonitoring.class), eq(request.vm));
         verify(context, times(1)).execute(eq("MoveInActions"), any(Function.class), eq(Void.class));
-
+        verify(context, times(1)).execute(eq(ApplyPanoptaTemplates.class), any(ApplyPanoptaTemplates.Request.class));
     }
 }

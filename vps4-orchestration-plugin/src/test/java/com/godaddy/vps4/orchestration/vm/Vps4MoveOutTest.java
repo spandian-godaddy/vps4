@@ -1,9 +1,12 @@
 package com.godaddy.vps4.orchestration.vm;
 
+import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.panopta.PausePanoptaMonitoring;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4RemoveSupportUser;
-import com.godaddy.vps4.panopta.jdbc.JdbcPanoptaDataService;
+import com.godaddy.vps4.panopta.PanoptaDataService;
+import com.godaddy.vps4.panopta.PanoptaService;
+import com.godaddy.vps4.panopta.jdbc.PanoptaServerDetails;
 import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VirtualMachine;
@@ -14,9 +17,11 @@ import com.godaddy.vps4.vm.VmUserType;
 import gdg.hfs.orchestration.CommandContext;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
-import org.mockito.MockitoAnnotations;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -33,34 +38,32 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@RunWith(MockitoJUnitRunner.class)
 public class Vps4MoveOutTest {
-    private CommandContext context;
-    private ActionService actionService;
-    private VirtualMachineService virtualMachineService;
-    private VmUserService vmUserService;
-    private SchedulerWebService schedulerWebService;
-    private NetworkService networkService;
-    private JdbcPanoptaDataService panoptaDataService;
-    private Vps4MoveOut command;
+    @Mock private CommandContext context;
+    @Mock private Config config;
+    @Mock private ActionService actionService;
+    @Mock private VirtualMachineService virtualMachineService;
+    @Mock private VmUserService vmUserService;
+    @Mock private SchedulerWebService schedulerWebService;
+    @Mock private NetworkService networkService;
+    @Mock private PanoptaDataService panoptaDataService;
+    @Mock private PanoptaService panoptaService;
 
+    private Vps4MoveOut command;
     private Vps4MoveOut.Request request;
     private VirtualMachine vm;
     private List<VmUser> supportUsers;
+    private PanoptaServerDetails panoptaServerDetails;
 
     @Captor private ArgumentCaptor<String> commandNameCaptor;
     @Captor private ArgumentCaptor<Vps4RemoveSupportUser.Request> removeSupportUserRequestCaptor;
+    @Captor private ArgumentCaptor<Function<CommandContext, Void>> lambda;
 
     @Before
-    public void setup() {
-        MockitoAnnotations.initMocks(this);
-        context = mock(CommandContext.class);
-        actionService = mock(ActionService.class);
-        virtualMachineService = mock(VirtualMachineService.class);
-        vmUserService = mock(VmUserService.class);
-        schedulerWebService = mock(SchedulerWebService.class);
-        networkService = mock(NetworkService.class);
-        panoptaDataService = mock(JdbcPanoptaDataService.class);
-        command = new Vps4MoveOut(actionService, virtualMachineService, vmUserService, schedulerWebService, networkService, panoptaDataService);
+    public void setUp() {
+        command = new Vps4MoveOut(actionService, config, virtualMachineService, vmUserService, schedulerWebService,
+                                  networkService, panoptaDataService, panoptaService);
 
         request = new Vps4MoveOut.Request();
         request.vmId = UUID.randomUUID();
@@ -84,6 +87,15 @@ public class Vps4MoveOutTest {
         when(context.getId()).thenReturn(UUID.randomUUID());
         when(virtualMachineService.getVirtualMachine(request.vmId)).thenReturn(vm);
         when(vmUserService.listUsers(request.vmId, VmUserType.SUPPORT)).thenReturn(supportUsers);
+        when(config.get("panopta.api.templates.webhook")).thenReturn("test-template-id");
+        setUpPanoptaServerDetails();
+    }
+
+    private void setUpPanoptaServerDetails() {
+        panoptaServerDetails = new PanoptaServerDetails();
+        panoptaServerDetails.setServerId(1234);
+        panoptaServerDetails.setPartnerCustomerKey("test-customer");
+        when(panoptaDataService.getPanoptaServerDetails(vm.vmId)).thenReturn(panoptaServerDetails);
     }
 
     @Test
@@ -130,6 +142,16 @@ public class Vps4MoveOutTest {
     public void pausesPanoptaMonitoring() {
         command.execute(context, request);
         verify(context, times(1)).execute(eq(PausePanoptaMonitoring.class), eq(request.vmId));
+    }
+
+    @Test
+    public void removesPanoptaWebhook() {
+        command.execute(context, request);
+        verify(context, times(1)).execute(eq("RemovePanoptaWebhook"), lambda.capture(), eq(Void.class));
+        lambda.getValue().apply(context);
+        verify(panoptaDataService, times(1)).getPanoptaServerDetails(vm.vmId);
+        verify(config, times(1)).get("panopta.api.templates.webhook");
+        verify(panoptaService, times(1)).removeTemplate(1234, "test-customer", "test-template-id");
     }
 
     @Test

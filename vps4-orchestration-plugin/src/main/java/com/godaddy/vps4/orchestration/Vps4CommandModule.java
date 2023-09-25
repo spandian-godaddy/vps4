@@ -26,6 +26,7 @@ import com.godaddy.vps4.orchestration.monitoring.Vps4ClearVmOutage;
 import com.godaddy.vps4.orchestration.monitoring.Vps4NewVmOutage;
 import com.godaddy.vps4.orchestration.network.RemoveIpFromBlacklist;
 import com.godaddy.vps4.orchestration.panopta.AddAdditionalFqdnPanopta;
+import com.godaddy.vps4.orchestration.panopta.ApplyPanoptaTemplates;
 import com.godaddy.vps4.orchestration.panopta.PausePanoptaMonitoring;
 import com.godaddy.vps4.orchestration.panopta.ResumePanoptaMonitoring;
 import com.godaddy.vps4.orchestration.panopta.SetupPanopta;
@@ -143,6 +144,7 @@ public class Vps4CommandModule extends AbstractModule {
         bind(Vps4AddMonitoring.class);
         bind(RemovePanoptaMonitoring.class);
         bind(SetupPanopta.class);
+        bind(ApplyPanoptaTemplates.class);
         bind(InstallPanoptaAgent.class);
         bind(UninstallPanoptaAgent.class);
         bind(WaitForPanoptaAgentSync.class);

@@ -1,16 +1,17 @@
 package com.godaddy.vps4.orchestration.vm;
 
-import com.godaddy.vps4.credit.CreditService;
-import com.godaddy.vps4.credit.ECommCreditService;
-import com.godaddy.vps4.network.IpAddress;
-import com.godaddy.vps4.network.NetworkService;
-import com.godaddy.vps4.orchestration.panopta.ResumePanoptaMonitoring;
-import com.godaddy.vps4.panopta.PanoptaDataService;
-import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
-import com.godaddy.vps4.vm.ActionService;
-import com.godaddy.vps4.vm.VirtualMachine;
-import com.godaddy.vps4.vm.VirtualMachineService;
-import gdg.hfs.orchestration.CommandContext;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.UUID;
+import java.util.function.Function;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -20,19 +21,19 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.UUID;
-import java.util.function.Function;
+import com.godaddy.vps4.credit.CreditService;
+import com.godaddy.vps4.credit.ECommCreditService;
+import com.godaddy.vps4.network.IpAddress;
+import com.godaddy.vps4.network.NetworkService;
+import com.godaddy.vps4.orchestration.panopta.ResumePanoptaMonitoring;
+import com.godaddy.vps4.panopta.PanoptaDataService;
+import com.godaddy.vps4.panopta.jdbc.PanoptaServerDetails;
+import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
+import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.vm.VirtualMachineService;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import gdg.hfs.orchestration.CommandContext;
 
 @RunWith(MockitoJUnitRunner.class)
 public class Vps4MoveBackTest {
@@ -44,6 +45,8 @@ public class Vps4MoveBackTest {
     @Mock private PanoptaDataService panoptaDataService;
     @Mock private CreditService creditService;
     private Vps4MoveBack command;
+
+    @Mock private PanoptaServerDetails panoptaServerDetails;
 
     private Vps4MoveBack.Request request;
     private VirtualMachine vm;
@@ -57,7 +60,6 @@ public class Vps4MoveBackTest {
     @Captor ArgumentCaptor<Function<CommandContext, Void>> markIpActivateCaptor;
     @Captor ArgumentCaptor<Function<CommandContext, Void>> updateProductMetaCaptor;
     @Captor ArgumentCaptor<Map<ECommCreditService.ProductMetaField, String>> productMetaCaptor;
-
 
     @Before
     public void setup() {
@@ -84,8 +86,9 @@ public class Vps4MoveBackTest {
         vm.primaryIpAddress.addressId = 789012L;
 
         when(context.getId()).thenReturn(UUID.randomUUID());
-        when(virtualMachineService.getVirtualMachine(request.vmId)).thenReturn(vm);
+        when(virtualMachineService.getVirtualMachine(vm.vmId)).thenReturn(vm);
         when(networkService.getAllVmSecondaryAddresses(vm.hfsVmId)).thenReturn(addresses);
+        when(panoptaDataService.getPanoptaServerDetails(vm.vmId)).thenReturn(panoptaServerDetails);
     }
 
     @Test
@@ -157,12 +160,9 @@ public class Vps4MoveBackTest {
 
     @Test
     public void updatesProdMeta() {
-        Instant preExecutionInstant = Instant.now();
-
         command.execute(context, request);
 
-        verify(context, times(1)).execute(eq("UpdateProdMeta"),
-                updateProductMetaCaptor.capture(), eq(Void.class));
+        verify(context, times(1)).execute(eq("UpdateProdMeta"), updateProductMetaCaptor.capture(), eq(Void.class));
         updateProductMetaCaptor.getValue().apply(context);
         verify(creditService, times(1)).updateProductMeta(eq(vm.orionGuid), productMetaCaptor.capture());
 

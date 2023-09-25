@@ -6,8 +6,10 @@ import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.ActionCommand;
 import com.godaddy.vps4.orchestration.Vps4ActionRequest;
+import com.godaddy.vps4.orchestration.panopta.ApplyPanoptaTemplates;
 import com.godaddy.vps4.orchestration.panopta.ResumePanoptaMonitoring;
 import com.godaddy.vps4.panopta.PanoptaDataService;
+import com.godaddy.vps4.panopta.jdbc.PanoptaServerDetails;
 import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VirtualMachine;
@@ -19,7 +21,6 @@ import gdg.hfs.orchestration.CommandRetryStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -78,7 +79,7 @@ public class Vps4MoveBack extends ActionCommand<Vps4MoveBack.Request, Void> {
             setIpsValidUntil(addressIds);
             resumeAutomaticBackups(vm.backupJobId);
             markPanoptaServerActive(request.vmId);
-            resumePanoptaMonitoring(request.vmId);
+            resumePanoptaMonitoring(vm);
             updateProdMeta(request.dcId, request.vmId, vm.orionGuid);
         } catch (Exception e) {
             String errorMessage = String.format("Move back failed for VM %s", request.vmId);
@@ -116,8 +117,16 @@ public class Vps4MoveBack extends ActionCommand<Vps4MoveBack.Request, Void> {
         }, Void.class);
     }
 
-    private void resumePanoptaMonitoring(UUID vmId) {
-        VirtualMachine vm = virtualMachineService.getVirtualMachine(vmId);
+    private void resumePanoptaMonitoring(VirtualMachine vm) {
+        PanoptaServerDetails psd = panoptaDataService.getPanoptaServerDetails(vm.vmId);
+
+        ApplyPanoptaTemplates.Request applyPanoptaTemplatesRequest = new ApplyPanoptaTemplates.Request();
+        applyPanoptaTemplatesRequest.vmId = vm.vmId;
+        applyPanoptaTemplatesRequest.partnerCustomerKey = psd.getPartnerCustomerKey();
+        applyPanoptaTemplatesRequest.serverId = psd.getServerId();
+        applyPanoptaTemplatesRequest.orionGuid = vm.orionGuid;
+        context.execute(ApplyPanoptaTemplates.class, applyPanoptaTemplatesRequest);
+
         context.execute(ResumePanoptaMonitoring.class, vm);
     }
 

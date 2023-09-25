@@ -194,24 +194,17 @@ public class DefaultPanoptaService implements PanoptaService {
 
 
     @Override
-    public void applyTemplates(long serverId, String partnerCustomerKey,
-                                      String[] templates) throws PanoptaServiceException {
+    public void applyTemplates(long serverId, String partnerCustomerKey, String[] templates) {
             for (String template : templates) {
                 logger.info("Applying template {} to serverId: {}", template, serverId);
-                applyTemplateToServer(serverId, partnerCustomerKey, template);
+                PanoptaApiApplyTemplateRequest request = new PanoptaApiApplyTemplateRequest(template, true);
+                panoptaApiServerService.applyTemplate(serverId, partnerCustomerKey, request);
             }
     }
 
-    private void applyTemplateToServer(long serverId, String partnerCustomerKey,
-                                       String template) throws PanoptaServiceException {
-        PanoptaApiApplyTemplateRequest request = new PanoptaApiApplyTemplateRequest(template, true);
-        try {
-            panoptaApiServerService.applyTemplate(serverId, partnerCustomerKey, request);
-        }
-        catch (Exception e) {
-            throw new PanoptaServiceException("APPLY_TEMPLATES_FAILED",
-                    "Applying templates to Panopta server " + serverId + " failed: " + e);
-        }
+    @Override
+    public void removeTemplate(long serverId, String partnerCustomerKey, String templateId) {
+        panoptaApiServerService.removeTemplate(serverId, partnerCustomerKey, templateId);
     }
 
     @Override

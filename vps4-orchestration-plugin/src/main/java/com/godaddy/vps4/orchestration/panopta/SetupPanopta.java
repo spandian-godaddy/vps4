@@ -1,7 +1,9 @@
 package com.godaddy.vps4.orchestration.panopta;
 
+import static com.godaddy.vps4.orchestration.panopta.Utils.getServerTemplateId;
+import static com.godaddy.vps4.orchestration.panopta.Utils.getTemplateIds;
+
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -58,9 +60,8 @@ public class SetupPanopta implements Command<SetupPanopta.Request, Void> {
         this.request = request;
         this.credit = creditService.getVirtualMachineCredit(request.orionGuid);
         PanoptaCustomerDetails customerDetails = getOrCreateCustomer();
-        String[] templateIds = getTemplateIds();
-        PanoptaServerDetails serverDetails = getOrCreateServer(templateIds[0]);
-        applyTemplates(serverDetails.getPartnerCustomerKey(), serverDetails.getServerId(), templateIds);
+        PanoptaServerDetails serverDetails = getOrCreateServer();
+        applyTemplates(request.vmId, serverDetails);
         installAgentOrFailGracefully(customerDetails.getCustomerKey(), serverDetails.getServerKey());
         return null;
     }
@@ -105,7 +106,7 @@ public class SetupPanopta implements Command<SetupPanopta.Request, Void> {
         }
     }
 
-    private PanoptaServerDetails getOrCreateServer(String templateId) {
+    private PanoptaServerDetails getOrCreateServer() {
         PanoptaServerDetails serverInDb = panoptaDataService.getPanoptaServerDetails(request.vmId);
         PanoptaServer serverInPanopta = panoptaService.getServer(request.vmId);
         if (serverInPanopta == null) {
@@ -115,6 +116,7 @@ public class SetupPanopta implements Command<SetupPanopta.Request, Void> {
             Map<Long, String> attributes = getAttributes();
             String[] tags = attributes.values().toArray(new String[0]);
             PanoptaServer server = createServer(tags);
+            String templateId = getServerTemplateId(config, credit);
             panoptaDataService.createPanoptaServer(request.vmId, request.shopperId, templateId, server);
             serverInDb = panoptaDataService.getPanoptaServerDetails(request.vmId);
             panoptaService.setServerAttributes(request.vmId, attributes);
@@ -134,17 +136,13 @@ public class SetupPanopta implements Command<SetupPanopta.Request, Void> {
         }
     }
 
-    private void applyTemplates(String partnerCustomerKey, long serverId, String[] templateIds) {
-        logger.info("applying templates to Panopta server for VM {}.", request.vmId);
-
-        String[] templates = Arrays.stream(templateIds)
-                .map(t -> "https://api2.panopta.com/v2/server_template/" + t)
-                .toArray(String[]::new);
-        try {
-            panoptaService.applyTemplates(serverId, partnerCustomerKey, templates);
-        } catch (PanoptaServiceException e) {
-            throw new RuntimeException(e);
-        }
+    private void applyTemplates(UUID vmId, PanoptaServerDetails serverDetails) {
+        ApplyPanoptaTemplates.Request request = new ApplyPanoptaTemplates.Request();
+        request.vmId = vmId;
+        request.orionGuid = credit.getOrionGuid();
+        request.partnerCustomerKey = serverDetails.getPartnerCustomerKey();
+        request.serverId = serverDetails.getServerId();
+        context.execute(ApplyPanoptaTemplates.class, request);
     }
 
     private void installAgentOrFailGracefully(String customerKey, String serverKey) {
@@ -169,18 +167,9 @@ public class SetupPanopta implements Command<SetupPanopta.Request, Void> {
         request.customerKey = customerKey;
         request.serverKey = serverKey;
         request.serverName = this.request.orionGuid.toString();
-        request.templates = String.join(",", getTemplateIds());
+        request.templateIds = String.join(",", getTemplateIds(config, credit));
         request.fqdn = this.request.fqdn;
         context.execute(InstallPanoptaAgent.class, request);
-    }
-
-    private String[] getTemplateIds() {
-        String templateType = (credit.isManaged()) ? "managed" : credit.hasMonitoring() ? "addon" : "base";
-        String templateOS = credit.getOperatingSystem().toLowerCase();
-
-        String serverTemplate = config.get("panopta.api.templates." + templateType + "." + templateOS);
-        String dcAlertTemplate = config.get("panopta.api.templates.webhook");
-        return new String[] { serverTemplate, dcAlertTemplate };
     }
 
     private Map<Long, String> getAttributes() {

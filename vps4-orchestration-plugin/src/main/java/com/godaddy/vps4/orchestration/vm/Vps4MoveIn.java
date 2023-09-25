@@ -4,6 +4,7 @@ import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.ECommCreditService;
 import com.godaddy.vps4.orchestration.ActionCommand;
 import com.godaddy.vps4.orchestration.Vps4ActionRequest;
+import com.godaddy.vps4.orchestration.panopta.ApplyPanoptaTemplates;
 import com.godaddy.vps4.orchestration.panopta.ResumePanoptaMonitoring;
 import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
@@ -65,6 +66,13 @@ public class Vps4MoveIn extends ActionCommand<Vps4MoveIn.Request, Void> {
     }
 
     private static void resumePanoptaMonitoring(CommandContext context, Request request) {
+        ApplyPanoptaTemplates.Request applyPanoptaTemplatesRequest = new ApplyPanoptaTemplates.Request();
+        applyPanoptaTemplatesRequest.vmId = request.vmId;
+        applyPanoptaTemplatesRequest.partnerCustomerKey = request.panoptaPartnerCustomerKey;
+        applyPanoptaTemplatesRequest.serverId = request.panoptaServerId;
+        applyPanoptaTemplatesRequest.orionGuid = request.vm.orionGuid;
+        context.execute(ApplyPanoptaTemplates.class, applyPanoptaTemplatesRequest);
+
         context.execute(ResumePanoptaMonitoring.class, request.vm);
     }
 
@@ -84,5 +92,7 @@ public class Vps4MoveIn extends ActionCommand<Vps4MoveIn.Request, Void> {
     public static class Request extends Vps4ActionRequest {
         public VirtualMachine vm;
         public List<Action> actions;
+        public long panoptaServerId;
+        public String panoptaPartnerCustomerKey;
     }
 }

@@ -18,7 +18,7 @@ public class InstallPanoptaAgent implements Command<InstallPanoptaAgent.Request,
         public String customerKey;
         public String serverKey;
         public String serverName;
-        public String templates;
+        public String templateIds;
         public String fqdn;
         public long hfsVmId;
     }
@@ -35,7 +35,7 @@ public class InstallPanoptaAgent implements Command<InstallPanoptaAgent.Request,
         logger.info("Configuring panopta agent for hfs vm id {} ", request.hfsVmId);
 
         SysAdminAction hfsSysAction = context.execute("InstallPanoptaAgent",
-                ctx -> sysAdminService.installPanopta(request.hfsVmId, request.customerKey, request.templates,
+                ctx -> sysAdminService.installPanopta(request.hfsVmId, request.customerKey, request.templateIds,
                                                       request.serverName, request.serverKey, request.fqdn, false),
                 SysAdminAction.class);
         context.execute("WaitForPanoptaInstall-" + request.hfsVmId, WaitForSysAdminAction.class, hfsSysAction);

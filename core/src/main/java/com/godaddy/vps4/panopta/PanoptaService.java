@@ -21,7 +21,9 @@ public interface PanoptaService {
     PanoptaServer createServer(String shopperId, UUID orionGuid, String ipAddress, String[] tags)
             throws PanoptaServiceException;
 
-    void applyTemplates(long serverId, String partnerCustomerKey, String[] templates) throws PanoptaServiceException;
+    void applyTemplates(long serverId, String partnerCustomerKey, String[] templates);
+
+    void removeTemplate(long serverId, String partnerCustomerKey, String templateId);
 
     PanoptaServer getServer(UUID vmId);
 

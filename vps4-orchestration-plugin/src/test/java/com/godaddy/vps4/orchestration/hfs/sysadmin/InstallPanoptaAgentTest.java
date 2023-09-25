@@ -60,7 +60,7 @@ public class InstallPanoptaAgentTest {
         request = new InstallPanoptaAgent.Request();
         request.hfsVmId = fakeHfsVmId;
         request.customerKey = fakeCustomerKey;
-        request.templates = fakeTemplates;
+        request.templateIds = fakeTemplates;
         request.serverKey = fakeServerKey;
         request.fqdn = fakeFqdn;
         request.serverName = fakeServerName;

@@ -61,6 +61,7 @@ public class SetupPanoptaTest {
     private final UUID orionGuid = UUID.randomUUID();
     private final UUID vmId = UUID.randomUUID();
     private final String customerKey = "fake-customer-key";
+    private final long serverId = 9876;
     private final String serverKey = "fake-server-key";
     private final String partnerCustomerKey = "gdtest_" + shopperId;
     private VirtualMachineCredit credit;
@@ -69,6 +70,7 @@ public class SetupPanoptaTest {
     private PanoptaServer server;
     private PanoptaServerDetails serverDetails;
 
+    @Captor private ArgumentCaptor<ApplyPanoptaTemplates.Request> applyTemplatesCaptor;
     @Captor private ArgumentCaptor<InstallPanoptaAgent.Request> agentInstallCaptor;
     @Captor private ArgumentCaptor<String[]> templateCaptor;
     @Captor private ArgumentCaptor<String[]> tagCaptor;
@@ -91,6 +93,7 @@ public class SetupPanoptaTest {
         when(credit.isManaged()).thenReturn(false);
         when(credit.hasMonitoring()).thenReturn(false);
         when(credit.getOperatingSystem()).thenReturn("LINUX");
+        when(credit.getOrionGuid()).thenReturn(orionGuid);
         when(credit.getResellerId()).thenReturn("1");
         when(creditService.getVirtualMachineCredit(orionGuid)).thenReturn(credit);
     };
@@ -112,6 +115,8 @@ public class SetupPanoptaTest {
         serverDetails = mock(PanoptaServerDetails.class);
         serverDetails.setServerId(0L);
         serverDetails.setPartnerCustomerKey(partnerCustomerKey);
+        when(serverDetails.getPartnerCustomerKey()).thenReturn(partnerCustomerKey);
+        when(serverDetails.getServerId()).thenReturn(serverId);
         when(serverDetails.getServerKey()).thenReturn(serverKey);
         when(panoptaDataService.getPanoptaServerDetails(vmId)).thenReturn(serverDetails);
         doNothing().when(panoptaDataService).createPanoptaServer(eq(vmId), eq(shopperId), any(), any());
@@ -220,13 +225,6 @@ public class SetupPanoptaTest {
         verify(panoptaService, times(1))
                 .createServer(eq(shopperId), eq(orionGuid), eq(fqdn), tagCaptor.capture());
 
-        verify(panoptaService, times(1))
-                .applyTemplates(eq(server.serverId), eq(server.partnerCustomerKey), templateCaptor.capture());
-        String[] templates = templateCaptor.getValue();
-
-        assertEquals("https://api2.panopta.com/v2/server_template/fake_template_base", templates[0]);
-        assertEquals("https://api2.panopta.com/v2/server_template/fake_template_dc", templates[1]);
-
         String[] tags = tagCaptor.getValue();
         assertTrue(Arrays.asList(tags).contains("1"));
         assertTrue(Arrays.asList(tags).contains("godaddy"));
@@ -241,37 +239,18 @@ public class SetupPanoptaTest {
     }
 
     @Test
-    public void createsPanoptaServerWithAddonTemplate() throws PanoptaServiceException {
-        when(credit.hasMonitoring()).thenReturn(true);
-        when(panoptaDataService.getPanoptaServerDetails(vmId))
-                .thenReturn(null)
-                .thenReturn(serverDetails);
-        when(panoptaService.getServer(vmId))
-                .thenReturn(null);
+    public void createsPanoptaServerWithTemplates() throws PanoptaServiceException {
+        when(panoptaDataService.getPanoptaServerDetails(vmId)).thenReturn(null).thenReturn(serverDetails);
+        when(panoptaService.getServer(vmId)).thenReturn(null);
         setupPanopta.execute(context, request);
-        verify(panoptaService, times(1))
-                .createServer(eq(shopperId), eq(orionGuid), eq(fqdn), any());
-        verify(panoptaService, times(1))
-                .applyTemplates(eq(server.serverId), eq(server.partnerCustomerKey), templateCaptor.capture());
-        String[] templates = templateCaptor.getValue();
-        assertEquals("https://api2.panopta.com/v2/server_template/fake_template_addon", templates[0]);
-    }
 
-    @Test
-    public void createsPanoptaServerWithManagedTemplate() throws PanoptaServiceException {
-        when(credit.isManaged()).thenReturn(true);
-        when(panoptaDataService.getPanoptaServerDetails(vmId))
-                .thenReturn(null)
-                .thenReturn(serverDetails);
-        when(panoptaService.getServer(vmId))
-                .thenReturn(null);
-        setupPanopta.execute(context, request);
-        verify(panoptaService, times(1))
-                .createServer(eq(shopperId), eq(orionGuid), eq(fqdn), any());
-        verify(panoptaService, times(1))
-                .applyTemplates(eq(server.serverId), eq(server.partnerCustomerKey), templateCaptor.capture());
-        String[] templates = templateCaptor.getValue();
-        assertEquals("https://api2.panopta.com/v2/server_template/fake_template_managed", templates[0]);
+        verify(context, times(1)).execute(eq(ApplyPanoptaTemplates.class), applyTemplatesCaptor.capture());
+
+        ApplyPanoptaTemplates.Request r = applyTemplatesCaptor.getValue();
+        assertEquals(vmId, r.vmId);
+        assertEquals(orionGuid, r.orionGuid);
+        assertEquals(partnerCustomerKey, r.partnerCustomerKey);
+        assertEquals(serverId, r.serverId);
     }
 
     @Test
@@ -310,7 +289,7 @@ public class SetupPanoptaTest {
         assertEquals(customerKey, request.customerKey);
         assertEquals(serverKey, request.serverKey);
         assertEquals(orionGuid.toString(), request.serverName);
-        assertEquals("fake_template_base,fake_template_dc", request.templates);
+        assertEquals("fake_template_base,fake_template_dc", request.templateIds);
         assertEquals(fqdn, request.fqdn);
         assertEquals(hfsVmId, request.hfsVmId);
     }

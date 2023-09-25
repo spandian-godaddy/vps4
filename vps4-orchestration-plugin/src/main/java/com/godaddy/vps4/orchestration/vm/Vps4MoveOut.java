@@ -1,11 +1,14 @@
 package com.godaddy.vps4.orchestration.vm;
 
+import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.ActionCommand;
 import com.godaddy.vps4.orchestration.Vps4ActionRequest;
 import com.godaddy.vps4.orchestration.panopta.PausePanoptaMonitoring;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4RemoveSupportUser;
 import com.godaddy.vps4.panopta.PanoptaDataService;
+import com.godaddy.vps4.panopta.PanoptaService;
+import com.godaddy.vps4.panopta.jdbc.PanoptaServerDetails;
 import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VirtualMachineService;
@@ -30,26 +33,32 @@ import java.util.stream.Collectors;
 
 public class Vps4MoveOut extends ActionCommand<Vps4MoveOut.Request, Void> {
     private CommandContext context;
+    private final Config config;
     private final VirtualMachineService virtualMachineService;
     private final VmUserService vmUserService;
     private final SchedulerWebService schedulerWebService;
     private final NetworkService networkService;
     private final PanoptaDataService panoptaDataService;
+    private final PanoptaService panoptaService;
     private static final Logger logger = LoggerFactory.getLogger(Vps4MoveOut.class);
 
     @Inject
     public Vps4MoveOut(ActionService actionService,
+                       Config config,
                        VirtualMachineService virtualMachineService,
                        VmUserService vmUserService,
                        SchedulerWebService schedulerWebService,
                        NetworkService networkService,
-                       PanoptaDataService panoptaDataService) {
+                       PanoptaDataService panoptaDataService,
+                       PanoptaService panoptaService) {
         super(actionService);
+        this.config = config;
         this.virtualMachineService = virtualMachineService;
         this.vmUserService = vmUserService;
         this.schedulerWebService = schedulerWebService;
         this.networkService = networkService;
         this.panoptaDataService = panoptaDataService;
+        this.panoptaService = panoptaService;
     }
 
     public static class Request extends Vps4ActionRequest {
@@ -68,6 +77,7 @@ public class Vps4MoveOut extends ActionCommand<Vps4MoveOut.Request, Void> {
             pauseAutomaticBackups(request.backupJobId);
             setVmCanceledAndValidUntil(request.vmId);
             pausePanoptaMonitoring(request.vmId);
+            removePanoptaWebhook(request.vmId);
             markPanoptaServerDestroyed(request.vmId);
             setIpsValidUntil(request.addressIds);
         } catch (Exception e) {
@@ -115,6 +125,15 @@ public class Vps4MoveOut extends ActionCommand<Vps4MoveOut.Request, Void> {
 
     private void pausePanoptaMonitoring(UUID vmId) {
         context.execute(PausePanoptaMonitoring.class, vmId);
+    }
+
+    private void removePanoptaWebhook(UUID vmId) {
+        context.execute("RemovePanoptaWebhook", ctx -> {
+            PanoptaServerDetails psd = panoptaDataService.getPanoptaServerDetails(vmId);
+            String templateId = config.get("panopta.api.templates.webhook");
+            panoptaService.removeTemplate(psd.getServerId(), psd.getPartnerCustomerKey(), templateId);
+            return null;
+        }, Void.class);
     }
 
     private void markPanoptaServerDestroyed(UUID vmId) {

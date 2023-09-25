@@ -569,8 +569,8 @@ public class DefaultPanoptaServiceTest {
 
         assertEquals(templates[0], req.get(0).getServerTemplate());
         assertEquals(templates[1], req.get(1).getServerTemplate());
-        assertEquals(true, req.get(0).isContinuous());
-        assertEquals(true, req.get(1).isContinuous());
+        assertTrue(req.get(0).isContinuous());
+        assertTrue(req.get(1).isContinuous());
     }
 
     @Test
