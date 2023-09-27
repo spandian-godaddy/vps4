@@ -79,11 +79,7 @@ public class Vps4MoveIn extends ActionCommand<Vps4MoveIn.Request, Void> {
     private void insertActionRecords(CommandContext context, UUID vmId, List<Action> actions) {
         context.execute("MoveInActions", ctx -> {
             for (Action action : actions) {
-                try {
-                    actionService.insertAction(vmId, action);
-                } catch (Exception e) {
-                    logger.warn("Failed to insert actionId {} for vmId {}. Skipping this one", action.id, vmId, e);
-                }
+                actionService.insertAction(vmId, action);
             }
             return null;
         }, Void.class);

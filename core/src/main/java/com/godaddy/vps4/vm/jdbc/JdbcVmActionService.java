@@ -142,10 +142,10 @@ public class JdbcVmActionService implements ActionService {
                 action.state,
                 action.response,
                 action.status.getStatusId(),
-                Timestamp.from(action.created),
+                (action.created == null) ? null : Timestamp.from(action.created),
                 action.note,
                 vmId,
-                Timestamp.from(action.completed),
+                (action.completed == null) ? null : Timestamp.from(action.completed),
                 action.initiatedBy);
     }
 
