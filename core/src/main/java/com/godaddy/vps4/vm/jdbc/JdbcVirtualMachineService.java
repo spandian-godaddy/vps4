@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public class JdbcVirtualMachineService implements VirtualMachineService {
 
@@ -285,7 +286,8 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
 
 	@Override
     public List<VirtualMachine> getVirtualMachines(VirtualMachineType type, Long vps4UserId, String ipAddress,
-            UUID orionGuid, Long hfsVmId, Integer dcId, String platform) {
+                                                   UUID orionGuid, Integer dcId, String platform,
+                                                   List<Long> hfsVmIds) {
         List<Object> args = new ArrayList<>();
         StringBuilder queryAddition = new StringBuilder();
 
@@ -313,10 +315,6 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
             queryAddition.append(" AND vm.orion_guid=?");
             args.add(orionGuid);
         }
-        if(hfsVmId != null) {
-            queryAddition.append(" AND vm.hfs_vm_id=?");
-            args.add(hfsVmId);
-        }
         if(dcId != null) {
             queryAddition.append(" AND vm.data_center_id=?");
             args.add(dcId);
@@ -325,7 +323,16 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
             queryAddition.append(" AND st.platform=?");
             args.add(platform.toUpperCase());
         }
+        if(hfsVmIds != null && !hfsVmIds.isEmpty()) {
+            String whereInClause = " AND vm.hfs_vm_id::varchar IN (%s)";
+            List<String> parameterizedTokens = hfsVmIds.stream().map(t -> "?").collect(Collectors.toList());
+            whereInClause = String.format(whereInClause, String.join(",", parameterizedTokens));
+
+            queryAddition.append(whereInClause);
+            args.addAll(hfsVmIds.stream().map(t -> t.toString()).collect(Collectors.toList()));
+        }
         String query = selectVirtualMachineQuery + queryAddition;
+
         return Sql.with(dataSource)
                 .exec(query, Sql.listOf(this::mapVirtualMachine), args.toArray());
     }

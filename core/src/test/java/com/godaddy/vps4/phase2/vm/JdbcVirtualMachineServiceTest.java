@@ -9,6 +9,8 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -197,7 +199,7 @@ public class JdbcVirtualMachineServiceTest {
         virtualMachines.add(testVm);
         virtualMachines.add(testVmOtherDc);
 
-        List<VirtualMachine> vms = virtualMachineService.getVirtualMachines(null, vps4User.getId(), null, null, null, 1, null);
+        List<VirtualMachine> vms = virtualMachineService.getVirtualMachines(null, vps4User.getId(), null, null, 1, null, null);
         VirtualMachine actualVm = vms.get(0);
         assertEquals(1, vms.size());
         assertEquals(testVm.vmId, actualVm.vmId);
@@ -210,7 +212,7 @@ public class JdbcVirtualMachineServiceTest {
             testVm = SqlTestData.insertTestVmWithIp(UUID.randomUUID(), dataSource, vps4User.getId());
             virtualMachines.add(testVm);
         }
-        List<VirtualMachine> actualVms = virtualMachineService.getVirtualMachines(null, null, testVm.primaryIpAddress.ipAddress, null, testVm.hfsVmId+1, null, null);
+        List<VirtualMachine> actualVms = virtualMachineService.getVirtualMachines(null, null, testVm.primaryIpAddress.ipAddress, null, null, null, Collections.singletonList(testVm.hfsVmId+1));
         assertEquals(0, actualVms.size());
     }
 
@@ -225,13 +227,27 @@ public class JdbcVirtualMachineServiceTest {
 
 
         List<VirtualMachine> actualVms = virtualMachineService.getVirtualMachines(null, vps4User2.getId(),
-                null, null, testVm.hfsVmId, null, null);
+                null, null, null, null, Collections.singletonList(testVm.hfsVmId));
         assertEquals(0, actualVms.size());
 
         actualVms = virtualMachineService.getVirtualMachines(null, vps4User.getId(), null, null,
-                testVm.hfsVmId, null, null);
+                null, null, Collections.singletonList(testVm.hfsVmId));
         assertEquals(1, actualVms.size());
         assertEquals(testVm.vmId, actualVms.get(0).vmId);
+    }
+
+    @Test
+    public void testGetVirtualMachinesByListOfHfsVmIds() {
+        for (int i = 0; i < 3; i++) {
+            VirtualMachine testVm = SqlTestData.insertTestVm(UUID.randomUUID(), dataSource, vps4User.getId());
+            virtualMachines.add(testVm);
+        }
+        List<Long> firstTwoHfsVms = Arrays.asList(virtualMachines.get(0).hfsVmId, virtualMachines.get(1).hfsVmId);
+        List<VirtualMachine> actualVms = virtualMachineService.getVirtualMachines(null, null, null, null, null, null, firstTwoHfsVms);
+        assertEquals(2, actualVms.size());
+        assertEquals(virtualMachines.get(0).hfsVmId, actualVms.get(1).hfsVmId);
+        assertEquals(virtualMachines.get(1).hfsVmId, actualVms.get(0
+        ).hfsVmId);
     }
 
     @Test
@@ -509,7 +525,7 @@ public class JdbcVirtualMachineServiceTest {
         virtualMachines.add(SqlTestData.insertTestVmCustomSpec(UUID.randomUUID(), dataSource, vps4User.getId(), 10, "hfs-centos7"));
         virtualMachines.add(SqlTestData.insertTestVm(UUID.randomUUID(), dataSource, vps4User.getId()));
 
-        List<VirtualMachine> vms = virtualMachineService.getVirtualMachines(null, vps4User.getId(), null, null, null, null, platform);
+        List<VirtualMachine> vms = virtualMachineService.getVirtualMachines(null, vps4User.getId(), null, null, null, platform, null);
         VirtualMachine vm = vms.get(0);
 
         assertEquals(1, vms.size());

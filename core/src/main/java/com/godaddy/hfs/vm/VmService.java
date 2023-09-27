@@ -33,6 +33,10 @@ public interface VmService {
     @Path("/")
     VmList listVms( @QueryParam("sgid")  String sgid);
 
+    @GET
+    @Path("/")
+    VmList listVmsOnHypervisor(@QueryParam("resource") String resource, @QueryParam("hypervisor") String hypervisor);
+
     @POST
     @Path("/")
     VmAction createVm(CreateVMRequest request);

@@ -3,6 +3,7 @@ package com.godaddy.vps4.web.vm;
 import com.godaddy.hfs.config.Config;
 import com.godaddy.hfs.vm.Vm;
 import com.godaddy.hfs.vm.VmExtendedInfo;
+import com.godaddy.hfs.vm.VmList;
 import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.ECommCreditService;
@@ -56,11 +57,8 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.godaddy.vps4.web.util.RequestValidation.getAndValidateUserAccountCredit;
 import static com.godaddy.vps4.web.util.RequestValidation.validateCreditIsNotInUse;
@@ -372,21 +370,50 @@ public class VmResource {
             @ApiParam(value = "HFS VM ID associated with the VM", required = false) @QueryParam("hfsVmId") Long hfsVmId,
             @ApiParam(value = "DC ID associated with the VM", required = false) @QueryParam("dcId") Integer dcId,
             @ApiParam(value = "Customer ID of the user", required = false) @QueryParam("customerId") UUID customerId,
-            @ApiParam(value = "Platform of the VM", required = false) @QueryParam("platform") ServerType.Platform platform) {
+            @ApiParam(value = "Platform of the VM", required = false) @QueryParam("platform") ServerType.Platform platform,
+            @ApiParam(value = "Hypervisor associated with the VM. Ex: sg3plztncldhv000-00.prod.sin3.gdg", required = false) @QueryParam("hypervisor") String hypervisor) {
 
         if (user.isEmployee()) {
-            return getVmsForEmployee(type, shopperId, customerId, ipAddress, orionGuid, hfsVmId, dcId, platform);
+            return getVmsForEmployee(type, shopperId, customerId, ipAddress, orionGuid, hfsVmId, dcId, platform, hypervisor);
         }
         return getVmsForVps4User(type, dcId);
     }
 
+    private List<Long> getHfsVmIdsOnHypervisor(ServerType.Platform platform, String hypervisor) {
+        List<Long> vmIds = new ArrayList<>();
+        VmList hfsVmList = getHfsVmsOnPlatformAndHV(platform, hypervisor);
+        if (hfsVmList.results != null && !hfsVmList.results.isEmpty()) {
+            vmIds = hfsVmList.results.stream().map(t -> t.vmId).collect(Collectors.toList());
+        }
+        return vmIds;
+    }
+
+    private VmList getHfsVmsOnPlatformAndHV(ServerType.Platform platform, String hypervisor) {
+        if (platform == ServerType.Platform.OPENSTACK) {
+            return vmService.listVmsOnHypervisor("openstack", hypervisor);
+        }
+        if (platform == ServerType.Platform.OPTIMIZED_HOSTING) {
+            return vmService.listVmsOnHypervisor("virtuozzo_vm", hypervisor);
+        }
+        throw new Vps4Exception("INVALID_PLATFORM", "Platform must be either OPENSTACK or OPTIMIZED_HOSTING");
+    }
+
     private List<VirtualMachine> getVmsForEmployee(VirtualMachineType type, String shopperId, UUID customerId, String ipAddress,
-                                                   UUID orionGuid, Long hfsVmId, Integer dcId, ServerType.Platform platform) {
+                                                   UUID orionGuid, Long hfsVmId, Integer dcId, ServerType.Platform platform,
+                                                   String hypervisor) {
+        List<Long> hfsVmIds = null;
         List<VirtualMachine> vmList = new ArrayList<>();
+        if (hypervisor != null && hfsVmId != null) {
+            throw new Vps4Exception("INVALID_FILTERS", "Both Hypervisor and Hfs Vm Id fields cannot be filled in.");
+        } else if (hypervisor != null) {
+            hfsVmIds = getHfsVmIdsOnHypervisor(platform, hypervisor);
+        } else if (hfsVmId != null) {
+            hfsVmIds = Collections.singletonList(hfsVmId);
+        }
         try {
             Long vps4UserId = getUserId(shopperId, customerId);
-            String platformStr = platform != null ? platform.toString() : null;
-            vmList = virtualMachineService.getVirtualMachines(type, vps4UserId, ipAddress, orionGuid, hfsVmId, dcId, platformStr);
+            String platformStr = (hypervisor == null && platform != null) ? platform.toString() : null;
+            vmList = virtualMachineService.getVirtualMachines(type, vps4UserId, ipAddress, orionGuid, dcId, platformStr, hfsVmIds);
         } catch (Vps4UserNotFound ex) {
             logger.warn("Shopper not found", ex);
         }
@@ -435,7 +462,7 @@ public class VmResource {
             return new ArrayList<VirtualMachine>();
         }
 
-        return virtualMachineService.getVirtualMachines(type, vps4User.getId(), null, null, null, dcId, null);
+        return virtualMachineService.getVirtualMachines(type, vps4User.getId(), null, null, dcId, null, null);
     }
 
     public Vm getVmFromVmVertical(long vmId) {

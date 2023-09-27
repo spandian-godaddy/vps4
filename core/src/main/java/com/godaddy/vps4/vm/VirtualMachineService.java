@@ -67,7 +67,7 @@ public interface VirtualMachineService {
     void reviveZombieVm(UUID vmId, UUID newOrionGuid);
 
 	List<VirtualMachine> getVirtualMachines(VirtualMachineType type, Long vps4UserId, String ipAddress, UUID orionGuid,
-                                            Long hfsVmId, Integer dcId, String platform);
+                                            Integer dcId, String platform, List<Long> hfsVmIds);
 
     UUID getImportedVm(UUID vmId);
 
