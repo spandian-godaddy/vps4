@@ -1,7 +1,9 @@
 package com.godaddy.vps4.orchestration.vm;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -25,11 +27,14 @@ import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.ECommCreditService;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.NetworkService;
+import com.godaddy.vps4.orchestration.monitoring.Vps4AddMonitoring;
 import com.godaddy.vps4.orchestration.panopta.ResumePanoptaMonitoring;
 import com.godaddy.vps4.panopta.PanoptaDataService;
+import com.godaddy.vps4.panopta.PanoptaServiceException;
 import com.godaddy.vps4.panopta.jdbc.PanoptaServerDetails;
 import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.DataCenter;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 
@@ -46,17 +51,16 @@ public class Vps4MoveBackTest {
     @Mock private CreditService creditService;
     private Vps4MoveBack command;
 
+    @Mock private VirtualMachine vm;
     @Mock private PanoptaServerDetails panoptaServerDetails;
 
-    private Vps4MoveBack.Request request;
-    private VirtualMachine vm;
+    private VmActionRequest request;
     private UUID backupJobId;
     private ArrayList<IpAddress> addresses;
 
     @Captor ArgumentCaptor<Function<CommandContext, Void>> resumeAutomaticBackupsCaptor;
     @Captor ArgumentCaptor<Function<CommandContext, Void>> clearVmCanceledCaptor;
     @Captor ArgumentCaptor<Function<CommandContext, Void>> markVmAsActiveCaptor;
-    @Captor ArgumentCaptor<Function<CommandContext, Void>> markPanoptaServerActiveCaptor;
     @Captor ArgumentCaptor<Function<CommandContext, Void>> markIpActivateCaptor;
     @Captor ArgumentCaptor<Function<CommandContext, Void>> updateProductMetaCaptor;
     @Captor ArgumentCaptor<Map<ECommCreditService.ProductMetaField, String>> productMetaCaptor;
@@ -64,12 +68,11 @@ public class Vps4MoveBackTest {
     @Before
     public void setup() {
         MockitoAnnotations.initMocks(this);
-        command = new Vps4MoveBack(actionService, virtualMachineService, schedulerWebService, networkService,
-                panoptaDataService, creditService);
+        command = new Vps4MoveBack(actionService, virtualMachineService,
+                                   schedulerWebService, networkService, creditService);
 
-        request = new Vps4MoveBack.Request();
-        request.vmId = UUID.randomUUID();
-        request.dcId = 1;
+        request = new VmActionRequest();
+        request.virtualMachine = vm;
         backupJobId = UUID.randomUUID();
         addresses = new ArrayList<>();
         addresses.add(new IpAddress());
@@ -77,13 +80,14 @@ public class Vps4MoveBackTest {
         addresses.get(0).addressId = 123456L;
         addresses.get(1).addressId = 552364L;
 
-        vm = new VirtualMachine();
         vm.backupJobId = backupJobId;
-        vm.vmId = request.vmId;
+        vm.vmId = UUID.randomUUID();
         vm.orionGuid = UUID.randomUUID();
         vm.hfsVmId = 42L;
-        vm.primaryIpAddress = new IpAddress();
+        vm.primaryIpAddress = mock(IpAddress.class);
         vm.primaryIpAddress.addressId = 789012L;
+        vm.dataCenter = mock(DataCenter.class);
+        vm.dataCenter.dataCenterId = 2;
 
         when(context.getId()).thenReturn(UUID.randomUUID());
         when(virtualMachineService.getVirtualMachine(vm.vmId)).thenReturn(vm);
@@ -124,22 +128,6 @@ public class Vps4MoveBackTest {
     }
 
     @Test
-    public void marksPanoptaServerActive() {
-        command.execute(context, request);
-
-        verify(context, times(1)).execute(eq("MarkPanoptaServerActive"),
-                markPanoptaServerActiveCaptor.capture(), eq(Void.class));
-        markPanoptaServerActiveCaptor.getValue().apply(context);
-        verify(panoptaDataService, times(1)).setPanoptaServerActive(vm.vmId);
-    }
-
-    @Test
-    public void resumesPanoptaMonitoring() {
-        command.execute(context, request);
-        verify(context, times(1)).execute(eq(ResumePanoptaMonitoring.class), eq(vm));
-    }
-
-    @Test
     public void setValidUntilOnIpAddresses() {
         command.execute(context, request);
 
@@ -168,7 +156,22 @@ public class Vps4MoveBackTest {
 
         Map<ECommCreditService.ProductMetaField, String> capturedProdMeta = productMetaCaptor.getValue();
         assertEquals(2, capturedProdMeta.size());
-        assertEquals(capturedProdMeta.get(ECommCreditService.ProductMetaField.DATA_CENTER), String.valueOf(request.dcId));
-        assertEquals(capturedProdMeta.get(ECommCreditService.ProductMetaField.PRODUCT_ID), request.vmId.toString());
+        assertEquals(capturedProdMeta.get(ECommCreditService.ProductMetaField.DATA_CENTER),
+                     String.valueOf(request.virtualMachine.dataCenter.dataCenterId));
+        assertEquals(capturedProdMeta.get(ECommCreditService.ProductMetaField.PRODUCT_ID),
+                     request.virtualMachine.vmId.toString());
+    }
+
+    @Test
+    public void installsPanopta() {
+        command.execute(context, request);
+        verify(context, times(1)).execute(eq(Vps4AddMonitoring.class), eq(request));
+    }
+
+    @Test
+    public void doesNotFailParentIfPanoptaFails() {
+        when(context.execute(eq(Vps4AddMonitoring.class), any())).thenThrow(new RuntimeException("ignored-exception"));
+        command.execute(context, request);
+        verify(context, times(1)).execute(eq(Vps4AddMonitoring.class), eq(request));
     }
 }

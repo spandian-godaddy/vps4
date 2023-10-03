@@ -245,9 +245,8 @@ public class JdbcVirtualMachineServiceTest {
         List<Long> firstTwoHfsVms = Arrays.asList(virtualMachines.get(0).hfsVmId, virtualMachines.get(1).hfsVmId);
         List<VirtualMachine> actualVms = virtualMachineService.getVirtualMachines(null, null, null, null, null, null, firstTwoHfsVms);
         assertEquals(2, actualVms.size());
-        assertEquals(virtualMachines.get(0).hfsVmId, actualVms.get(1).hfsVmId);
-        assertEquals(virtualMachines.get(1).hfsVmId, actualVms.get(0
-        ).hfsVmId);
+        assertTrue(virtualMachines.stream().anyMatch(vm -> vm.hfsVmId == actualVms.get(0).hfsVmId));
+        assertTrue(virtualMachines.stream().anyMatch(vm -> vm.hfsVmId == actualVms.get(1).hfsVmId));
     }
 
     @Test

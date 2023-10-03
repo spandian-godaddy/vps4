@@ -57,29 +57,9 @@ public class JdbcPanoptaDataService implements PanoptaDataService {
     }
 
     @Override
-    public void insertPanoptaServerFromKey(UUID vmId, String partnerCustomerKey, long serverId, String serverKey, String templateId) {
-        Sql.with(dataSource)
-                .exec("INSERT INTO panopta_server (partner_customer_key, vm_id, server_id, server_key, template_id) " +
-                                "values (?,?,?,?,?)",
-                        null, partnerCustomerKey, vmId, serverId, serverKey, templateId);
-    }
-
-    @Override
     public void setPanoptaServerDestroyed(UUID vmId) {
         Sql.with(dataSource)
            .exec("UPDATE panopta_server SET destroyed = now_utc() WHERE vm_id = ?", null, vmId);
-    }
-
-    @Override
-    public void setPanoptaServerActive(UUID vmId) {
-        Sql.with(dataSource)
-           .exec("UPDATE panopta_server SET destroyed = 'infinity' WHERE vm_id = ?", null, vmId);
-    }
-
-    @Override
-    public void deletePanoptaServer(UUID vmId) {
-        Sql.with(dataSource)
-           .exec("DELETE FROM panopta_server WHERE vm_id = ?", null, vmId);
     }
 
     @Override

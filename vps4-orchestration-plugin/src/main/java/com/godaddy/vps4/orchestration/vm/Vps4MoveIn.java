@@ -1,25 +1,24 @@
 package com.godaddy.vps4.orchestration.vm;
 
-import com.godaddy.vps4.credit.CreditService;
-import com.godaddy.vps4.credit.ECommCreditService;
-import com.godaddy.vps4.orchestration.ActionCommand;
-import com.godaddy.vps4.orchestration.Vps4ActionRequest;
-import com.godaddy.vps4.orchestration.panopta.ApplyPanoptaTemplates;
-import com.godaddy.vps4.orchestration.panopta.ResumePanoptaMonitoring;
-import com.godaddy.vps4.vm.Action;
-import com.godaddy.vps4.vm.ActionService;
-import com.godaddy.vps4.vm.VirtualMachine;
-import gdg.hfs.orchestration.CommandContext;
-import gdg.hfs.orchestration.CommandMetadata;
-import gdg.hfs.orchestration.CommandRetryStrategy;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.inject.Inject;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
+
+import javax.inject.Inject;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.godaddy.vps4.credit.CreditService;
+import com.godaddy.vps4.credit.ECommCreditService;
+import com.godaddy.vps4.orchestration.ActionCommand;
+import com.godaddy.vps4.orchestration.monitoring.Vps4AddMonitoring;
+import com.godaddy.vps4.vm.Action;
+import com.godaddy.vps4.vm.ActionService;
+
+import gdg.hfs.orchestration.CommandContext;
+import gdg.hfs.orchestration.CommandMetadata;
+import gdg.hfs.orchestration.CommandRetryStrategy;
 
 @CommandMetadata(
         name = "Vps4MoveIn",
@@ -28,10 +27,12 @@ import java.util.UUID;
 )
 
 public class Vps4MoveIn extends ActionCommand<Vps4MoveIn.Request, Void> {
-
     private final CreditService creditService;
     private final ActionService actionService;
     private static final Logger logger = LoggerFactory.getLogger(Vps4MoveIn.class);
+
+    private CommandContext context;
+    private Request request;
 
     @Inject
     public Vps4MoveIn(ActionService actionService, CreditService creditService) {
@@ -41,53 +42,52 @@ public class Vps4MoveIn extends ActionCommand<Vps4MoveIn.Request, Void> {
     }
 
     @Override
-    protected Void executeWithAction(CommandContext context, Request request) throws Exception {
+    protected Void executeWithAction(CommandContext context, Request request) {
+        this.context = context;
+        this.request = request;
+
         try {
-            updateProdMeta(context, request);
-            resumePanoptaMonitoring(context, request);
-            insertActionRecords(context, request.vm.vmId, request.actions);
+            updateProdMeta();
+            insertActionRecords();
+            installPanopta();
         } catch (Exception e) {
-            logger.error("Vps4MoveIn failed for vmId {}", request.vm.vmId);
+            logger.error("Vps4MoveIn failed for vmId {}", request.virtualMachine.vmId);
             throw e;
         }
 
         return null;
     }
 
-    private void updateProdMeta(CommandContext context, Request request) {
+    private void updateProdMeta() {
         Map<ECommCreditService.ProductMetaField, String> newProdMeta = new EnumMap<>(ECommCreditService.ProductMetaField.class);
-        newProdMeta.put(ECommCreditService.ProductMetaField.DATA_CENTER, String.valueOf(request.vm.dataCenter.dataCenterId));
-        newProdMeta.put(ECommCreditService.ProductMetaField.PRODUCT_ID, request.vm.vmId.toString());
+        newProdMeta.put(ECommCreditService.ProductMetaField.DATA_CENTER,
+                        String.valueOf(request.virtualMachine.dataCenter.dataCenterId));
+        newProdMeta.put(ECommCreditService.ProductMetaField.PRODUCT_ID,
+                        request.virtualMachine.vmId.toString());
         context.execute("UpdateProdMeta", ctx -> {
-            creditService.updateProductMeta(request.vm.orionGuid, newProdMeta);
+            creditService.updateProductMeta(request.virtualMachine.orionGuid, newProdMeta);
             return null;
         }, Void.class);
     }
 
-    private static void resumePanoptaMonitoring(CommandContext context, Request request) {
-        ApplyPanoptaTemplates.Request applyPanoptaTemplatesRequest = new ApplyPanoptaTemplates.Request();
-        applyPanoptaTemplatesRequest.vmId = request.vmId;
-        applyPanoptaTemplatesRequest.partnerCustomerKey = request.panoptaPartnerCustomerKey;
-        applyPanoptaTemplatesRequest.serverId = request.panoptaServerId;
-        applyPanoptaTemplatesRequest.orionGuid = request.vm.orionGuid;
-        context.execute(ApplyPanoptaTemplates.class, applyPanoptaTemplatesRequest);
-
-        context.execute(ResumePanoptaMonitoring.class, request.vm);
-    }
-
-    private void insertActionRecords(CommandContext context, UUID vmId, List<Action> actions) {
+    private void insertActionRecords() {
         context.execute("MoveInActions", ctx -> {
-            for (Action action : actions) {
-                actionService.insertAction(vmId, action);
+            for (Action action : request.actions) {
+                actionService.insertAction(request.virtualMachine.vmId, action);
             }
             return null;
         }, Void.class);
     }
 
-    public static class Request extends Vps4ActionRequest {
-        public VirtualMachine vm;
+    private void installPanopta() {
+        try {
+            context.execute(Vps4AddMonitoring.class, request);
+        } catch (Exception e) {
+            logger.error("Exception while setting up Panopta for migrated VM {}: {}", request.virtualMachine.vmId, e);
+        }
+    }
+
+    public static class Request extends VmActionRequest {
         public List<Action> actions;
-        public long panoptaServerId;
-        public String panoptaPartnerCustomerKey;
     }
 }

@@ -1,40 +1,12 @@
 package com.godaddy.vps4.web.vm;
 
-import com.godaddy.hfs.config.Config;
-import com.godaddy.vps4.credit.CreditService;
-import com.godaddy.vps4.credit.VirtualMachineCredit;
-import com.godaddy.vps4.move.VmMoveImageMapService;
-import com.godaddy.vps4.move.VmMoveSpecMapService;
-import com.godaddy.vps4.network.IpAddress;
-import com.godaddy.vps4.network.NetworkService;
-import com.godaddy.vps4.orchestration.vm.Vps4MoveIn;
-import com.godaddy.vps4.orchestration.vm.Vps4MoveOut;
-import com.godaddy.vps4.orchestration.vm.Vps4MoveBack;
-import com.godaddy.vps4.panopta.PanoptaDataService;
-import com.godaddy.vps4.project.Project;
-import com.godaddy.vps4.project.ProjectService;
-import com.godaddy.vps4.security.Vps4User;
-import com.godaddy.vps4.security.Vps4UserService;
-import com.godaddy.vps4.vm.Action;
-import com.godaddy.vps4.vm.ActionService;
-import com.godaddy.vps4.vm.ActionStatus;
-import com.godaddy.vps4.vm.ActionType;
-import com.godaddy.vps4.vm.Image;
-import com.godaddy.vps4.vm.ImageService;
-import com.godaddy.vps4.vm.InsertVirtualMachineParameters;
-import com.godaddy.vps4.vm.ServerSpec;
-import com.godaddy.vps4.vm.VirtualMachine;
-import com.godaddy.vps4.vm.VirtualMachineService;
-import com.godaddy.vps4.vm.VmAction;
-import com.godaddy.vps4.vm.VmUserService;
-import com.godaddy.vps4.web.Vps4Api;
-import com.godaddy.vps4.web.Vps4Exception;
-import com.godaddy.vps4.web.action.ActionResource;
-import com.godaddy.vps4.web.security.GDUser;
-import com.godaddy.vps4.web.security.RequiresRole;
-import gdg.hfs.orchestration.CommandService;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiParam;
+import static com.godaddy.vps4.web.util.VmHelper.createActionAndExecute;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
@@ -42,15 +14,32 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
 
-import static com.godaddy.vps4.web.util.VmHelper.createActionAndExecute;
+import com.godaddy.hfs.config.Config;
+import com.godaddy.vps4.credit.CreditService;
+import com.godaddy.vps4.credit.VirtualMachineCredit;
+import com.godaddy.vps4.move.VmMoveImageMapService;
+import com.godaddy.vps4.move.VmMoveSpecMapService;
+import com.godaddy.vps4.network.IpAddress;
+import com.godaddy.vps4.network.NetworkService;
+import com.godaddy.vps4.orchestration.vm.VmActionRequest;
+import com.godaddy.vps4.orchestration.vm.Vps4MoveIn;
+import com.godaddy.vps4.orchestration.vm.Vps4MoveOut;
+import com.godaddy.vps4.project.Project;
+import com.godaddy.vps4.project.ProjectService;
+import com.godaddy.vps4.security.Vps4User;
+import com.godaddy.vps4.security.Vps4UserService;
+import com.godaddy.vps4.vm.*;
+import com.godaddy.vps4.web.Vps4Api;
+import com.godaddy.vps4.web.Vps4Exception;
+import com.godaddy.vps4.web.action.ActionResource;
+import com.godaddy.vps4.web.security.GDUser;
+import com.godaddy.vps4.web.security.RequiresRole;
+
+import gdg.hfs.orchestration.CommandService;
+
+import io.swagger.annotations.Api;
 
 @Vps4Api
 @Api(tags = {"vms"})
@@ -58,53 +47,53 @@ import static com.godaddy.vps4.web.util.VmHelper.createActionAndExecute;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class PlatformMigrationResource {
+    private final ActionResource actionResource;
+    private final GDUser gdUser;
+    private final VmResource vmResource;
     private final ActionService actionService;
     private final CommandService commandService;
-    private final VirtualMachineService virtualMachineService;
-    private final ProjectService projectService;
-    private final NetworkService networkService;
-    private final ActionResource actionResource;
-    private final PanoptaDataService panoptaDataService;
-    private final VmUserService vmUserService;
-    private final Vps4UserService vps4UserService;
-    private final VmMoveSpecMapService vmMoveSpecMapService;
-    private final VmMoveImageMapService vmMoveImageMapService;
-    private final ImageService imageService;
-    private final GDUser gdUser;
     private final Config config;
     private final CreditService creditService;
+    private final ImageService imageService;
+    private final NetworkService networkService;
+    private final ProjectService projectService;
+    private final VirtualMachineService virtualMachineService;
+    private final VmMoveImageMapService vmMoveImageMapService;
+    private final VmMoveSpecMapService vmMoveSpecMapService;
+    private final VmUserService vmUserService;
+    private final Vps4UserService vps4UserService;
 
     @Inject
-    public PlatformMigrationResource(ActionService actionService,
-                                     CommandService commandService,
-                                     VirtualMachineService virtualMachineService,
-                                     ProjectService projectService,
-                                     NetworkService networkService,
-                                     ActionResource actionResource,
-                                     PanoptaDataService panoptaDataService,
-                                     VmUserService vmUserService,
-                                     Vps4UserService vps4UserService,
-                                     VmMoveSpecMapService vmMoveSpecMapService,
-                                     VmMoveImageMapService vmMoveImageMapService,
-                                     ImageService imageService,
+    public PlatformMigrationResource(ActionResource actionResource,
                                      GDUser gdUser,
+                                     VmResource vmResource,
+                                     ActionService actionService,
+                                     CommandService commandService,
                                      Config config,
-                                     CreditService creditService) {
+                                     CreditService creditService,
+                                     ImageService imageService,
+                                     NetworkService networkService,
+                                     ProjectService projectService,
+                                     VirtualMachineService virtualMachineService,
+                                     VmMoveImageMapService vmMoveImageMapService,
+                                     VmMoveSpecMapService vmMoveSpecMapService,
+                                     VmUserService vmUserService,
+                                     Vps4UserService vps4UserService) {
+        this.actionResource = actionResource;
+        this.gdUser = gdUser;
+        this.vmResource = vmResource;
         this.actionService = actionService;
         this.commandService = commandService;
-        this.virtualMachineService = virtualMachineService;
-        this.projectService = projectService;
-        this.networkService = networkService;
-        this.actionResource = actionResource;
-        this.panoptaDataService = panoptaDataService;
-        this.vmUserService = vmUserService;
-        this.vps4UserService = vps4UserService;
-        this.vmMoveSpecMapService = vmMoveSpecMapService;
-        this.vmMoveImageMapService = vmMoveImageMapService;
-        this.imageService = imageService;
-        this.gdUser = gdUser;
         this.config = config;
         this.creditService = creditService;
+        this.imageService = imageService;
+        this.networkService = networkService;
+        this.projectService = projectService;
+        this.virtualMachineService = virtualMachineService;
+        this.vmMoveImageMapService = vmMoveImageMapService;
+        this.vmMoveSpecMapService = vmMoveSpecMapService;
+        this.vmUserService = vmUserService;
+        this.vps4UserService = vps4UserService;
     }
 
     @POST
@@ -146,10 +135,9 @@ public class PlatformMigrationResource {
     @RequiresRole(roles = { GDUser.Role.ADMIN })
     @Path("/{vmId}/move/back")
     public VmAction moveBack(@PathParam("vmId") UUID vmId) {
-        int dcId = Integer.parseInt(config.get("vps4.datacenter.defaultId"));
-        Vps4MoveBack.Request moveBackRequest = new Vps4MoveBack.Request();
-        moveBackRequest.vmId = vmId;
-        moveBackRequest.dcId = dcId;
+        VirtualMachine vm = vmResource.getVm(vmId);
+        VmActionRequest moveBackRequest = new VmActionRequest();
+        moveBackRequest.virtualMachine = vm;
 
         return createActionAndExecute(actionService, commandService, vmId, ActionType.MOVE_BACK, moveBackRequest,
                 "Vps4MoveBack", gdUser);
@@ -165,7 +153,6 @@ public class PlatformMigrationResource {
         info.primaryIpAddress = vm.primaryIpAddress;
         info.additionalIps = networkService.getVmActiveSecondaryAddresses(vm.hfsVmId);
         info.actions = getActions(vm.vmId);
-        info.panoptaDetail = panoptaDataService.getPanoptaDetails(vm.vmId);
         info.vmUser = vmUserService.getPrimaryCustomer(vm.vmId);
 
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(vm.orionGuid);
@@ -197,10 +184,8 @@ public class PlatformMigrationResource {
                     moveInInfo.sgid);
 
             vm = insertVirtualMachine(moveInInfo, moveOutInfo, dataCenterId, project);
-
             insertIpAddresses(moveOutInfo, vm);
             vmUserService.createUser(moveOutInfo.vmUser.username, vm.vmId);
-            insertPanoptaRecords(moveOutInfo, vm);
         } catch (Exception e) {
             markNewRecordsDeleted(vm);
             throw new Vps4Exception("MOVE_IN_FAILED", e.getMessage(), e);
@@ -226,31 +211,25 @@ public class PlatformMigrationResource {
         return virtualMachineService.insertVirtualMachine(parameters);
     }
 
-    private void insertIpAddresses(MoveOutInfo moveOutInfo, VirtualMachine virtualMachine) {
-        networkService.createIpAddress(0, virtualMachine.vmId, moveOutInfo.primaryIpAddress.ipAddress, IpAddress.IpAddressType.PRIMARY);
+    private void insertIpAddresses(MoveOutInfo moveOutInfo, VirtualMachine vm) {
+        vm.primaryIpAddress = networkService.createIpAddress(0,
+                                                             vm.vmId,
+                                                             moveOutInfo.primaryIpAddress.ipAddress,
+                                                             IpAddress.IpAddressType.PRIMARY);
         if (moveOutInfo.additionalIps != null && !moveOutInfo.additionalIps.isEmpty()) {
             for (IpAddress ipAddress : moveOutInfo.additionalIps) {
-                networkService.createIpAddress(ipAddress.hfsAddressId, virtualMachine.vmId, ipAddress.ipAddress, IpAddress.IpAddressType.SECONDARY);
+                networkService.createIpAddress(ipAddress.hfsAddressId,
+                                               vm.vmId,
+                                               ipAddress.ipAddress,
+                                               IpAddress.IpAddressType.SECONDARY);
             }
         }
     }
 
-    private void insertPanoptaRecords(MoveOutInfo moveOutInfo, VirtualMachine vm) {
-        panoptaDataService.createOrUpdatePanoptaCustomerFromKey(moveOutInfo.panoptaDetail.getPartnerCustomerKey(), moveOutInfo.panoptaDetail.getCustomerKey());
-        panoptaDataService.insertPanoptaServerFromKey(
-                vm.vmId,
-                moveOutInfo.panoptaDetail.getPartnerCustomerKey(),
-                moveOutInfo.panoptaDetail.getServerId(),
-                moveOutInfo.panoptaDetail.getServerKey(),
-                moveOutInfo.panoptaDetail.getTemplateId());
-    }
-
     private void markNewRecordsDeleted(VirtualMachine vm) {
         if (vm != null) {
-            vm = virtualMachineService.getVirtualMachine(vm.vmId);
             virtualMachineService.setVmCanceled(vm.vmId);
             virtualMachineService.setVmRemoved(vm.vmId);
-            panoptaDataService.setPanoptaServerDestroyed(vm.vmId);
 
             if (vm.primaryIpAddress != null) networkService.destroyIpAddress(vm.primaryIpAddress.addressId);
             List<IpAddress> additionalIps = networkService.getVmActiveSecondaryAddresses(vm.hfsVmId);
@@ -264,7 +243,7 @@ public class PlatformMigrationResource {
 
     private VmAction runMoveInCommand(MoveOutInfo moveOutInfo, VirtualMachine vm) {
         Vps4MoveIn.Request moveInRequest = new Vps4MoveIn.Request();
-        moveInRequest.vm = vm;
+        moveInRequest.virtualMachine = vm;
         moveInRequest.actions = moveOutInfo.actions;
 
         return createActionAndExecute(

@@ -20,9 +20,11 @@ import java.util.UUID;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
-import org.mockito.MockitoAnnotations;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.CreditService;
@@ -33,8 +35,6 @@ import com.godaddy.vps4.move.VmMoveSpecMap;
 import com.godaddy.vps4.move.VmMoveSpecMapService;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.NetworkService;
-import com.godaddy.vps4.panopta.PanoptaDataService;
-import com.godaddy.vps4.panopta.PanoptaDetail;
 import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.security.Vps4User;
@@ -42,35 +42,35 @@ import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.vm.*;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.action.ActionResource;
-import com.google.inject.AbstractModule;
-import com.google.inject.Guice;
-import com.google.inject.Injector;
+import com.godaddy.vps4.web.security.GDUser;
 
 import gdg.hfs.orchestration.CommandService;
 import gdg.hfs.orchestration.CommandState;
 
+@RunWith(MockitoJUnitRunner.class)
 public class PlatformMigrationResourceTest {
-    private final ActionService actionService = mock(ActionService.class);
-    private final CommandService commandService = mock(CommandService.class);
-    private final VirtualMachineService virtualMachineService = mock(VirtualMachineService.class);
-    private final ProjectService projectService = mock(ProjectService.class);
-    private final NetworkService networkService = mock(NetworkService.class);
-    private final ActionResource actionResource = mock(ActionResource.class);
-    private final PanoptaDataService panoptaDataService = mock(PanoptaDataService.class);
-    private final VmUserService vmUserService = mock(VmUserService.class);
-    private final Vps4UserService vps4UserService = mock(Vps4UserService.class);
-    private final Config config = mock(Config.class);
-    private final VmMoveImageMapService vmMoveImageMapService = mock(VmMoveImageMapService.class);
-    private final VmMoveSpecMapService vmMoveSpecMapService = mock(VmMoveSpecMapService.class);
-    private final ImageService imageService = mock(ImageService.class);
-    private final CreditService creditService = mock(CreditService.class);
+    @Mock private ActionResource actionResource;
+    @Mock private GDUser user;
+    @Mock private VmResource vmResource;
+    @Mock private ActionService actionService;
+    @Mock private CommandService commandService;
+    @Mock private Config config;
+    @Mock private CreditService creditService;
+    @Mock private ImageService imageService;
+    @Mock private NetworkService networkService;
+    @Mock private ProjectService projectService;
+    @Mock private VirtualMachineService virtualMachineService;
+    @Mock private VmMoveImageMapService vmMoveImageMapService;
+    @Mock private VmMoveSpecMapService vmMoveSpecMapService;
+    @Mock private VmUserService vmUserService;
+    @Mock private Vps4UserService vps4UserService;
 
     private final UUID vmId = UUID.randomUUID();
     private final List<IpAddress> additionalIps = new ArrayList<>();
     private final List<Action> actions = new ArrayList<>();
-    private final PanoptaDetail panoptaDetail = mock(PanoptaDetail.class);
     private final VmUser vmUser = mock(VmUser.class);
     private final Action moveOutAction = mock(Action.class);
+
     private VirtualMachine vm;
     private Project project;
     private Vps4User vps4User;
@@ -81,36 +81,10 @@ public class PlatformMigrationResourceTest {
 
     @Captor private ArgumentCaptor<InsertVirtualMachineParameters> insertVirtualMachineParametersCaptor;
 
-    private final Injector injector = Guice.createInjector(
-            new AbstractModule() {
-                @Override
-                public void configure() {
-                    bind(ActionService.class).toInstance(actionService);
-                    bind(CommandService.class).toInstance(commandService);
-                    bind(VirtualMachineService.class).toInstance(virtualMachineService);
-                    bind(ProjectService.class).toInstance(projectService);
-                    bind(NetworkService.class).toInstance(networkService);
-                    bind(ActionResource.class).toInstance(actionResource);
-                    bind(PanoptaDataService.class).toInstance(panoptaDataService);
-                    bind(VmUserService.class).toInstance(vmUserService);
-                    bind(Vps4UserService.class).toInstance(vps4UserService);
-                    bind(Config.class).toInstance(config);
-                    bind(VmMoveImageMapService.class).toInstance(vmMoveImageMapService);
-                    bind(VmMoveSpecMapService.class).toInstance(vmMoveSpecMapService);
-                    bind(ImageService.class).toInstance(imageService);
-                    bind(CreditService.class).toInstance(creditService);
-                }
-            });
-
-    private PlatformMigrationResource getPlatformMigrationResource() {
-        return injector.getInstance(PlatformMigrationResource.class);
-    }
+    private PlatformMigrationResource resource;
 
     @Before
     public void setup() {
-        injector.injectMembers(this);
-        MockitoAnnotations.initMocks(this);
-
         vm = new VirtualMachine();
         vm.vmId = vmId;
         vm.orionGuid = UUID.randomUUID();
@@ -151,7 +125,6 @@ public class PlatformMigrationResourceTest {
         when(networkService.getVmActiveSecondaryAddresses(vm.hfsVmId)).thenReturn(additionalIps);
         when(actionResource.getActionList(null, null, null, null, null,
                 null, Long.MAX_VALUE, 0)).thenReturn(actions);
-        when(panoptaDataService.getPanoptaDetails(vmId)).thenReturn(panoptaDetail);
         when(vmUserService.getPrimaryCustomer(vmId)).thenReturn(vmUser);
         when(vps4UserService.getUser(vps4User.getShopperId())).thenReturn(vps4User);
         when(config.get("vps4.datacenter.defaultId")).thenReturn("1");
@@ -185,11 +158,15 @@ public class PlatformMigrationResourceTest {
         when(virtualMachineService.insertVirtualMachine(any(InsertVirtualMachineParameters.class))).thenReturn(vm);
 
         when(creditService.getVirtualMachineCredit(vm.orionGuid)).thenReturn(credit);
+
+        resource = new PlatformMigrationResource(actionResource, user, vmResource, actionService, commandService,
+                                                 config, creditService, imageService, networkService, projectService,
+                                                 virtualMachineService, vmMoveImageMapService, vmMoveSpecMapService,
+                                                 vmUserService, vps4UserService);
     }
 
     private void getMoveOutInfo() {
         moveOutInfo = new MoveOutInfo();
-        moveOutInfo.panoptaDetail = panoptaDetail;
         moveOutInfo.vps4User = vps4User;
         moveOutInfo.entitlementId = vm.orionGuid;
         moveOutInfo.hostname = vm.hostname;
@@ -204,24 +181,23 @@ public class PlatformMigrationResourceTest {
 
     @Test
     public void moveOutCallsServices() {
-        getPlatformMigrationResource().moveOut(vmId);
+        resource.moveOut(vmId);
 
         verify(virtualMachineService, atLeastOnce()).getVirtualMachine(vmId);
         verify(networkService, atLeastOnce()).getVmActiveSecondaryAddresses(vm.hfsVmId);
-        verify(panoptaDataService, atLeastOnce()).getPanoptaDetails(vmId);
         verify(vmUserService, atLeastOnce()).getPrimaryCustomer(vmId);
         verify(vps4UserService, atLeastOnce()).getUser("test-vps4-shopper");
     }
 
     @Test
     public void moveOutCreatesMoveOutCommand() {
-        getPlatformMigrationResource().moveOut(vmId);
+        resource.moveOut(vmId);
         verify(actionService, times(1)).createAction(eq(vmId), eq(ActionType.MOVE_OUT), anyString(), anyString());
     }
 
     @Test
     public void moveOutReturnsExpectedInfo() {
-        MoveOutInfo result = getPlatformMigrationResource().moveOut(vmId);
+        MoveOutInfo result = resource.moveOut(vmId);
 
         assertEquals(vm.orionGuid, result.entitlementId);
         assertEquals(vm.name, result.serverName);
@@ -231,13 +207,12 @@ public class PlatformMigrationResourceTest {
         assertEquals(vm.primaryIpAddress, result.primaryIpAddress);
         assertEquals(additionalIps, result.additionalIps);
         assertEquals(actions, result.actions);
-        assertEquals(panoptaDetail, result.panoptaDetail);
         assertEquals(vmUser, result.vmUser);
         assertEquals(vps4User, result.vps4User);
     }
 
     @Test public void moveInInsertsUser() {
-        getPlatformMigrationResource().moveIn(moveInRequest);
+        resource.moveIn(moveInRequest);
 
         verify(vps4UserService, times(1)).getOrCreateUserForShopper(
                 moveOutInfo.vps4User.getShopperId(),
@@ -246,7 +221,7 @@ public class PlatformMigrationResourceTest {
     }
 
     @Test public void moveInCreatesProject() {
-        getPlatformMigrationResource().moveIn(moveInRequest);
+        resource.moveIn(moveInRequest);
 
         verify(projectService, times(1)).createProject(
                 moveOutInfo.entitlementId.toString(),
@@ -255,7 +230,7 @@ public class PlatformMigrationResourceTest {
     }
 
     @Test public void moveInInsertsVirtualMachine() {
-        getPlatformMigrationResource().moveIn(moveInRequest);
+        resource.moveIn(moveInRequest);
 
         verify(virtualMachineService, times(1))
                 .insertVirtualMachine(insertVirtualMachineParametersCaptor.capture());
@@ -271,7 +246,7 @@ public class PlatformMigrationResourceTest {
     }
 
     @Test public void moveInInsertsIpAddresses() {
-        getPlatformMigrationResource().moveIn(moveInRequest);
+        resource.moveIn(moveInRequest);
 
         verify(networkService, times(1))
                 .createIpAddress(
@@ -284,36 +259,20 @@ public class PlatformMigrationResourceTest {
     }
 
     @Test public void moveInInsertsVmUser() {
-        getPlatformMigrationResource().moveIn(moveInRequest);
+        resource.moveIn(moveInRequest);
 
         verify(vmUserService, times(1)).createUser(moveOutInfo.vmUser.username, vm.vmId);
     }
 
     @Test public void moveInInsertsActions() {
-        getPlatformMigrationResource().moveIn(moveInRequest);
+        resource.moveIn(moveInRequest);
 
         verify(actionService, times(actions.size())).insertAction(eq(vm.vmId), any());
     }
 
-    @Test public void moveInInsertsPanoptaRecords() {
-        getPlatformMigrationResource().moveIn(moveInRequest);
-
-        verify(panoptaDataService, times(1))
-                .createOrUpdatePanoptaCustomerFromKey(
-                        moveOutInfo.panoptaDetail.getPartnerCustomerKey(),
-                        moveOutInfo.panoptaDetail.getCustomerKey());
-        verify(panoptaDataService, times(1))
-                .insertPanoptaServerFromKey(
-                        vm.vmId,
-                        moveOutInfo.panoptaDetail.getPartnerCustomerKey(),
-                        moveOutInfo.panoptaDetail.getServerId(),
-                        moveOutInfo.panoptaDetail.getServerKey(),
-                        moveOutInfo.panoptaDetail.getTemplateId());
-    }
-
     @Test
     public void moveInCreatesMoveInCommand() {
-        getPlatformMigrationResource().moveIn(moveInRequest);
+        resource.moveIn(moveInRequest);
 
         verify(actionService, times(1))
                 .createAction(eq(vmId), eq(ActionType.MOVE_IN), anyString(), anyString());
@@ -323,7 +282,7 @@ public class PlatformMigrationResourceTest {
     public void moveInThrowsExceptionIfUnmappedSpec() {
         when(vmMoveSpecMapService.getVmMoveSpecMap(vm.spec.specId, ServerType.Platform.OPENSTACK))
                 .thenThrow(new IllegalArgumentException("A mapping does not exist for this spec: 0"));
-        getPlatformMigrationResource().moveIn(moveInRequest);
+        resource.moveIn(moveInRequest);
 
         fail("Expected exception to be thrown.");
     }
@@ -334,14 +293,14 @@ public class PlatformMigrationResourceTest {
                 .thenThrow(new IllegalArgumentException("A mapping does not exist for this image: 0"));
         when(imageService.getImageByHfsName(vm.image.hfsName)).thenReturn(vm.image);
 
-        getPlatformMigrationResource().moveIn(moveInRequest);
+        resource.moveIn(moveInRequest);
 
         fail("Expected exception to be thrown.");
     }
 
     @Test
     public void moveBackCreatesMoveBackCommand() {
-        getPlatformMigrationResource().moveBack(vmId);
+        resource.moveBack(vmId);
         verify(actionService, times(1)).createAction(eq(vmId), eq(ActionType.MOVE_BACK), anyString(), anyString());
     }
 }

@@ -2,10 +2,9 @@ package com.godaddy.vps4.orchestration.vm;
 
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.network.NetworkService;
-import com.godaddy.vps4.orchestration.panopta.PausePanoptaMonitoring;
+import com.godaddy.vps4.orchestration.monitoring.RemovePanoptaMonitoring;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4RemoveSupportUser;
 import com.godaddy.vps4.panopta.PanoptaDataService;
-import com.godaddy.vps4.panopta.PanoptaService;
 import com.godaddy.vps4.panopta.jdbc.PanoptaServerDetails;
 import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.godaddy.vps4.vm.ActionService;
@@ -32,7 +31,6 @@ import java.util.function.Function;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -48,7 +46,8 @@ public class Vps4MoveOutTest {
     @Mock private SchedulerWebService schedulerWebService;
     @Mock private NetworkService networkService;
     @Mock private PanoptaDataService panoptaDataService;
-    @Mock private PanoptaService panoptaService;
+
+    @Captor private ArgumentCaptor<Function<CommandContext, Void>> voidCommandCaptor;
 
     private Vps4MoveOut command;
     private Vps4MoveOut.Request request;
@@ -62,8 +61,8 @@ public class Vps4MoveOutTest {
 
     @Before
     public void setUp() {
-        command = new Vps4MoveOut(actionService, config, virtualMachineService, vmUserService, schedulerWebService,
-                                  networkService, panoptaDataService, panoptaService);
+        command = new Vps4MoveOut(actionService, virtualMachineService,
+                                  vmUserService, schedulerWebService, networkService);
 
         request = new Vps4MoveOut.Request();
         request.vmId = UUID.randomUUID();
@@ -74,7 +73,7 @@ public class Vps4MoveOutTest {
         request.addressIds.add(552364L);
 
         vm = new VirtualMachine();
-        vm.backupJobId = UUID.randomUUID();
+        vm.backupJobId = request.backupJobId;
         vm.vmId = request.vmId;
         vm.hfsVmId = 42L;
 
@@ -118,8 +117,9 @@ public class Vps4MoveOutTest {
     @Test
     public void pausesAutomaticBackups() {
         command.execute(context, request);
-        verify(context, times(1)).execute(eq("PauseAutomaticBackups"),
-                any(Function.class), eq(Void.class));
+        verify(context, times(1)).execute(eq("PauseAutomaticBackups"), voidCommandCaptor.capture(), eq(Void.class));
+        voidCommandCaptor.getValue().apply(context);
+        verify(schedulerWebService, times(1)).pauseJob("vps4", "backups", vm.backupJobId);
     }
 
     @Test
@@ -132,38 +132,38 @@ public class Vps4MoveOutTest {
     @Test
     public void callsToSetCanceledAndValidUntil() {
         command.execute(context, request);
-        verify(context, times(1)).execute(eq("MarkVmAsZombie"),
-                any(Function.class), eq(Void.class));
-        verify(context, times(1)).execute(eq("MarkVmAsRemoved"),
-                any(Function.class), eq(Void.class));
-    }
 
-    @Test
-    public void pausesPanoptaMonitoring() {
-        command.execute(context, request);
-        verify(context, times(1)).execute(eq(PausePanoptaMonitoring.class), eq(request.vmId));
-    }
+        verify(context, times(1)).execute(eq("MarkVmAsZombie"), voidCommandCaptor.capture(), eq(Void.class));
+        voidCommandCaptor.getValue().apply(context);
+        verify(virtualMachineService, times(1)).setVmCanceled(vm.vmId);
 
-    @Test
-    public void removesPanoptaWebhook() {
-        command.execute(context, request);
-        verify(context, times(1)).execute(eq("RemovePanoptaWebhook"), lambda.capture(), eq(Void.class));
-        lambda.getValue().apply(context);
-        verify(panoptaDataService, times(1)).getPanoptaServerDetails(vm.vmId);
-        verify(config, times(1)).get("panopta.api.templates.webhook");
-        verify(panoptaService, times(1)).removeTemplate(1234, "test-customer", "test-template-id");
+        verify(context, times(1)).execute(eq("MarkVmAsRemoved"), voidCommandCaptor.capture(), eq(Void.class));
+        voidCommandCaptor.getValue().apply(context);
+        verify(virtualMachineService, times(1)).setVmRemoved(vm.vmId);
     }
 
     @Test
     public void setValidUntilOnIpAddresses() {
         command.execute(context, request);
+
         verify(context, times(1)).execute(
                 eq("MarkIpDeleted-" + request.addressIds.get(0).toString()),
-                any(Function.class),
+                voidCommandCaptor.capture(),
                 eq(Void.class));
+        voidCommandCaptor.getValue().apply(context);
+        verify(networkService, times(1)).destroyIpAddress(request.addressIds.get(0));
+
         verify(context, times(1)).execute(
                 eq("MarkIpDeleted-" + request.addressIds.get(1).toString()),
-                any(Function.class),
+                voidCommandCaptor.capture(),
                 eq(Void.class));
+        voidCommandCaptor.getValue().apply(context);
+        verify(networkService, times(1)).destroyIpAddress(request.addressIds.get(1));
+    }
+
+    @Test
+    public void removesPanoptaMonitoring() {
+        command.execute(context, request);
+        verify(context, times(1)).execute(RemovePanoptaMonitoring.class, vm.vmId);
     }
 }

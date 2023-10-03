@@ -6,7 +6,6 @@ import java.util.Arrays;
 import java.util.UUID;
 
 import javax.inject.Inject;
-import javax.ws.rs.HEAD;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,7 +14,6 @@ import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.panopta.PanoptaService;
-import com.godaddy.vps4.panopta.PanoptaServiceException;
 
 import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;

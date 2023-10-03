@@ -144,17 +144,6 @@ public class PanoptaDataServiceTest {
     }
 
     @Test
-    public void deletePanoptaServer() {
-        panoptaDataService.createOrUpdatePanoptaCustomer(fakeShopperId, fakeCustomerKey);
-        panoptaDataService.createPanoptaServer(vm.vmId, fakeShopperId, fakeTemplateId, panoptaServer);
-
-        panoptaDataService.deletePanoptaServer(vm.vmId);
-
-        PanoptaServerDetails panoptaServerDetails = panoptaDataService.getPanoptaServerDetails(vm.vmId);
-        assertNull(panoptaServerDetails);
-    }
-
-    @Test
     public void createPanoptaServer() {
         panoptaDataService.createOrUpdatePanoptaCustomer(fakeShopperId, fakeCustomerKey);
         panoptaDataService.createPanoptaServer(vm.vmId, fakeShopperId, fakeTemplateId, panoptaServer);

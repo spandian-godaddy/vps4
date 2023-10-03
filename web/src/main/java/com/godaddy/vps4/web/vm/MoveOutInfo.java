@@ -18,7 +18,6 @@ public class MoveOutInfo {
     public String hostname;
     public IpAddress primaryIpAddress;
     public List<IpAddress> additionalIps;
-    public PanoptaDetail panoptaDetail;
     public VmUser vmUser;
     public Vps4User vps4User;
     public List<Action> actions;
