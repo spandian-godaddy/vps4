@@ -20,6 +20,8 @@ import java.util.List;
 import java.util.Random;
 import java.util.UUID;
 
+import javax.ws.rs.NotFoundException;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -36,6 +38,8 @@ import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
+import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmAction;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.GDUser;
@@ -45,15 +49,18 @@ import com.godaddy.vps4.web.security.RequiresRole;
 public class InterventionResourceTest {
     @Captor private ArgumentCaptor<ActionListFilters> alfCaptor;
 
-    @Mock private Action action;
-    @Mock private Action conflictingAction;
     @Mock private ActionService actionService;
+    @Mock private VirtualMachineService virtualMachineService;
 
     private final InterventionResource.Request request = new InterventionResource.Request();
     private final List<Action> interventions = new ArrayList<>();
     private final String reason = "Testing intervention endpoint";
     private final String jsonReason = String.format("{\"reason\":\"%s\"}", reason);
     private final UUID vmId = UUID.randomUUID();
+
+    @Mock private Action action;
+    @Mock private Action conflictingAction;
+    @Mock private VirtualMachine vm;
 
     private GDUser user;
     private InterventionResource resource;
@@ -72,10 +79,11 @@ public class InterventionResourceTest {
         action.type = ActionType.INTERVENTION;
         conflictingAction.id = new Random().nextLong();
         conflictingAction.type = ActionType.INTERVENTION;
+        vm.validUntil = Instant.MAX;
         request.reason = reason;
         interventions.add(action);
         user = GDUserMock.createAdmin();
-        resource = new InterventionResource(user, actionService);
+        resource = new InterventionResource(user, actionService, virtualMachineService);
     }
 
     private void setUpInteractions() {
@@ -86,6 +94,7 @@ public class InterventionResourceTest {
         when(actionService.getActionList(any(ActionListFilters.class)))
                 .thenReturn(new ResultSubset<>(interventions, interventions.size()));
         doNothing().when(actionService).completeAction(anyLong(), eq(null), eq(null));
+        when(virtualMachineService.getVirtualMachine(vmId)).thenReturn(vm);
     }
 
     @Test
@@ -102,6 +111,14 @@ public class InterventionResourceTest {
         verify(actionService, times(1)).createAction(eq(vmId), eq(ActionType.INTERVENTION), eq(jsonReason), anyString());
         verify(actionService, times(1)).markActionInProgress(action.id);
         assertEquals(action.id, result.id);
+    }
+
+    @Test
+    public void startInterventionThrows404() throws JsonProcessingException {
+        try {
+            resource.startIntervention(UUID.randomUUID(), request);
+            fail();
+        } catch (NotFoundException ignored) {}
     }
 
     @Test
@@ -131,6 +148,14 @@ public class InterventionResourceTest {
         assertEquals(vmId, value.getResourceId());
         assertTrue(value.getTypeList().contains(ActionType.INTERVENTION));
         assertTrue(value.getStatusList().contains(ActionStatus.IN_PROGRESS));
+    }
+
+    @Test
+    public void endInterventionThrows404() {
+        try {
+            resource.endIntervention(UUID.randomUUID());
+            fail();
+        } catch (NotFoundException ignored) {}
     }
 
     @Test

@@ -1,6 +1,7 @@
 package com.godaddy.vps4.web.intervention;
 
 import static com.godaddy.vps4.web.util.RequestValidation.validateNoConflictingActions;
+import static com.godaddy.vps4.web.util.RequestValidation.validateVmExists;
 
 import java.util.UUID;
 
@@ -19,6 +20,8 @@ import com.godaddy.vps4.vm.Action;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
+import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmAction;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.Vps4Exception;
@@ -37,16 +40,20 @@ import io.swagger.annotations.Api;
 public class InterventionResource {
     private final GDUser user;
     private final ActionService actionService;
+    private final VirtualMachineService virtualMachineService;
 
     @Inject
-    public InterventionResource(GDUser user, ActionService actionService) {
+    public InterventionResource(GDUser user, ActionService actionService, VirtualMachineService virtualMachineService) {
         this.user = user;
         this.actionService = actionService;
+        this.virtualMachineService = virtualMachineService;
     }
 
     @POST
     @Path("/start")
     public VmAction startIntervention(@PathParam("vmId") UUID vmId, Request request) throws JsonProcessingException {
+        VirtualMachine vm = virtualMachineService.getVirtualMachine(vmId);
+        validateVmExists(vmId, vm, user);
         validateNoConflictingActions(vmId, actionService, ActionType.INTERVENTION);
 
         ObjectMapper om = new ObjectMapper();
@@ -66,6 +73,9 @@ public class InterventionResource {
     @POST
     @Path("/end")
     public VmAction endIntervention(@PathParam("vmId") UUID vmId) {
+        VirtualMachine vm = virtualMachineService.getVirtualMachine(vmId);
+        validateVmExists(vmId, vm, user);
+
         ActionListFilters filters = new ActionListFilters()
                 .byResourceId(vmId)
                 .byType(ActionType.INTERVENTION)
