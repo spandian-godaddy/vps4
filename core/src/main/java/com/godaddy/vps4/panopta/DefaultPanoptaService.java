@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -673,5 +675,17 @@ public class DefaultPanoptaService implements PanoptaService {
                         "NO_SERVER_GROUP_FOUND",
                         "No default server group found."
                 )).url;
+    }
+
+    @Override
+    public Set<String> getOutageMetrics(UUID vmId) throws PanoptaServiceException {
+        List<VmOutage> outages = this.getOutages(vmId, null, null, null);
+        Set<String> outageMetrics = new HashSet<>();
+        for (VmOutage outage : outages) {
+            for (VmMetric metric : outage.metrics) {
+                outageMetrics.add(metric.toString());
+            }
+        }
+        return outageMetrics;
     }
 }

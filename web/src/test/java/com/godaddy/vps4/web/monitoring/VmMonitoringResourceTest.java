@@ -56,7 +56,6 @@ public class VmMonitoringResourceTest {
     private UriInfo uriInfo;
     private PanoptaService panoptaService;
     private PanoptaDataService panoptaDataService;
-    private VmOutageResource vmOutageResource;
 
     private final Injector injector = Guice.createInjector(new ObjectMapperModule());
 
@@ -66,8 +65,7 @@ public class VmMonitoringResourceTest {
         vmResource = mock(VmResource.class);
         panoptaService = mock(PanoptaService.class);
         panoptaDataService = mock(PanoptaDataService.class);
-        vmOutageResource = mock(VmOutageResource.class);
-        resource = new VmMonitoringResource(vmResource, panoptaService, panoptaDataService, vmOutageResource);
+        resource = new VmMonitoringResource(vmResource, panoptaService);
         IpAddress ipAddress = new IpAddress(1, 0, null, null, null, null, null, 4);
         vm = new VirtualMachine(UUID.randomUUID(),
                                 1L,
@@ -159,7 +157,7 @@ public class VmMonitoringResourceTest {
                                                         "customerKey", 3, "serverKey",
                                                         Instant.now(), Instant.MAX, "templateId");
         when(panoptaDataService.getPanoptaDetails(vm.vmId)).thenReturn(panoptaDetail);
-        when(vmOutageResource.getVmOutageList(vm.vmId, null, null, null)).thenReturn(panoptaEvents);
+        when(panoptaService.getOutages(vm.vmId, null, null, null)).thenReturn(panoptaEvents);
 
         PaginatedResult<MonitoringEvent> events = resource.getVmMonitoringEvents(vm.vmId, 30, 10, 0, uriInfo);
 
