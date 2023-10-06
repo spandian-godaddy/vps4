@@ -30,6 +30,7 @@ import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 
 import com.godaddy.vps4.panopta.PanoptaAvailability;
+import com.godaddy.vps4.panopta.PanoptaDataService;
 import com.godaddy.vps4.panopta.PanoptaGraph;
 import com.godaddy.vps4.panopta.PanoptaService;
 import com.godaddy.vps4.panopta.PanoptaServiceException;
@@ -56,11 +57,18 @@ public class VmMonitoringResource {
 
     private final VmResource vmResource;
     private final PanoptaService panoptaService;
+    private final PanoptaDataService panoptaDataService;
+    private final VmOutageResource vmOutageResource;
 
     @Inject
-    public VmMonitoringResource(VmResource vmResource, PanoptaService panoptaService) {
+    public VmMonitoringResource(VmResource vmResource,
+                                PanoptaService panoptaService,
+                                PanoptaDataService panoptaDataService,
+                                VmOutageResource vmOutageResource) {
         this.vmResource = vmResource;
         this.panoptaService = panoptaService;
+        this.panoptaDataService = panoptaDataService;
+        this.vmOutageResource = vmOutageResource;
     }
 
     @GET
@@ -98,7 +106,7 @@ public class VmMonitoringResource {
         int scrubbedOffset = Math.max(offset, 0);
         List<MonitoringEvent> events;
 
-        List<VmOutage> sourceEvents = panoptaService.getOutages(vmId, null, null, null);
+        List<VmOutage> sourceEvents = vmOutageResource.getVmOutageList(vmId, null, null, null);
         events = sourceEvents.stream()
                              .filter(event -> event.metrics.contains(VmMetric.PING))
                              .map(MonitoringEvent::new)

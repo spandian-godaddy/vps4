@@ -1,21 +1,17 @@
 package com.godaddy.vps4.web.monitoring;
 
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
-import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.UriInfo;
 
 import com.godaddy.vps4.orchestration.monitoring.Vps4ClearVmOutage;
 import com.godaddy.vps4.orchestration.monitoring.Vps4NewVmOutage;
@@ -26,10 +22,10 @@ import com.godaddy.vps4.vm.VmAction;
 import com.godaddy.vps4.vm.VmMetric;
 import com.godaddy.vps4.vm.VmOutage;
 import com.godaddy.vps4.vm.VirtualMachine;
-import com.godaddy.vps4.web.PaginatedResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.panopta.PanoptaService;
 import com.godaddy.vps4.panopta.PanoptaServiceException;
 import com.godaddy.vps4.web.Vps4Api;
@@ -56,6 +52,7 @@ public class VmOutageResource {
 
     private final VmResource vmResource;
     private final CommandService commandService;
+    private final CreditService creditService;
     private final PanoptaService panoptaService;
     private final ActionService actionService;
     private final GDUser user;
@@ -63,11 +60,13 @@ public class VmOutageResource {
     @Inject
     public VmOutageResource(VmResource vmResource,
                             CommandService commandService,
+                            CreditService creditService,
                             PanoptaService panoptaService,
                             ActionService actionService,
                             GDUser user) {
         this.vmResource = vmResource;
         this.commandService = commandService;
+        this.creditService = creditService;
         this.panoptaService = panoptaService;
         this.actionService = actionService;
         this.user = user;
@@ -75,23 +74,14 @@ public class VmOutageResource {
 
     @GET
     @Path("/{vmId}/outages")
-    public PaginatedResult<VmOutage> getVmOutageList(@PathParam("vmId") UUID vmId,
+    public List<VmOutage> getVmOutageList(@PathParam("vmId") UUID vmId,
                                           @QueryParam("daysAgo") Integer daysAgo,
                                           @QueryParam("metric") VmMetric metric,
-                                          @QueryParam("status") VmOutage.Status status,
-                                          @DefaultValue("10") @QueryParam("limit") Integer limit,
-                                          @DefaultValue("0") @QueryParam("offset") Integer offset,
-                                          @Context UriInfo uri) throws PanoptaServiceException {
+                                          @QueryParam("status") VmOutage.Status status)
+            throws PanoptaServiceException {
         vmResource.getVm(vmId); // Auth validation
 
-        int scrubbedLimit = Math.max(limit, 0);
-        int scrubbedOffset = Math.max(offset, 0);
-
-        List<VmOutage> outages = panoptaService.getOutages(vmId, daysAgo, metric, status);
-        List<VmOutage> paginatedEvents = outages.subList(Math.min(scrubbedOffset, outages.size()),
-                Math.min(scrubbedOffset + scrubbedLimit, outages.size()));
-
-        return new PaginatedResult<>(paginatedEvents, scrubbedLimit, scrubbedOffset, outages.size(), uri);
+        return panoptaService.getOutages(vmId, daysAgo, metric, status);
     }
 
     @GET
@@ -142,12 +132,5 @@ public class VmOutageResource {
 
         return createActionAndExecute(actionService, commandService, vmId, ActionType.CLEAR_VM_OUTAGE,
                 clearVmOutageRequest, "Vps4ClearVmOutage", user);
-    }
-
-    @GET
-    @Path("/{vmId}/outageMetrics")
-    public Set<String> getOutageMetrics(@PathParam("vmId") UUID vmId) throws PanoptaServiceException {
-        vmResource.getVm(vmId);  // Auth validation
-        return panoptaService.getOutageMetrics(vmId);
     }
 }
