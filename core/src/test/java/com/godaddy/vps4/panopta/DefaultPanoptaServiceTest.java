@@ -871,4 +871,36 @@ public class DefaultPanoptaServiceTest {
             assertEquals("NO_SERVER_FOUND", e.getId());
         }
     }
+
+    @Test
+    public void getOutageMetrics() throws PanoptaServiceException {
+        Set<String> expected = new HashSet<>(Arrays.asList("CPU", "RAM"));
+        long ramMetricId = 215100057L, cpuMetricId = 215100054L;
+        PanoptaOutageList panoptaOutageList = new PanoptaOutageList();
+        PanoptaOutage newRamOutage = createDummyOutage(ramMetricId, Instant.now(), "vps4_ram_outage");
+        PanoptaOutage oldRamOutage = createDummyOutage(ramMetricId, Instant.now().minus(7, ChronoUnit.DAYS), "vps4_ram_outage");
+        PanoptaOutage oldCpuOutage = createDummyOutage(cpuMetricId, Instant.now().minus(7, ChronoUnit.DAYS), "vps4_cpu_outage");
+        panoptaOutageList.value = new ArrayList<>(Arrays.asList(newRamOutage, oldRamOutage, oldCpuOutage));
+
+        when(panoptaApiServerService.getOutages(serverId, partnerCustomerKey, null, 0, null)).thenReturn(panoptaOutageList);
+
+        Set<String> actual = defaultPanoptaService.getOutageMetrics(vmId);
+
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void getOutageMetricsWithConsolidatedOutage() throws PanoptaServiceException {
+        Set<String> expected = new HashSet<>(Arrays.asList("CPU", "RAM"));
+        long ramMetricId = 215100057L, cpuMetricId = 215100054L;
+        PanoptaOutageList panoptaOutageList = new PanoptaOutageList();
+        PanoptaOutage newRamOutage = createDummyOutage(ramMetricId, Instant.now(), "vps4_ram_outage");
+        PanoptaOutage oldRamAndCpuOutage = createDummyOutage(ramMetricId, Instant.now().minus(7, ChronoUnit.DAYS), "vps4_ram_outage");
+        oldRamAndCpuOutage.metricIds.add(cpuMetricId);
+        panoptaOutageList.value = new ArrayList<>(Arrays.asList(newRamOutage, oldRamAndCpuOutage));
+
+        when(panoptaApiServerService.getOutages(serverId, partnerCustomerKey, null, 0, null)).thenReturn(panoptaOutageList);
+
+        assertEquals(expected, defaultPanoptaService.getOutageMetrics(vmId));
+    }
 }

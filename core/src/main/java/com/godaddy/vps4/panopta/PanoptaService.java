@@ -2,6 +2,7 @@ package com.godaddy.vps4.panopta;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import com.godaddy.vps4.vm.VmMetric;
@@ -63,4 +64,6 @@ public interface PanoptaService {
     String getDefaultGroup(String shopperId) throws PanoptaServiceException;
 
     List<PanoptaDomain> getAdditionalDomains(UUID vmId);
+
+    Set<String> getOutageMetrics(UUID vmId) throws PanoptaServiceException;
 }
