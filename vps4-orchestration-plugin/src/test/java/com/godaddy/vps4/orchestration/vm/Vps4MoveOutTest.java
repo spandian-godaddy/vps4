@@ -1,7 +1,33 @@
 package com.godaddy.vps4.orchestration.vm;
 
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Matchers.startsWith;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.UUID;
+import java.util.function.Function;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
+
 import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.network.NetworkService;
+import com.godaddy.vps4.orchestration.hfs.sysadmin.UninstallPanoptaAgent;
 import com.godaddy.vps4.orchestration.monitoring.RemovePanoptaMonitoring;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4RemoveSupportUser;
 import com.godaddy.vps4.panopta.PanoptaDataService;
@@ -13,28 +39,8 @@ import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.vm.VmUser;
 import com.godaddy.vps4.vm.VmUserService;
 import com.godaddy.vps4.vm.VmUserType;
+
 import gdg.hfs.orchestration.CommandContext;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
-import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
-import java.util.function.Function;
-
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class Vps4MoveOutTest {
@@ -99,19 +105,24 @@ public class Vps4MoveOutTest {
 
     @Test
     public void removesAllSupportUsers() {
-        List<String> capturedCommandNames;
-        List<Vps4RemoveSupportUser.Request> capturedRequests;
-
         command.execute(context, request);
+        verify(context, times(2)).execute(startsWith("AttemptRemoveUser-"), voidCommandCaptor.capture(), eq(Void.class));
 
-        verify(context, times(2)).execute(commandNameCaptor.capture(), eq(Vps4RemoveSupportUser.class), removeSupportUserRequestCaptor.capture());
-        capturedCommandNames = commandNameCaptor.getAllValues();
-        capturedRequests = removeSupportUserRequestCaptor.getAllValues();
+        voidCommandCaptor.getAllValues().forEach(f -> f.apply(context));
+        verify(context, times(2)).execute(startsWith("RemoveUser-"),
+                                          eq(Vps4RemoveSupportUser.class),
+                                          removeSupportUserRequestCaptor.capture());
 
-        assertEquals("RemoveUser-lobster", capturedCommandNames.get(0));
-        assertEquals("RemoveUser-duck", capturedCommandNames.get(1));
-        assertEquals("lobster", capturedRequests.get(0).username);
-        assertEquals("duck", capturedRequests.get(1).username);
+        List<Vps4RemoveSupportUser.Request> results = removeSupportUserRequestCaptor.getAllValues();
+        assertEquals("lobster", results.get(0).username);
+        assertEquals("duck", results.get(1).username);
+    }
+
+    @Test
+    public void ignoresSupportUserRemovalExceptions() {
+        when(context.execute(anyString(), eq(Vps4RemoveSupportUser.class), any()))
+                .thenThrow(new RuntimeException("test exception"));
+        removesAllSupportUsers();
     }
 
     @Test
@@ -164,6 +175,16 @@ public class Vps4MoveOutTest {
     @Test
     public void removesPanoptaMonitoring() {
         command.execute(context, request);
+        verify(context, times(1)).execute(UninstallPanoptaAgent.class, vm.hfsVmId);
+        verify(context, times(1)).execute(RemovePanoptaMonitoring.class, vm.vmId);
+    }
+
+    @Test
+    public void ignoresPanoptaUninstallationException() {
+        when(context.execute(eq(UninstallPanoptaAgent.class), anyLong()))
+                .thenThrow(new RuntimeException("test exception"));
+        command.execute(context, request);
+        verify(context, times(1)).execute(UninstallPanoptaAgent.class, vm.hfsVmId);
         verify(context, times(1)).execute(RemovePanoptaMonitoring.class, vm.vmId);
     }
 }

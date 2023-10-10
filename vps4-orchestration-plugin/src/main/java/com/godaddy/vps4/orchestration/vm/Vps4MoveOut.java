@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.ActionCommand;
 import com.godaddy.vps4.orchestration.Vps4ActionRequest;
+import com.godaddy.vps4.orchestration.hfs.sysadmin.UninstallPanoptaAgent;
 import com.godaddy.vps4.orchestration.monitoring.RemovePanoptaMonitoring;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4RemoveSupportUser;
 import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
@@ -66,7 +67,7 @@ public class Vps4MoveOut extends ActionCommand<Vps4MoveOut.Request, Void> {
             pauseAutomaticBackups(request.backupJobId);
             setVmCanceledAndValidUntil(request.vmId);
             setIpsValidUntil(request.addressIds);
-            removeMonitoring(request.vmId);
+            removeMonitoring(request.vmId, request.hfsVmId);
         } catch (Exception e) {
             String errorMessage = String.format("Move out failed for VM %s", request.vmId);
             logger.warn(errorMessage, e);
@@ -80,12 +81,19 @@ public class Vps4MoveOut extends ActionCommand<Vps4MoveOut.Request, Void> {
                 .map(u -> u.username).collect(Collectors.toList());
 
         for (String username : supportUsernames) {
-            Vps4RemoveSupportUser.Request removeSupportUserRequest = new Vps4RemoveSupportUser.Request();
-            removeSupportUserRequest.hfsVmId = hfsVmId;
-            removeSupportUserRequest.username = username;
+            Vps4RemoveSupportUser.Request r = new Vps4RemoveSupportUser.Request();
+            r.hfsVmId = hfsVmId;
+            r.username = username;
 
-            context.execute("RemoveUser-" + removeSupportUserRequest.username,
-                    Vps4RemoveSupportUser.class, removeSupportUserRequest);
+            context.execute("AttemptRemoveUser-" + r.username, ctx -> {
+                try {
+                    context.execute("RemoveUser-" + r.username, Vps4RemoveSupportUser.class, r);
+                } catch (Exception e) {
+                    logger.error("Exception while removing support user {} for VM {} and shopper {}",
+                                 r.username, r.vmId, e);
+                }
+                return null;
+            }, Void.class);
         }
     }
 
@@ -119,7 +127,11 @@ public class Vps4MoveOut extends ActionCommand<Vps4MoveOut.Request, Void> {
         }
     }
 
-    private void removeMonitoring(UUID vmId) {
+    private void removeMonitoring(UUID vmId, long hfsVmId) {
+        try {
+            // uninstalling the agent greatly improves the chances that a reinstall will work
+            context.execute(UninstallPanoptaAgent.class, hfsVmId);
+        } catch (Exception ignored) {}
         context.execute(RemovePanoptaMonitoring.class, vmId);
     }
 }

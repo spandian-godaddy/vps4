@@ -156,7 +156,6 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
 
         setupAutomaticBackupSchedule(request.vmInfo.vmId, request.shopperId);
 
-
         sendSetupEmail(request, primaryIpAddress);
 
         destroyIfOrionGuidIsMismatched(request.orionGuid);

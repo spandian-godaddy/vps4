@@ -14,7 +14,7 @@ import gdg.hfs.orchestration.CommandContext;
 
 public class WaitForPanoptaAgentSync implements Command<WaitForPanoptaAgentSync.Request, Void> {
     private static final long SLEEP_SECONDS = 5;
-    private static final long TIMEOUT_MINUTES = 30;
+    private static final long TIMEOUT_MINUTES = 10;
 
     private final PanoptaService panoptaService;
 
