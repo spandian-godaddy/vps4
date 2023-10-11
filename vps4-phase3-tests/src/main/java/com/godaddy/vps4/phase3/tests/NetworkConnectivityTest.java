@@ -8,7 +8,7 @@ public class NetworkConnectivityTest implements VmTest {
     @Override
     public void execute(VirtualMachine vm) {
         Vps4RemoteAccessClient client = vm.remote();
-        assert(client.canPing("godaddy.com"));
+        assert(client.canPing("www.godaddy.com"));
         assert(client.canPing("google.com"));
 
         assert !vm.isWindows() || client.isRdpRunning();
