@@ -67,7 +67,7 @@ public class VmZombieResourceTest {
     ScheduledJobService scheduledJobService = mock(ScheduledJobService.class);
     Config config = mock(Config.class);
     ScheduledJob scheduledJob = mock(ScheduledJob.class);
-
+    ScheduledJob scheduledJob2 = mock(ScheduledJob.class);
     VirtualMachine testVm;
     VirtualMachineCredit oldCredit;
     VirtualMachineCredit newCredit;
@@ -111,6 +111,7 @@ public class VmZombieResourceTest {
         job = new SchedulerJobDetail(jobId, nextRun, jobRequest, false);
         scheduledJobs = new ArrayList<>();
         scheduledJobs.add(scheduledJob);
+        scheduledJobs.add(scheduledJob2);
         scheduledJob.id = jobId;
         when(scheduledJobService.getScheduledJobsByType(eq(testVm.vmId),
                 eq(ScheduledJob.ScheduledJobType.ZOMBIE))).thenReturn(scheduledJobs);
@@ -323,9 +324,9 @@ public class VmZombieResourceTest {
         vmZombieResource.rescheduleZombieVmDelete(testVm.vmId);
         ArgumentCaptor<CommandGroupSpec>
                 commandGroupSpecArgumentCaptor = ArgumentCaptor.forClass(CommandGroupSpec.class);
-        verify(commandService).executeCommand(commandGroupSpecArgumentCaptor.capture());
+        verify(commandService, times(2)).executeCommand(commandGroupSpecArgumentCaptor.capture());
         CommandGroupSpec commandGroupSpec = commandGroupSpecArgumentCaptor.getValue();
-        assertSame(commandGroupSpec.commands.get(0).command, "RescheduleZombieVmCleanup");
+        assertSame("RescheduleZombieVmCleanup", commandGroupSpec.commands.get(0).command);
     }
 
     @Test(expected = Vps4Exception.class)
@@ -356,13 +357,25 @@ public class VmZombieResourceTest {
     }
 
     @Test
+    public void deletesExtraZombieCleanupJobsOnReschedule() {
+        testVm.canceled = Instant.now().minus(10, ChronoUnit.MINUTES);
+
+        vmZombieResource.rescheduleZombieVmDelete(testVm.vmId);
+        ArgumentCaptor<CommandGroupSpec>
+                commandGroupSpecArgumentCaptor = ArgumentCaptor.forClass(CommandGroupSpec.class);
+        verify(commandService, times(2)).executeCommand(commandGroupSpecArgumentCaptor.capture());
+        List<CommandGroupSpec> commandGroupSpec = commandGroupSpecArgumentCaptor.getAllValues();
+        assertSame("Vps4DeleteExtraScheduledZombieJobsForVm", commandGroupSpec.get(0).commands.get(0).command);
+    }
+
+    @Test
     public void getsScheduledZombieVmDeleteJob() {
         testVm.canceled = Instant.now().minus(10, ChronoUnit.MINUTES);
 
         List<SchedulerJobDetail> zombieCleanupJobs = vmZombieResource.getScheduledZombieVmDelete(testVm.vmId);
 
         assertNotNull(zombieCleanupJobs);
-        assertEquals(1, zombieCleanupJobs.size());
+        assertEquals(2, zombieCleanupJobs.size());
         SchedulerJobDetail zombieCleanupJob = zombieCleanupJobs.get(0);
         assertEquals(jobId, zombieCleanupJob.id);
         assertEquals(nextRun, zombieCleanupJob.nextRun);

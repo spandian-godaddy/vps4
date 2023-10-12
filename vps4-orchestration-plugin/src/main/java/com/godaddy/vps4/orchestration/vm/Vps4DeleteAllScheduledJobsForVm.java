@@ -56,6 +56,7 @@ public class Vps4DeleteAllScheduledJobsForVm implements Command<UUID, Void> {
         DeleteScheduledJob.Request req = new DeleteScheduledJob.Request();
         req.jobId = job.id;
         req.jobRequestClass = Utils.getJobRequestClassForType(job.type);
+        scheduledJobService.deleteScheduledJob(job.id);
 
         try {
             logger.info("Delete scheduled job type {} with id {}", job.type, job.id);

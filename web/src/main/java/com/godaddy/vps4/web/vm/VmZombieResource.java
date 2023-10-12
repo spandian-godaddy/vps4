@@ -170,10 +170,13 @@ public class VmZombieResource {
 
         List<ScheduledJob> scheduledJobs =
                 scheduledJobService.getScheduledJobsByType(vmId, ScheduledJob.ScheduledJobType.ZOMBIE);
-        if (scheduledJobs.size() != 1) {
+        if (scheduledJobs.size() == 0) {
             logger.error("Expected 1 zombie cleanup job scheduled, returned {}", scheduledJobs.size());
             throw new Vps4Exception("UNEXPECTED_JOB_LIST_SIZE",
                     "Expected 1 zombie cleanup job scheduled, returned " + scheduledJobs.size());
+        } else if (scheduledJobs.size() > 1) {
+            logger.error("Expected 1 zombie cleanup job scheduled, returned {}. The extras will be deleted", scheduledJobs.size());
+            Commands.execute(commandService, "Vps4DeleteExtraScheduledZombieJobsForVm", vmId);
         }
 
         UUID scheduledJobId = scheduledJobs.get(0).id;

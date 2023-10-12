@@ -81,6 +81,7 @@ import com.godaddy.vps4.orchestration.vm.Vps4UpgradeVm;
 import com.godaddy.vps4.orchestration.vm.provision.Vps4ProvisionDedicated;
 import com.godaddy.vps4.orchestration.vm.provision.Vps4ProvisionOHVm;
 import com.godaddy.vps4.orchestration.vm.provision.Vps4ProvisionVm;
+import com.godaddy.vps4.orchestration.vm.Vps4DeleteExtraScheduledZombieJobsForVm;
 import com.godaddy.vps4.orchestration.vm.rebuild.Vps4RebuildDedicated;
 import com.godaddy.vps4.orchestration.vm.rebuild.Vps4RebuildOHVm;
 import com.godaddy.vps4.orchestration.vm.rebuild.Vps4RebuildVm;
@@ -123,6 +124,7 @@ public class Vps4CommandModule extends AbstractModule {
         bind(Vps4ReviveZombieVm.class);
         bind(Vps4DeleteAllScheduledJobsForVm.class);
         bind(Vps4DeleteAllScheduledZombieJobsForVm.class);
+        bind(Vps4DeleteExtraScheduledZombieJobsForVm.class);
         bind(Vps4RecordScheduledJobForVm.class);
         bind(Vps4RemoveSupportUsersFromDatabase.class);
         bind(UnlicenseControlPanel.class);
