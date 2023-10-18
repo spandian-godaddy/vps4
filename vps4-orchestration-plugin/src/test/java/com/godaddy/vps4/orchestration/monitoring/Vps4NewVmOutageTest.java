@@ -101,7 +101,7 @@ public class Vps4NewVmOutageTest {
         GetPanoptaOutage.Request actualRequest = getPanoptaOutageRequestCaptor.getValue();
         Assert.assertEquals(request.virtualMachine.vmId, actualRequest.vmId);
         Assert.assertEquals(request.outageId, actualRequest.outageId);
-        verify(context).execute(eq("SendOutageNotificationEmail"), eq(SendVmOutageEmail.class),
+        verify(context).execute(eq("SendOutageNotificationEmail"), eq(SendVmOutageCreatedEmail.class),
                 vmOutageEmailRequestArgumentCaptor.capture());
         VmOutageEmailRequest arg2 = vmOutageEmailRequestArgumentCaptor.getValue();
         Assert.assertEquals(request.virtualMachine.name, arg2.accountName);
@@ -116,28 +116,28 @@ public class Vps4NewVmOutageTest {
     public void noEmailCommandWhenAccountNotActive() {
         when(credit.isAccountActive()).thenReturn(false);
         vps4NewVmOutage.executeWithAction(context, request);
-        verify(context, never()).execute(eq("SendOutageNotificationEmail"), eq(SendVmOutageEmail.class), any());
+        verify(context, never()).execute(eq("SendOutageNotificationEmail"), eq(SendVmOutageCreatedEmail.class), any());
     }
 
     @Test
     public void noEmailCommandWhenCreditNotFound() {
         when(creditService.getVirtualMachineCredit(any())).thenReturn(null);
         vps4NewVmOutage.executeWithAction(context, request);
-        verify(context, never()).execute(eq("SendOutageNotificationEmail"), eq(SendVmOutageEmail.class), any());
+        verify(context, never()).execute(eq("SendOutageNotificationEmail"), eq(SendVmOutageCreatedEmail.class), any());
     }
 
     @Test
     public void noEmailCommandWhenVmDestroyed() {
         when(request.virtualMachine.isActive()).thenReturn(false);
         vps4NewVmOutage.executeWithAction(context, request);
-        verify(context, never()).execute(eq("SendOutageNotificationEmail"), eq(SendVmOutageEmail.class), any());
+        verify(context, never()).execute(eq("SendOutageNotificationEmail"), eq(SendVmOutageCreatedEmail.class), any());
     }
 
     @Test
     public void executeEmailCommandWhenCreditIsFullyManaged() {
         when(credit.isManaged()).thenReturn(true);
         vps4NewVmOutage.executeWithAction(context, request);
-        verify(context).execute(eq("SendOutageNotificationEmail"), eq(SendVmOutageEmail.class), any());
+        verify(context).execute(eq("SendOutageNotificationEmail"), eq(SendVmOutageCreatedEmail.class), any());
     }
 
     @Test

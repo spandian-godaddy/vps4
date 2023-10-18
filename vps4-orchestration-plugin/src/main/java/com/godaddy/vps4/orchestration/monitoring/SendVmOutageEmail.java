@@ -1,5 +1,6 @@
 package com.godaddy.vps4.orchestration.monitoring;
 
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -31,13 +32,11 @@ import gdg.hfs.orchestration.CommandRetryStrategy;
 public class SendVmOutageEmail implements Command<VmOutageEmailRequest, Void> {
 
     private static final Logger logger = LoggerFactory.getLogger(SendVmOutageEmail.class);
-    private final MessagingService messagingService;
     private final VmAlertService vmAlertService;
     private static final String SSL_EXPIRING_WARNING = "SSL certificate is expiring";
 
     @Inject
-    public SendVmOutageEmail(MessagingService messagingService, VmAlertService vmAlertService) {
-        this.messagingService = messagingService;
+    public SendVmOutageEmail(VmAlertService vmAlertService) {
         this.vmAlertService = vmAlertService;
     }
 
@@ -51,6 +50,23 @@ public class SendVmOutageEmail implements Command<VmOutageEmailRequest, Void> {
         return null;
     }
 
+    protected String sendGeneralOutageEmail(CommandContext context, String shopperId, String accountName, String ipAddress,
+                                          UUID orionGuid, String metricDomain, Instant alertStart, boolean isManaged, String metric) {
+        return null;
+        // do nothing
+    }
+
+    protected void sendUptimeOutageEmail(CommandContext context, String shopperId, String accountName, String ipAddress,
+                                         UUID orionGuid, Instant alertStart, boolean isManaged, String metric) {
+        // do nothing
+    }
+
+
+    protected void sendServerUsageOutageEmail(CommandContext context, String shopperId, String accountName, String ipAddress,
+                                            UUID orionGuid, Instant alertStart, String reason, boolean isManaged, String metric) {
+        // do nothing
+    }
+
     private void executeForHttpAndHttps(CommandContext context, VmOutageEmailRequest req, VmOutage.DomainMonitoringMetadata metricMetadata) {
         if (metricMetadata.metadata.size() == 1 && metricMetadata.metadata.get(0).equals(SSL_EXPIRING_WARNING)) {
             String text = "SSL expiring warning detected - no outage emails sent for shopper ID {}, VM ID {}.";
@@ -59,11 +75,8 @@ public class SendVmOutageEmail implements Command<VmOutageEmailRequest, Void> {
         }
 
         String metricDomain = metricMetadata.metric + " (" + metricMetadata.additionalFqdn + ")";
-        String messageId = context.execute("SendVmOutageEmail-" + metricMetadata.metric,
-                                           ctx -> messagingService
-                                                   .sendServicesDownEmail(req.shopperId, req.accountName, req.ipAddress, req.orionGuid,
-                                                                          metricDomain, req.vmOutage.started, req.managed),
-                                           String.class);
+        String messageId = sendGeneralOutageEmail(context, req.shopperId, req.accountName, req.ipAddress, req.orionGuid,
+                metricDomain, req.vmOutage.started, req.managed, metricMetadata.metric.toString());
 
         if (messageId != null) {
             logger.info("Outage message ID {} sent for VM ID {}", messageId, req.vmId);
@@ -79,26 +92,13 @@ public class SendVmOutageEmail implements Command<VmOutageEmailRequest, Void> {
         for (VmMetric metric : req.vmOutage.metrics) {
             switch (metric) {
                 case PING:
-                    context.execute("SendVmOutageEmail-" + metric,
-                                    ctx -> messagingService
-                                            .sendUptimeOutageEmail(req.shopperId, req.accountName, req.ipAddress, req.orionGuid,
-                                                                   req.vmOutage.started, req.managed),
-                                    String.class);
+                    sendUptimeOutageEmail(context, req.shopperId, req.accountName, req.ipAddress, req.orionGuid, req.vmOutage.started, req.managed, metric.toString());
                     break;
 
                 case CPU:
                 case DISK:
                 case RAM:
-                    Pattern pattern = Pattern.compile("^.* (\\d+%) .*$");
-                    Matcher matcher = pattern.matcher(req.vmOutage.reason);
-                    String percent = (matcher.find()) ? matcher.group(1) : "95%";
-
-                    context.execute("SendVmOutageEmail-" + metric,
-                                    ctx -> messagingService
-                                            .sendServerUsageOutageEmail(req.shopperId, req.accountName, req.ipAddress,
-                                                                        req.orionGuid, metric.name(), percent,
-                                                                        req.vmOutage.started, req.managed),
-                                    String.class);
+                    sendServerUsageOutageEmail(context, req.shopperId, req.accountName, req.ipAddress, req.orionGuid, req.vmOutage.started, req.vmOutage.reason, req.managed, metric.toString());
                     break;
 
                 case FTP:
@@ -124,11 +124,7 @@ public class SendVmOutageEmail implements Command<VmOutageEmailRequest, Void> {
             String portCheckServiceNames = portCheckServices.stream()
                                                             .map(Enum::name)
                                                             .collect(Collectors.joining(", "));
-            context.execute("SendVmOutageEmail-Services",
-                            ctx -> messagingService
-                                    .sendServicesDownEmail(req.shopperId, req.accountName, req.ipAddress, req.orionGuid,
-                                                           portCheckServiceNames, req.vmOutage.started, req.managed),
-                            String.class);
+            sendGeneralOutageEmail(context, req.shopperId, req.accountName, req.ipAddress, req.orionGuid, portCheckServiceNames, req.vmOutage.started, req.managed, "Services");
         }
     }
 

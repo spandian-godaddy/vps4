@@ -1,23 +1,12 @@
 package com.godaddy.vps4.orchestration.monitoring;
 
-import static org.junit.Assert.assertNotNull;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.UUID;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
+import com.godaddy.vps4.messaging.MessagingService;
+import com.godaddy.vps4.vm.VmAlertService;
+import com.godaddy.vps4.vm.VmMetric;
+import com.godaddy.vps4.vm.VmMetricAlert;
+import com.godaddy.vps4.vm.VmOutage;
+import com.google.common.collect.Sets;
+import gdg.hfs.orchestration.CommandContext;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -27,17 +16,26 @@ import org.mockito.Matchers;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import com.godaddy.vps4.messaging.MessagingService;
-import com.godaddy.vps4.vm.VmAlertService;
-import com.godaddy.vps4.vm.VmMetric;
-import com.godaddy.vps4.vm.VmMetricAlert;
-import com.godaddy.vps4.vm.VmOutage;
-import com.google.common.collect.Sets;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.UUID;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
-import gdg.hfs.orchestration.CommandContext;
+import static org.junit.Assert.assertNotNull;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.never;
 
 @RunWith(MockitoJUnitRunner.class)
-public class SendVmOutageEmailTest {
+public class SendVmOutageCreatedEmailTest {
     @Mock private MessagingService messagingService;
     @Mock private VmAlertService vmAlertService;
     @Mock private CommandContext context;
@@ -53,7 +51,7 @@ public class SendVmOutageEmailTest {
     String fakeReason = "fake-reason";
     UUID fakeVmId = UUID.randomUUID();
 
-    SendVmOutageEmail command;
+    SendVmOutageCreatedEmail command;
 
     @Captor ArgumentCaptor<Function<CommandContext, String>> lambdaCaptor;
 
@@ -76,7 +74,7 @@ public class SendVmOutageEmailTest {
         vmOutage.metrics = new HashSet<>();
 
         setupEnabledAlerts();
-        command = new SendVmOutageEmail(messagingService, vmAlertService);
+        command = new SendVmOutageCreatedEmail(messagingService, vmAlertService);
     }
 
     private void setupEnabledAlerts() {
@@ -95,7 +93,7 @@ public class SendVmOutageEmailTest {
         command.execute(context, request);
 
         verify(context, times(1))
-                .execute(eq("SendVmOutageEmail-PING"), lambdaCaptor.capture(), eq(String.class));
+                .execute(eq("SendVmOutageCreatedEmail-PING"), lambdaCaptor.capture(), eq(String.class));
         Function<CommandContext, String> lambdaValue = lambdaCaptor.getValue();
         lambdaValue.apply(context);
         verify(messagingService, times(1))
@@ -109,7 +107,7 @@ public class SendVmOutageEmailTest {
         command.execute(context, request);
 
         verify(context, times(1))
-                .execute(eq("SendVmOutageEmail-CPU"), lambdaCaptor.capture(), eq(String.class));
+                .execute(eq("SendVmOutageCreatedEmail-CPU"), lambdaCaptor.capture(), eq(String.class));
         Function<CommandContext, String> lambdaValue = lambdaCaptor.getValue();
         lambdaValue.apply(context);
         verify(messagingService, times(1))
@@ -128,7 +126,7 @@ public class SendVmOutageEmailTest {
         command.execute(context, request);
 
         verify(context, times(1))
-                .execute(eq("SendVmOutageEmail-Services"), lambdaCaptor.capture(), eq(String.class));
+                .execute(eq("SendVmOutageCreatedEmail-Services"), lambdaCaptor.capture(), eq(String.class));
         Function<CommandContext, String> lambdaValue = lambdaCaptor.getValue();
         String actualMessageId = lambdaValue.apply(context);
         assertNotNull(actualMessageId);
@@ -149,7 +147,7 @@ public class SendVmOutageEmailTest {
         command.execute(context, request);
 
         verify(context, times(1))
-                .execute(eq("SendVmOutageEmail-HTTP_DOMAIN"), lambdaCaptor.capture(), eq(String.class));
+                .execute(eq("SendVmOutageCreatedEmail-HTTP_DOMAIN"), lambdaCaptor.capture(), eq(String.class));
         Function<CommandContext, String> lambdaValue = lambdaCaptor.getValue();
         String actualMessageId = lambdaValue.apply(context);
         assertNotNull(actualMessageId);
@@ -167,7 +165,7 @@ public class SendVmOutageEmailTest {
         command.execute(context, request);
 
         verify(context, times(1))
-                .execute(eq("SendVmOutageEmail-HTTPS_DOMAIN"), lambdaCaptor.capture(), eq(String.class));
+                .execute(eq("SendVmOutageCreatedEmail-HTTPS_DOMAIN"), lambdaCaptor.capture(), eq(String.class));
         Function<CommandContext, String> lambdaValue = lambdaCaptor.getValue();
         String actualMessageId = lambdaValue.apply(context);
         assertNotNull(actualMessageId);
@@ -186,7 +184,7 @@ public class SendVmOutageEmailTest {
         command.execute(context, request);
 
         verify(context, times(1))
-                .execute(eq("SendVmOutageEmail-HTTPS_DOMAIN"), lambdaCaptor.capture(), eq(String.class));
+                .execute(eq("SendVmOutageCreatedEmail-HTTPS_DOMAIN"), lambdaCaptor.capture(), eq(String.class));
         Function<CommandContext, String> lambdaValue = lambdaCaptor.getValue();
         String actualMessageId = lambdaValue.apply(context);
         assertNotNull(actualMessageId);
@@ -204,7 +202,7 @@ public class SendVmOutageEmailTest {
         command.execute(context, request);
 
         verify(context, times(0))
-                .execute(eq("SendVmOutageEmail-HTTPS"), lambdaCaptor.capture(), eq(String.class));
+                .execute(eq("SendVmOutageCreatedEmail-HTTPS"), lambdaCaptor.capture(), eq(String.class));
     }
 
     @Test
@@ -213,7 +211,7 @@ public class SendVmOutageEmailTest {
         command.execute(context, request);
 
         verify(context, never())
-                .execute(eq("SendVmOutageEmail-" + fakeShopperId), any(Function.class), eq(String.class));
+                .execute(eq("SendVmOutageCreatedEmail-" + fakeShopperId), any(Function.class), eq(String.class));
     }
 
     @Test
@@ -224,7 +222,7 @@ public class SendVmOutageEmailTest {
         command.execute(context, request);
 
         verify(context, times(1))
-                .execute(eq("SendVmOutageEmail-DISK"), lambdaCaptor.capture(), eq(String.class));
+                .execute(eq("SendVmOutageCreatedEmail-DISK"), lambdaCaptor.capture(), eq(String.class));
 
         lambdaCaptor.getValue().apply(context);
         verify(messagingService, times(1)).sendServerUsageOutageEmail(eq(fakeShopperId), eq(fakeAccountName),
@@ -241,7 +239,7 @@ public class SendVmOutageEmailTest {
         command.execute(context, request);
 
         verify(context, times(1))
-                .execute(eq("SendVmOutageEmail-DISK"), lambdaCaptor.capture(), eq(String.class));
+                .execute(eq("SendVmOutageCreatedEmail-DISK"), lambdaCaptor.capture(), eq(String.class));
 
         lambdaCaptor.getValue().apply(context);
         verify(messagingService, times(1)).sendServerUsageOutageEmail(eq(fakeShopperId), eq(fakeAccountName),
@@ -264,8 +262,8 @@ public class SendVmOutageEmailTest {
         command.execute(context, request);
 
         verify(context, times(1))
-                .execute(eq("SendVmOutageEmail-HTTP_DOMAIN"), Matchers.<Function<CommandContext, String>> any(), eq(String.class));
+                .execute(eq("SendVmOutageCreatedEmail-HTTP_DOMAIN"), Matchers.<Function<CommandContext, String>> any(), eq(String.class));
         verify(context, times(1))
-                .execute(eq("SendVmOutageEmail-Services"), Matchers.<Function<CommandContext, String>> any(), eq(String.class));
+                .execute(eq("SendVmOutageCreatedEmail-Services"), Matchers.<Function<CommandContext, String>> any(), eq(String.class));
     }
 }

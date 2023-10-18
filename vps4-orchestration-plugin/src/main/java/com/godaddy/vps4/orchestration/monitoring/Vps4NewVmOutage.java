@@ -72,7 +72,7 @@ public class Vps4NewVmOutage extends ActionCommand<Vps4NewVmOutage.Request, Void
                     new VmOutageEmailRequest(virtualMachine.name, virtualMachine.primaryIpAddress.ipAddress,
                             credit.getOrionGuid(), credit.getShopperId(), virtualMachine.vmId, credit.isManaged(),
                             vmOutage);
-            context.execute("SendOutageNotificationEmail", SendVmOutageEmail.class, vmOutageEmailRequest);
+            context.execute("SendOutageNotificationEmail", SendVmOutageCreatedEmail.class, vmOutageEmailRequest);
         }
     }
 
