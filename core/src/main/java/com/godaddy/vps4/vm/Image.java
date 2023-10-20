@@ -45,6 +45,21 @@ public class Image {
         public static ControlPanel valueOf(int id) {
             return map.get(id);
         }
+
+        public static ControlPanel getEnumValueFromEcommName(String controlPanel) {
+            switch (controlPanel.toLowerCase()) {
+                case "plesk":
+                case "pleskwebpro":
+                case "pleskwebhost":
+                    return PLESK;
+                case "cpanel":
+                    return CPANEL;
+                case "myh":
+                    return MYH;
+                default:
+                    throw new IllegalArgumentException(controlPanel + " is not a valid control panel");
+            }
+        }
     }
 
     public long imageId;

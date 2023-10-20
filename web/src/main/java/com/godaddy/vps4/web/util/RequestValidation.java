@@ -295,13 +295,13 @@ public class RequestValidation {
     public static void validateRequestedImage(VirtualMachineCredit vmCredit, Image image) {
         String errMsg = "The image %s (%s:%s) is not valid for this credit.";
 
-        ControlPanel creditCp = validateAndReturnEnumValue(ControlPanel.class, vmCredit.getControlPanel().toUpperCase());
+        ControlPanel creditCp = validateAndReturnEnumValue(ControlPanel.class, vmCredit.getControlPanel());
         if (image.controlPanel != creditCp) {
             throw new Vps4Exception("INVALID_IMAGE",
                     String.format(errMsg, image.hfsName, "control panel", image.controlPanel));
         }
 
-        OperatingSystem creditOs = validateAndReturnEnumValue(OperatingSystem.class, vmCredit.getOperatingSystem().toUpperCase());
+        OperatingSystem creditOs = validateAndReturnEnumValue(OperatingSystem.class, vmCredit.getOperatingSystem());
         if (image.operatingSystem != creditOs) {
             throw new Vps4Exception("INVALID_IMAGE",
                     String.format(errMsg, image.hfsName, "os", image.operatingSystem));
@@ -357,7 +357,10 @@ public class RequestValidation {
 
     public static <E extends Enum<E>> E validateAndReturnEnumValue(Class<E> clazz, String name) {
         try {
-            return Enum.valueOf(clazz, name);
+            if(clazz == ControlPanel.class) {
+                return (E) ControlPanel.getEnumValueFromEcommName(name);
+            }
+            return Enum.valueOf(clazz, name.toUpperCase());
         } catch(IllegalArgumentException ex) {
             throw new Vps4Exception("INVALID_PARAMETER", String.format("%s is an invalid %s", name, clazz.getSimpleName()));
         }

@@ -6,6 +6,7 @@ import org.junit.Test;
 import static com.godaddy.vps4.vm.Image.ControlPanel.CPANEL;
 import static com.godaddy.vps4.vm.Image.ControlPanel.MYH;
 import static com.godaddy.vps4.vm.Image.ControlPanel.PLESK;
+import static com.godaddy.vps4.vm.Image.ControlPanel.getEnumValueFromEcommName;
 import static org.junit.Assert.*;
 
 
@@ -174,5 +175,25 @@ public class ImageTest {
     public void getImageIdForWindows() {
         image.operatingSystem = Image.OperatingSystem.WINDOWS;
         assertEquals(2, image.operatingSystem.getOperatingSystemId());
+    }
+
+    @Test
+    public void getControlPanelFromEcommName() {
+        Image.ControlPanel controlPanelPleskWebPro = getEnumValueFromEcommName("pleskWebPro");
+        Image.ControlPanel controlPanelPleskWebHost = getEnumValueFromEcommName("pleskWebHost");
+        Image.ControlPanel controlPanelPlesk = getEnumValueFromEcommName("plesk");
+        Image.ControlPanel controlPanelCpanel = getEnumValueFromEcommName("cpanel");
+        Image.ControlPanel controlPanelMyh = getEnumValueFromEcommName("myh");
+
+        assertEquals(PLESK, controlPanelPleskWebPro);
+        assertEquals(PLESK, controlPanelPleskWebHost);
+        assertEquals(PLESK, controlPanelPlesk);
+        assertEquals(CPANEL, controlPanelCpanel);
+        assertEquals(MYH, controlPanelMyh);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void getControlPanelFromEcommNameBadName() {
+        getEnumValueFromEcommName("badControlPanel");
     }
 }

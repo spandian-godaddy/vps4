@@ -57,10 +57,10 @@ public class ImageResource {
                                  @QueryParam("controlPanel") String controlPanel,
                                  @ApiParam(value = "HFS image name") @QueryParam("imageName") String hfsImageName,
                                  @QueryParam("platform") String platform) {
-        return imageService.getImages(validateAndReturnEnumValue(OperatingSystem.class, os.toUpperCase()),
-                                      validateAndReturnEnumValue(ControlPanel.class, controlPanel.toUpperCase()),
+        return imageService.getImages(validateAndReturnEnumValue(OperatingSystem.class, os),
+                                      validateAndReturnEnumValue(ControlPanel.class, controlPanel),
                                       hfsImageName,
-                                      validateAndReturnEnumValue(Platform.class, platform.toUpperCase()));
+                                      validateAndReturnEnumValue(Platform.class, platform));
     }
 
     @GET
