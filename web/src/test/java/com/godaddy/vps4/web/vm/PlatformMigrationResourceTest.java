@@ -261,7 +261,7 @@ public class PlatformMigrationResourceTest {
     @Test public void moveInInsertsVmUser() {
         resource.moveIn(moveInRequest);
 
-        verify(vmUserService, times(1)).createUser(moveOutInfo.vmUser.username, vm.vmId);
+        verify(vmUserService, times(1)).createUser(moveOutInfo.vmUser.username, vm.vmId, moveOutInfo.vmUser.adminEnabled);
     }
 
     @Test public void moveInInsertsActions() {

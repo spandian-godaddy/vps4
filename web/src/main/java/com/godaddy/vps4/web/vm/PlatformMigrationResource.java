@@ -185,7 +185,7 @@ public class PlatformMigrationResource {
 
             vm = insertVirtualMachine(moveInInfo, moveOutInfo, dataCenterId, project);
             insertIpAddresses(moveOutInfo, vm);
-            vmUserService.createUser(moveOutInfo.vmUser.username, vm.vmId);
+            vmUserService.createUser(moveOutInfo.vmUser.username, vm.vmId, moveOutInfo.vmUser.adminEnabled);
         } catch (Exception e) {
             markNewRecordsDeleted(vm);
             throw new Vps4Exception("MOVE_IN_FAILED", e.getMessage(), e);
