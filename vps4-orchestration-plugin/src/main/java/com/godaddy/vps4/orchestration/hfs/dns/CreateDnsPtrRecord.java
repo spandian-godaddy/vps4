@@ -27,7 +27,7 @@ public class CreateDnsPtrRecord implements Command<CreateDnsPtrRecord.Request,Vo
     public Void execute(CommandContext context, Request request) {
         logger.info("Requesting HFS to create reverse dns name {} for vm {}", request.reverseDnsName,
                 request.virtualMachine.vmId);
-        HfsDnsAction hfsDnsAction = context.execute("HfsCreateDnsPtrRecord",
+        HfsDnsAction hfsDnsAction = context.execute("CreateDnsPtrRecord",
                 ctx -> hfsDnsService
                         .createDnsPtrRecord(request.virtualMachine.hfsVmId,
                                 request.reverseDnsName),
