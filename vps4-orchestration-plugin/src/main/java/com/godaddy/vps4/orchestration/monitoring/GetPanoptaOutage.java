@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
+import javax.ws.rs.ProcessingException;
 import java.util.UUID;
 
 @CommandMetadata(
@@ -28,13 +29,24 @@ public class GetPanoptaOutage implements Command<GetPanoptaOutage.Request, VmOut
         this.panoptaService = panoptaService;
     }
 
+    public VmOutage getOutage(UUID vmId, long outageId) {
+        VmOutage outage;
+        try {
+            outage = panoptaService.getOutage(vmId, outageId);
+        } catch (PanoptaServiceException e) {
+            throw new RuntimeException(e.getMessage(), e);
+        }
+        return outage;
+    }
+
     @Override
     public VmOutage execute(CommandContext context, GetPanoptaOutage.Request request) {
         VmOutage outage;
         try {
-            outage = panoptaService.getOutage(request.vmId, request.outageId);
-        } catch (PanoptaServiceException e) {
-            throw new RuntimeException(e.getMessage(), e);
+              outage = getOutage(request.vmId, request.outageId);
+        } catch (ProcessingException e) {
+              logger.info("Caught Processing Error while getting panopta outage. Attempting a retry");
+              outage = getOutage(request.vmId, request.outageId);
         }
         return outage;
     }
