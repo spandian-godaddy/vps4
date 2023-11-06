@@ -19,8 +19,8 @@ import com.google.inject.Injector;
 
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.GuiceCommandProvider;
-import gdg.hfs.vhfs.plesk.PleskAction;
-import gdg.hfs.vhfs.plesk.PleskService;
+import com.godaddy.hfs.plesk.PleskAction;
+import com.godaddy.hfs.plesk.PleskService;
 
 public class UnlicensePleskTest {
 

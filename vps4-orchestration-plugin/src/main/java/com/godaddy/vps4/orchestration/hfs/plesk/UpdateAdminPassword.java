@@ -9,8 +9,8 @@ import com.godaddy.vps4.util.Cryptography;
 
 import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
-import gdg.hfs.vhfs.plesk.PleskAction;
-import gdg.hfs.vhfs.plesk.PleskService;
+import com.godaddy.hfs.plesk.PleskAction;
+import com.godaddy.hfs.plesk.PleskService;
 
 public class UpdateAdminPassword implements Command<UpdateAdminPassword.Request, Void> {
 

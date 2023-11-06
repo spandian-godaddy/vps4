@@ -15,6 +15,7 @@ public class ProvisionVmInfo {
     public int diskGib;
     public boolean isPanoptaEnabled;
     public int previousRelays;
+    public PleskLicenseType pleskLicenseType;
 
     public ProvisionVmInfo() {
     }

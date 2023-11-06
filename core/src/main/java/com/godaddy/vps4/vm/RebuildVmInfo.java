@@ -24,6 +24,8 @@ public class RebuildVmInfo {
     public boolean keepAdditionalIps;
     public String gdUserName;
     public boolean isManaged;
+    public String controlPanel;
+    public PleskLicenseType pleskLicenseType;
 
     public RebuildVmInfo() {
     }

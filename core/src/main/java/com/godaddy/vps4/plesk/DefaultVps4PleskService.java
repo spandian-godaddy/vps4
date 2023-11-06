@@ -19,8 +19,8 @@ import com.godaddy.vps4.util.PollerTimedOutException;
 import com.godaddy.vps4.util.Vps4Poller;
 import com.godaddy.vps4.network.NetworkService;
 
-import gdg.hfs.vhfs.plesk.PleskAction;
-import gdg.hfs.vhfs.plesk.PleskService;
+import com.godaddy.hfs.plesk.PleskAction;
+import com.godaddy.hfs.plesk.PleskService;
 
 public class DefaultVps4PleskService implements Vps4PleskService {
 

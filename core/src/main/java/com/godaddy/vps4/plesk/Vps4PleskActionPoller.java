@@ -11,9 +11,9 @@ import org.slf4j.LoggerFactory;
 import com.godaddy.vps4.util.PollerTimedOutException;
 import com.godaddy.vps4.util.Vps4Poller;
 
-import gdg.hfs.vhfs.plesk.PleskAction;
-import gdg.hfs.vhfs.plesk.PleskAction.Status;
-import gdg.hfs.vhfs.plesk.PleskService;
+import com.godaddy.hfs.plesk.PleskAction;
+import com.godaddy.hfs.plesk.PleskAction.Status;
+import com.godaddy.hfs.plesk.PleskService;
 
 public class Vps4PleskActionPoller implements Vps4Poller<PleskAction, Integer, String> {
 

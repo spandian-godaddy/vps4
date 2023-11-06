@@ -2,8 +2,8 @@ package com.godaddy.vps4.orchestration.hfs.plesk;
 
 import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
-import gdg.hfs.vhfs.plesk.PleskAction;
-import gdg.hfs.vhfs.plesk.PleskService;
+import com.godaddy.hfs.plesk.PleskAction;
+import com.godaddy.hfs.plesk.PleskService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,5 +47,3 @@ public class SetPleskOutgoingEmailIp implements Command<SetPleskOutgoingEmailIp.
     }
 
 }
-
-

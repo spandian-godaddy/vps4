@@ -1,6 +1,7 @@
 package com.godaddy.vps4.web.vm;
 
 import static com.godaddy.vps4.sysadmin.UsernamePasswordGenerator.generatePassword;
+import static com.godaddy.vps4.web.util.RequestValidation.validateAndReturnEnumValue;
 import static com.godaddy.vps4.web.util.RequestValidation.validateNoConflictingActions;
 import static com.godaddy.vps4.web.util.RequestValidation.validatePassword;
 import static com.godaddy.vps4.web.util.RequestValidation.validateRequestedImage;
@@ -17,6 +18,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
+import com.godaddy.vps4.vm.PleskLicenseType;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -160,6 +162,9 @@ public class VmRebuildResource {
         rebuildVmInfo.username = StringUtils.isBlank(request.username) ? vmUserService.getPrimaryCustomer(vm.vmId).username : request.username;
         rebuildVmInfo.vmId = vm.vmId;
         rebuildVmInfo.image = StringUtils.isBlank(request.imageName) ? vm.image : imageService.getImageByHfsName(request.imageName);
+        if(rebuildVmInfo.image.hasPlesk()) {
+            rebuildVmInfo.pleskLicenseType = validateAndReturnEnumValue(PleskLicenseType.class, credit.getControlPanel());
+        }
         rebuildVmInfo.ipAddress = vm.primaryIpAddress;
         rebuildVmInfo.zone = vm.spec.isVirtualMachine() ?
                 config.get(vm.dataCenter.dataCenterName + ".openstack.zone", null) :

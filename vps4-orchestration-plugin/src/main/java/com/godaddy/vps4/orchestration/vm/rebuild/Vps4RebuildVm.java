@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.godaddy.vps4.vm.PleskLicenseType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -255,8 +256,10 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Void> {
     }
 
     private ConfigurePleskRequest createConfigurePleskRequest(long hfsVmId) {
-        return new ConfigurePleskRequest(hfsVmId, request.rebuildVmInfo.username,
-                                         request.rebuildVmInfo.encryptedPassword);
+        return new ConfigurePleskRequest(hfsVmId,
+                                         request.rebuildVmInfo.username,
+                                         request.rebuildVmInfo.encryptedPassword,
+                                         request.rebuildVmInfo.pleskLicenseType);
     }
 
     protected void configureNewUser(long hfsVmId) {

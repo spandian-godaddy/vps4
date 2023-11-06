@@ -1,14 +1,14 @@
 package com.godaddy.vps4.plesk;
 
+import com.godaddy.hfs.plesk.PleskAction;
+import com.godaddy.hfs.plesk.PleskAction.Status;
+import com.godaddy.hfs.plesk.PleskService;
 import com.godaddy.vps4.config.ConfigModule;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.NetworkService;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import gdg.hfs.vhfs.plesk.PleskAction;
-import gdg.hfs.vhfs.plesk.PleskAction.Status;
-import gdg.hfs.vhfs.plesk.PleskService;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

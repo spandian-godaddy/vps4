@@ -351,7 +351,10 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
     }
 
     private ConfigurePleskRequest createConfigurePleskRequest(long hfsVmId) {
-        return new ConfigurePleskRequest(hfsVmId, request.username, request.encryptedPassword);
+        return new ConfigurePleskRequest(hfsVmId,
+                                         request.username,
+                                         request.encryptedPassword,
+                                         request.vmInfo.pleskLicenseType);
     }
 
     private SetPleskOutgoingEmailIpRequest createPleskSetOutgoingEmailIpRequest(long hfsVmId, String ipAddress) {

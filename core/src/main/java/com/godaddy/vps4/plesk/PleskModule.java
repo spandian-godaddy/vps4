@@ -5,7 +5,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Scopes;
 import com.google.inject.TypeLiteral;
 
-import gdg.hfs.vhfs.plesk.PleskAction;
+import com.godaddy.hfs.plesk.PleskAction;
 
 public class PleskModule extends AbstractModule {
 

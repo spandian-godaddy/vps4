@@ -21,6 +21,7 @@ import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.DataCenter;
 import com.godaddy.vps4.vm.DataCenterService;
 import com.godaddy.vps4.vm.Image;
+import com.godaddy.vps4.vm.PleskLicenseType;
 import com.godaddy.vps4.vm.ProvisionVmInfo;
 import com.godaddy.vps4.vm.ServerSpec;
 import com.godaddy.vps4.vm.ServerType;
@@ -61,6 +62,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.godaddy.vps4.web.util.RequestValidation.getAndValidateUserAccountCredit;
+import static com.godaddy.vps4.web.util.RequestValidation.validateAndReturnEnumValue;
 import static com.godaddy.vps4.web.util.RequestValidation.validateCreditIsNotInUse;
 import static com.godaddy.vps4.web.util.RequestValidation.validateDcIdIsAllowed;
 import static com.godaddy.vps4.web.util.RequestValidation.validateDedResellerSelectedDc;
@@ -263,6 +265,10 @@ public class VmResource {
                                     mailRelayQuota,
                                     virtualMachine.spec.diskGib,
                                     previousRelays);
+        if(image.hasPlesk()) {
+            vmInfo.pleskLicenseType = validateAndReturnEnumValue(PleskLicenseType.class, vmCredit.getControlPanel());
+        }
+
         vmInfo.isPanoptaEnabled = provisionRequest.useBetaMonitoring;
         logger.info("vmInfo: {}", vmInfo);
         byte[] encryptedPassword = cryptography.encrypt(provisionRequest.password);
