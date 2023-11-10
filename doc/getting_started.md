@@ -51,7 +51,7 @@
                         <repository>
                             <id>default</id>
                             <name>hosting local repo</name>
-                            <url>https://artifactory.secureserver.net/artifactory/java-hostingcore-local/</url>
+                            <url>https://gdartifactory1.jfrog.io/artifactory/java-hostingcore-local/</url>
                             <layout>default</layout>
                         </repository>
                     </repositories>
