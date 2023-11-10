@@ -28,9 +28,8 @@ public class DefaultOhJobService implements OhJobService {
     }
 
     private Vm getHfsVm(UUID vmId) {
-        VirtualMachine vm = virtualMachineService.getVirtualMachine(vmId);
-        logger.info("retrieved hfs vm ID {} from database with vm Id {} ", vm.hfsVmId, vmId);
-        return vmService.getVm(vm.hfsVmId);
+        long hfsVmId = virtualMachineService.getHfsVmIdByVmId(vmId);
+        return vmService.getVm(hfsVmId);
     }
 
     @Override

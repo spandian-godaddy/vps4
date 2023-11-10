@@ -44,7 +44,7 @@ public class DefaultOhJobServiceTest {
         setUpMockJob();
         when(ohApiJobServices.get("zone1")).thenReturn(ohApiJobService1);
         when(ohApiJobServices.get("zone2")).thenReturn(ohApiJobService2);
-        when(virtualMachineService.getVirtualMachine(vm.vmId)).thenReturn(vm);
+        when(virtualMachineService.getHfsVmIdByVmId(vm.vmId)).thenReturn(vm.hfsVmId);
         when(vmService.getVm(hfsVm.vmId)).thenReturn(hfsVm);
         when(ohApiJobService1.getJob(any(UUID.class))).thenReturn(job);
         when(ohApiJobService2.getJob(any(UUID.class))).thenReturn(job);
@@ -71,7 +71,7 @@ public class DefaultOhJobServiceTest {
     @Test
     public void getJobGetsCorrectParameters() {
         service.getJob(vm.vmId, job.value().id);
-        verify(virtualMachineService).getVirtualMachine(vm.vmId);
+        verify(virtualMachineService).getHfsVmIdByVmId(vm.vmId);
         verify(vmService).getVm(vm.hfsVmId);
         verify(ohApiJobServices).get(hfsVm.resourceRegion);
         verify(ohApiJobService1).getJob(job.value().id);

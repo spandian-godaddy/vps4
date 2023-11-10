@@ -4,6 +4,8 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import gdg.hfs.orchestration.CommandMetadata;
+import gdg.hfs.orchestration.CommandRetryStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,6 +17,11 @@ import com.godaddy.vps4.orchestration.scheduler.Utils;
 import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
 
+@CommandMetadata(
+        name = "WaitForOhJob",
+        requestType = WaitForOhJob.Request.class,
+        retryStrategy = CommandRetryStrategy.NEVER
+)
 public class WaitForOhJob implements Command<WaitForOhJob.Request, Void> {
     private static final Logger logger = LoggerFactory.getLogger(WaitForOhJob.class);
 
