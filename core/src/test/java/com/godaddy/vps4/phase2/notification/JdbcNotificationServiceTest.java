@@ -402,6 +402,48 @@ public class JdbcNotificationServiceTest {
     }
 
     @Test
+    public void insertAndDeleteNotificationWithHelpLinkTest() {
+        NotificationService service = injector.getInstance(NotificationService.class);
+        UUID testNotificationId = UUID.randomUUID();
+        List<NotificationFilter> filters = new ArrayList<>();
+        NotificationFilter filter = new NotificationFilter();
+        filter.filterType = NotificationFilterType.RESELLER_ID;
+        filter.filterValue = Arrays.asList("1000");
+        filters.add(filter);
+        NotificationExtendedDetails notificationExtendedDetails = new NotificationExtendedDetails();
+        notificationExtendedDetails.helpLink = "test_help_link";
+
+        service.createNotification(testNotificationId, NotificationType.NEW_FEATURE,true,true,
+                notificationExtendedDetails, filters, null, null);
+
+        assertNotNull(service.getNotification(testNotificationId));
+        assertEquals("test_help_link", service.getNotification(testNotificationId).notificationExtendedDetails.helpLink);
+        service.deleteNotification(testNotificationId);
+        assertNull(service.getNotification(testNotificationId));
+    }
+
+    @Test
+    public void insertAndDeleteNotificationWithHelpTranslationIdTest() {
+        NotificationService service = injector.getInstance(NotificationService.class);
+        UUID testNotificationId = UUID.randomUUID();
+        List<NotificationFilter> filters = new ArrayList<>();
+        NotificationFilter filter = new NotificationFilter();
+        filter.filterType = NotificationFilterType.RESELLER_ID;
+        filter.filterValue = Arrays.asList("1000");
+        filters.add(filter);
+        NotificationExtendedDetails notificationExtendedDetails = new NotificationExtendedDetails();
+        notificationExtendedDetails.helpTranslationId = "help_translation_id";
+
+        service.createNotification(testNotificationId, NotificationType.NEW_FEATURE,true,true,
+                notificationExtendedDetails, filters, null, null);
+
+        assertNotNull(service.getNotification(testNotificationId));
+        assertEquals("help_translation_id", service.getNotification(testNotificationId).notificationExtendedDetails.helpTranslationId);
+        service.deleteNotification(testNotificationId);
+        assertNull(service.getNotification(testNotificationId));
+    }
+
+    @Test
     public void updateNotificationTest() {
         NotificationService service = injector.getInstance(NotificationService.class);
         List<NotificationFilter> filters = new ArrayList<>();
