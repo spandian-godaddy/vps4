@@ -32,11 +32,20 @@ public class RequiresRoleFilter implements ContainerRequestFilter {
 
     @Override
     public void filter(ContainerRequestContext requestContext) throws IOException {
-        GDUser user = (GDUser) request.getAttribute(AuthenticationFilter.USER_ATTRIBUTE_NAME);
-        logger.info(String.format("User role: %s, Filter reqdRoles: [%s]", user.roles, Arrays.toString(reqdRoles)));
+        if (reqdRoles.length > 0) {
+            GDUser user = (GDUser) request.getAttribute(AuthenticationFilter.USER_ATTRIBUTE_NAME);
 
-        if (!user.anyRole(reqdRoles)) {
-            requestContext.abortWith(Response.status(Response.Status.FORBIDDEN).build());
+            if (user == null) {
+                logger.info(String.format("User is undefined, filter reqdRoles: [%s]", Arrays.toString(reqdRoles)));
+            } else {
+                logger.info(String.format("User roles: [%s], filter reqdRoles: [%s]",
+                                          user.roles,
+                                          Arrays.toString(reqdRoles)));
+            }
+
+            if (user == null || !user.anyRole(reqdRoles)) {
+                requestContext.abortWith(Response.status(Response.Status.FORBIDDEN).build());
+            }
         }
     }
 

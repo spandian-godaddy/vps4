@@ -100,14 +100,14 @@ public class InventoryResource {
 
         List<InventoryDetails> inventoryDetails = new ArrayList<>();
         hfsInventoryDataList.forEach(inventoryData -> {
-            ServerSpec serverSpec = virtualMachineService.getSpec(inventoryData.getName());
+            ServerSpec serverSpec = virtualMachineService.getSpec(inventoryData.name);
 
             if (serverSpec != null) {
                 inventoryDetails.add(mapInventoryDataToDetails(inventoryData, serverSpec, activeServerCountByTiers,
                         zombieServerCountByTiers));
             } else {
                 logger.info("No corresponding server spec entry found in vps4 for spec: {}",
-                        inventoryData.getName());
+                        inventoryData.name);
             }
         });
 
@@ -118,13 +118,13 @@ public class InventoryResource {
                                                        Map<Integer, Integer> activeServerCountByTiers,
                                                        Map<Integer, Integer> zombieServerCountByTiers) {
         InventoryDetails inventoryDetails = new InventoryDetails();
-        inventoryDetails.flavor = matchedHfsInventoryData.getName();
+        inventoryDetails.flavor = matchedHfsInventoryData.name;
         inventoryDetails.tier = serverSpec.tier;
-        inventoryDetails.available = matchedHfsInventoryData.getAvailable();
-        inventoryDetails.inUse = matchedHfsInventoryData.getInUse();
-        inventoryDetails.hfsInUse = matchedHfsInventoryData.getHfsInUse();
-        inventoryDetails.reserved = matchedHfsInventoryData.getReserved();
-        inventoryDetails.retired = matchedHfsInventoryData.getRetired();
+        inventoryDetails.available = matchedHfsInventoryData.available;
+        inventoryDetails.inUse = matchedHfsInventoryData.inUse;
+        inventoryDetails.hfsInUse = matchedHfsInventoryData.hfsInUse;
+        inventoryDetails.reserved = matchedHfsInventoryData.reserved;
+        inventoryDetails.retired = matchedHfsInventoryData.retired;
         inventoryDetails.cpus = serverSpec.cpuCoreCount;
         inventoryDetails.diskSize = serverSpec.diskGib;
         inventoryDetails.ram = serverSpec.memoryMib;

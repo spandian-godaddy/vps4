@@ -61,6 +61,7 @@ public interface PanoptaService {
     VmOutage getOutage(UUID vmId, long outageId) throws PanoptaServiceException;
 
     List<VmOutage> getOutages(UUID vmId, Integer daysAgo, VmMetric metric, VmOutage.Status status) throws PanoptaServiceException;
+
     String getDefaultGroup(String shopperId) throws PanoptaServiceException;
 
     List<PanoptaDomain> getAdditionalDomains(UUID vmId);

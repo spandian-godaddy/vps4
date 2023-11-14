@@ -92,9 +92,9 @@ public class Vps4Injector {
         modules.add(new ServerModule());
         modules.add(new HttpModule());
         modules.add(new GuiceFilterModule(
-                "/api/*",
                 "/",
-                "/commands/*",
+                "/api/*",
+                "/open/*",
                 "/swagger.json"
         ));
         modules.add(new SwaggerModule());
@@ -156,15 +156,15 @@ public class Vps4Injector {
 
                 bind(Vps4CorsFilter.class).in(Singleton.class);
                 filter("/api/*").through(Vps4CorsFilter.class);
+                filter("/open/*").through(Vps4CorsFilter.class);
 
                 // attach a thread-local request ID
                 bind(RequestIdFilter.class).in(Singleton.class);
                 filter("/api/*").through(RequestIdFilter.class);
+                filter("/open/*").through(RequestIdFilter.class);
 
                 bind(AuthenticationFilter.class).in(Singleton.class);
                 filter("/api/*").through(AuthenticationFilter.class);
-                filter("/commands/*").through(AuthenticationFilter.class);
-                filter("/appmonitors/*").through(AuthenticationFilter.class);
 
                 bind(VmActiveSnapshotFilter.class).in(Singleton.class);
                 filter("/api/vms/*").through(VmActiveSnapshotFilter.class);
@@ -173,7 +173,7 @@ public class Vps4Injector {
                 filter("/api/vms/*").through(ImportedVmFilter.class);
 
                 Multibinder.newSetBinder(binder(), SwaggerClassFilter.class)
-                        .addBinding().toInstance(resourceClass -> isResourceSwaggerVisible(resourceClass));
+                        .addBinding().toInstance(Vps4Injector::isResourceSwaggerVisible);
             }
         });
         modules.add(new LogModule());

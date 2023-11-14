@@ -24,42 +24,14 @@ import com.godaddy.vps4.web.monitoring.VmMonitoringResource;
 import com.godaddy.vps4.web.monitoring.VmOutageResource;
 import com.godaddy.vps4.web.network.NetworkResource;
 import com.godaddy.vps4.web.notification.NotificationsResource;
+import com.godaddy.vps4.web.open.OpenAvailabilityResource;
 import com.godaddy.vps4.web.plan.PlanResource;
 import com.godaddy.vps4.web.security.Vps4ContainerRequestFilterModule;
 import com.godaddy.vps4.web.sysadmin.SysAdminResource;
 import com.godaddy.vps4.web.ticketing.VmJsdTicketingResource;
 import com.godaddy.vps4.web.validator.ValidatorResource;
-import com.godaddy.vps4.web.vm.ImageResource;
-import com.godaddy.vps4.web.vm.InventoryResource;
+import com.godaddy.vps4.web.vm.*;
 import com.godaddy.vps4.web.ohbackup.OhBackupResource;
-import com.godaddy.vps4.web.vm.OrphanResource;
-import com.godaddy.vps4.web.vm.ServerUsageStatsResource;
-import com.godaddy.vps4.web.vm.SnapshotScheduleResource;
-import com.godaddy.vps4.web.vm.UserResource;
-import com.godaddy.vps4.web.vm.VmActionResource;
-import com.godaddy.vps4.web.vm.VmDetailsResource;
-import com.godaddy.vps4.web.vm.VmFlavorResource;
-import com.godaddy.vps4.web.vm.VmImportResource;
-import com.godaddy.vps4.web.vm.VmNydusAckResource;
-import com.godaddy.vps4.web.vm.VmPatchResource;
-import com.godaddy.vps4.web.vm.VmPlanResource;
-import com.godaddy.vps4.web.vm.VmRebuildResource;
-import com.godaddy.vps4.web.vm.VmRescueResource;
-import com.godaddy.vps4.web.vm.VmResource;
-import com.godaddy.vps4.web.vm.VmRestoreResource;
-import com.godaddy.vps4.web.vm.VmShopperMergeResource;
-import com.godaddy.vps4.web.vm.VmSyncStatusResource;
-import com.godaddy.vps4.web.vm.VmSnapshotActionResource;
-import com.godaddy.vps4.web.vm.VmSnapshotResource;
-import com.godaddy.vps4.web.vm.VmSupportUserResource;
-import com.godaddy.vps4.web.vm.VmSuspendReinstateResource;
-import com.godaddy.vps4.web.vm.VmTroubleshootResource;
-import com.godaddy.vps4.web.vm.VmUpgradeResource;
-import com.godaddy.vps4.web.vm.VmZombieResource;
-import com.godaddy.vps4.web.vm.VmNotificationResource;
-import com.godaddy.vps4.web.vm.WinexeResource;
-import com.godaddy.vps4.web.vm.PlatformMigrationResource;
-import com.godaddy.vps4.web.vm.VmBootscriptResource;
 
 import com.google.inject.AbstractModule;
 
@@ -134,6 +106,8 @@ public class WebModule extends AbstractModule {
 
         bind(CommandsResource.class);
         bind(CommandsViewResource.class);
+
+        bind(OpenAvailabilityResource.class);
 
         install(new ActionCancelModule());
         install(new Vps4ContainerRequestFilterModule());

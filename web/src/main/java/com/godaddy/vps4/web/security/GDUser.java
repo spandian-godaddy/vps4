@@ -1,9 +1,8 @@
 package com.godaddy.vps4.web.security;
 
-
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
 
 import com.godaddy.hfs.sso.token.SsoToken;
 
@@ -18,7 +17,7 @@ public class GDUser {
     boolean isEmployee;
     boolean isAdmin;
     String username;
-    List<Role> roles = Arrays.asList(Role.CUSTOMER); // default
+    List<Role> roles = Collections.singletonList(Role.CUSTOMER); // default
 
     public String getShopperId() {
         return shopperId;

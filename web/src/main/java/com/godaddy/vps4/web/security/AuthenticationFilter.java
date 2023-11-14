@@ -45,12 +45,10 @@ public class AuthenticationFilter implements Filter {
 
     @Override
     @SuppressWarnings("unchecked")
-    public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
-            throws IOException {
-
+    public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException {
         HttpServletRequest request = (HttpServletRequest) req;
         try {
-            for (RequestAuthenticator<GDUser> authenticator : authenticators ) {
+            for (RequestAuthenticator<GDUser> authenticator : authenticators) {
                 GDUser user = authenticator.authenticate(request);
                 if (user != null) {
                     request.setAttribute(USER_ATTRIBUTE_NAME, user);

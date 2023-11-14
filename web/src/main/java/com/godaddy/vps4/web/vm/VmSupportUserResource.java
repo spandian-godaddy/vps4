@@ -21,7 +21,6 @@ import com.godaddy.hfs.config.Config;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4AddSupportUser;
 import com.godaddy.vps4.orchestration.sysadmin.Vps4RemoveSupportUser;
-import com.godaddy.vps4.orchestration.sysadmin.Vps4SetCustomerPassword;
 import com.godaddy.vps4.sysadmin.UsernamePasswordGenerator;
 import com.godaddy.vps4.util.Cryptography;
 import com.godaddy.vps4.vm.Action;
