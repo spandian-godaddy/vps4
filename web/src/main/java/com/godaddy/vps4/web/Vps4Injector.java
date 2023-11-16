@@ -7,6 +7,7 @@ import javax.inject.Singleton;
 
 import com.godaddy.vps4.jsd.JsdModule;
 import com.godaddy.vps4.move.VmMoveModule;
+import com.godaddy.vps4.web.firewall.FirewallsModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -125,6 +126,7 @@ public class Vps4Injector {
         modules.add(new IpBlacklistModule());
         modules.add(new ShopperNotesModule());
         modules.add(new NotificationsModule());
+        modules.add(new FirewallsModule());
         modules.add(new ResellerModule());
         modules.add(new CustomNotesModule());
         modules.add(new OhModule());
