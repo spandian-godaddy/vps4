@@ -264,7 +264,7 @@ public class SsoRequestAuthenticatorTest {
         Assert.assertEquals(false, user.isShopper());
         Assert.assertEquals(false, user.isAdmin());
         Assert.assertEquals(true, user.isEmployee());
-        Assert.assertEquals(Arrays.asList(Role.MIGRATION), user.roles());
+        Assert.assertEquals(Arrays.asList(Role.IMPORT), user.roles());
     }
 
     @Test

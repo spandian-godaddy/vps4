@@ -36,7 +36,7 @@ import io.swagger.annotations.Api;
 @Path("/api/vms/{vmId}/interventions")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@RequiresRole(roles = {GDUser.Role.ADMIN})
+@RequiresRole(roles = {GDUser.Role.ADMIN, GDUser.Role.HS_LEAD})
 public class InterventionResource {
     private final GDUser user;
     private final ActionService actionService;

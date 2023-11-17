@@ -137,7 +137,7 @@ public class SsoRequestAuthenticator implements RequestAuthenticator<GDUser> {
         } if (groups.contains(CSR)) {
             userRoles.add(Role.C3_OTHER);
         } if (groups.contains(MIGRATION_TOOL)) {
-            userRoles.add(Role.MIGRATION);
+            userRoles.add(Role.IMPORT);
         } if (groups.contains(VPS4_API_READONLY)) {
             userRoles.add(Role.VPS4_API_READONLY);
         } if (userRoles.isEmpty()) {

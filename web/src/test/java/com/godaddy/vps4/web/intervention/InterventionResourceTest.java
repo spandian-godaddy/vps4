@@ -101,7 +101,7 @@ public class InterventionResourceTest {
     public void requiresAdminRole() {
         assertTrue(InterventionResource.class.isAnnotationPresent(RequiresRole.class));
         GDUser.Role[] roles = InterventionResource.class.getAnnotation(RequiresRole.class).roles();
-        assertEquals(1, roles.length);
+        assertEquals(2, roles.length);
         assertTrue(Arrays.stream(roles).anyMatch(r -> r == GDUser.Role.ADMIN));
     }
 

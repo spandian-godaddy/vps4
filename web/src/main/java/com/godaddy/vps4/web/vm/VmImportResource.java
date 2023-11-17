@@ -32,7 +32,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
-import java.time.Instant;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -46,7 +46,7 @@ import static com.godaddy.vps4.web.util.RequestValidation.validateCreditIsNotInU
 @Path("/api")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@RequiresRole(roles = {Role.ADMIN, Role.MIGRATION})
+@RequiresRole(roles = {Role.ADMIN, Role.IMPORT})
 public class VmImportResource {
 
     private final VirtualMachineService virtualMachineService;
