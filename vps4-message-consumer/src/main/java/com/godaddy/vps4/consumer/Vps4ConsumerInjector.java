@@ -3,6 +3,7 @@ package com.godaddy.vps4.consumer;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.godaddy.vps4.entitlement.EntitlementsModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,6 +64,7 @@ public class Vps4ConsumerInjector {
 
         modules.add(new ObjectMapperModule());
         modules.add(new MessagingModule());
+        modules.add(new EntitlementsModule());
         modules.add(new HfsClientModule());
         modules.add(new ConfigModule());
         modules.add(new VmModule());
