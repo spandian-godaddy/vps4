@@ -16,6 +16,8 @@ chmod +x ./get_config_from_aws.sh;
 ./get_config_from_aws.sh $ACCESS_KEY_ID $SECRET_ACCESS_KEY $ROLE 'hfs.api.key' $ENV;
 ./get_config_from_aws.sh $ACCESS_KEY_ID $SECRET_ACCESS_KEY $ROLE 'messaging.api.crt' $ENV;
 ./get_config_from_aws.sh $ACCESS_KEY_ID $SECRET_ACCESS_KEY $ROLE 'messaging.api.key' $ENV;
+./get_config_from_aws.sh $ACCESS_KEY_ID $SECRET_ACCESS_KEY $ROLE 'entitlements.api.crt' $ENV;
+./get_config_from_aws.sh $ACCESS_KEY_ID $SECRET_ACCESS_KEY $ROLE 'entitlements.api.key' $ENV;
 ./get_config_from_aws.sh $ACCESS_KEY_ID $SECRET_ACCESS_KEY $ROLE 'password_encryption.key' $ENV;
 ./get_config_from_aws.sh $ACCESS_KEY_ID $SECRET_ACCESS_KEY $ROLE 'vps4_end_web_consumerclient.crt' $ENV;
 ./get_config_from_aws.sh $ACCESS_KEY_ID $SECRET_ACCESS_KEY $ROLE 'vps4_end_web_consumerclient.key' $ENV;

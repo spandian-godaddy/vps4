@@ -5,6 +5,7 @@ import java.util.List;
 
 import javax.inject.Singleton;
 
+import com.godaddy.vps4.entitlement.EntitlementsModule;
 import com.godaddy.vps4.jsd.JsdModule;
 import com.godaddy.vps4.move.VmMoveModule;
 import com.godaddy.vps4.web.firewall.FirewallsModule;
@@ -120,6 +121,7 @@ public class Vps4Injector {
         modules.add(new CpanelModule());
         modules.add(new PleskModule());
         modules.add(new MessagingModule());
+        modules.add(new EntitlementsModule());
         modules.add(new PlanModule());
         modules.add(new ServerUsageStatsModule());
         modules.add(new PanoptaModule());
