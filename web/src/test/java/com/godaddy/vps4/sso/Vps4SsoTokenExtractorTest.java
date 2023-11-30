@@ -24,6 +24,7 @@ import org.junit.Test;
 import com.godaddy.hfs.sso.SsoService;
 import com.godaddy.hfs.sso.TokenExpiredException;
 import com.godaddy.hfs.sso.VerificationException;
+import com.godaddy.hfs.sso.token.CertificateToken;
 import com.godaddy.hfs.sso.token.IdpSsoToken;
 import com.godaddy.hfs.sso.token.JomaxSsoToken;
 import com.godaddy.hfs.sso.token.SsoToken;
@@ -38,6 +39,7 @@ public class Vps4SsoTokenExtractorTest {
 
     SsoToken idpToken = mock(IdpSsoToken.class);
     SsoToken jomaxToken = mock(JomaxSsoToken.class);
+    CertificateToken certSsoToken = mock(CertificateToken.class);
     SsoService ssoService = mock(SsoService.class);
     long sessionTimeoutMs = 1000;
 
@@ -50,7 +52,7 @@ public class Vps4SsoTokenExtractorTest {
         when(idpCookie.getValue()).thenReturn("value");
         when(jomaxCookie.getName()).thenReturn("auth_jomax");
         when(jomaxCookie.getValue()).thenReturn("value");
-        ssoTokenExtractor = spy(new Vps4SsoTokenExtractor(ssoService, sessionTimeoutMs));
+        ssoTokenExtractor = spy(new Vps4SsoTokenExtractor(ssoService));
         doNothing().when(ssoTokenExtractor).validate(any(SsoToken.class));
     }
 
@@ -62,6 +64,16 @@ public class Vps4SsoTokenExtractorTest {
         verify(ssoTokenExtractor).extractAuthorizationHeaderToken(request);
         verify(ssoTokenExtractor, never()).extractIdpCookie(cookies);
         assertEquals(idpToken, token);
+    }
+
+    @Test
+    public void testRequestWithCertificateSsoHeader() {
+        doReturn(certSsoToken).when(ssoTokenExtractor).extractAuthorizationHeaderToken(request);
+
+        SsoToken token = ssoTokenExtractor.extractToken(request);
+        verify(ssoTokenExtractor).extractAuthorizationHeaderToken(request);
+        verify(ssoTokenExtractor, never()).extractIdpCookie(cookies);
+        assertEquals(certSsoToken, token);
     }
 
     @Test

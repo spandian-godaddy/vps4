@@ -15,6 +15,7 @@ import org.junit.Test;
 
 import com.godaddy.hfs.config.Config;
 import com.godaddy.hfs.sso.SsoTokenExtractor;
+import com.godaddy.hfs.sso.token.CertificateToken;
 import com.godaddy.hfs.sso.token.IdpSsoToken;
 import com.godaddy.hfs.sso.token.JomaxSsoToken;
 import com.godaddy.hfs.sso.token.SsoToken;
@@ -57,6 +58,12 @@ public class SsoRequestAuthenticatorTest {
         JomaxSsoToken token = mock(JomaxSsoToken.class);
         when(token.getGroups()).thenReturn(groups);
         return token;
+    }
+
+    private CertificateToken mockSsoCertificateToken() {
+        CertificateToken ssoToken = mock(CertificateToken.class);
+        ssoToken.cn = "usi-ss-chatterbox.client.int.dev-godaddy.com";
+        return ssoToken;
     }
 
     @Test
@@ -252,6 +259,22 @@ public class SsoRequestAuthenticatorTest {
         Assert.assertEquals(false, user.isAdmin());
         Assert.assertEquals(true, user.isEmployee());
         Assert.assertEquals(Arrays.asList(Role.SUSPEND_AUTH), user.roles());
+    }
+
+    @Test
+    public void testChatterBoxRole() {
+        String expectedRole = "CHATTERBOX";
+        CertificateToken token = mockSsoCertificateToken();
+        when(tokenExtractor.extractToken(request)).thenReturn(token);
+        String configEntry = String.format("[{ \"name\": \"TestCertName\", \"cn\": \"%s\", \"role\": \"%s\" }]", token.cn, expectedRole);
+        when(config.get("authz_certs")).thenReturn(configEntry);
+
+        GDUser user = authenticator.authenticate(request);
+        Assert.assertEquals(null, user.getShopperId());
+        Assert.assertEquals(false, user.isShopper());
+        Assert.assertEquals(false, user.isAdmin());
+        Assert.assertEquals(false, user.isEmployee());
+        Assert.assertEquals(Arrays.asList(Role.valueOf(expectedRole)), user.roles());
     }
 
     @Test

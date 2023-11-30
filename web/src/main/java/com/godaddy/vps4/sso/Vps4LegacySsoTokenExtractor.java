@@ -12,6 +12,7 @@ import com.godaddy.hfs.sso.SsoService;
 import com.godaddy.hfs.sso.SsoTokenExtractor;
 import com.godaddy.hfs.sso.TokenExpiredException;
 import com.godaddy.hfs.sso.VerificationException;
+ import com.godaddy.hfs.sso.TokenInvalidException;
 import com.godaddy.hfs.sso.token.IdpSsoToken;
 import com.godaddy.hfs.sso.token.SsoToken;
 
@@ -61,6 +62,9 @@ public class Vps4LegacySsoTokenExtractor extends SsoTokenExtractor {
             }
             catch (TokenExpiredException e) {
                 logger.warn("Token has expired", e);
+            }
+            catch (TokenInvalidException e) {
+                logger.warn("Token is invalid", e);
             }
         }
 

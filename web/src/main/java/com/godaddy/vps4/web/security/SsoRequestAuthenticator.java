@@ -1,7 +1,9 @@
 package com.godaddy.vps4.web.security;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Arrays;
+import java.util.Objects;
+import java.util.ArrayList;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
@@ -9,8 +11,10 @@ import javax.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.godaddy.hfs.config.Config;
 import com.godaddy.hfs.sso.SsoTokenExtractor;
+import com.godaddy.hfs.sso.token.CertificateToken;
 import com.godaddy.hfs.sso.token.IdpSsoToken;
 import com.godaddy.hfs.sso.token.JomaxSsoToken;
 import com.godaddy.hfs.sso.token.SsoToken;
@@ -109,6 +113,13 @@ public class SsoRequestAuthenticator implements RequestAuthenticator<GDUser> {
                 gdUser.username = "Customer";
             }
         }
+        else if (token instanceof CertificateToken) {
+            if (!isAllowedCertCN(gdUser, ((CertificateToken) token).cn)) {
+                String errorMsg = "Certificate not allowed: " + ((CertificateToken) token).cn;
+                logger.error(errorMsg);
+                throw new Vps4Exception("AUTHORIZATION_ERROR", errorMsg);
+            }
+        }
         else
             throw new Vps4Exception("AUTHORIZATION_ERROR", "Unknown SSO Token Type!");
 
@@ -146,5 +157,32 @@ public class SsoRequestAuthenticator implements RequestAuthenticator<GDUser> {
             userRoles.add(Role.CUSTOMER); // for employee impersonation
         }
         gdUser.roles = userRoles;
+    }
+
+    private boolean isAllowedCertCN(GDUser gdUser, String certCn) {
+        String authzCertsConfig = config.get("authz_certs");
+
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            List<AuthzSsoCert> authzCerts = new ArrayList<AuthzSsoCert>(Arrays.asList(mapper.readValue(authzCertsConfig, 
+                AuthzSsoCert[].class)));
+            
+            AuthzSsoCert ssoCertConfig = authzCerts.stream()
+                .filter(c -> c.cn.equals(certCn))
+                .findAny()
+                .orElse(null);
+
+            gdUser.username = ssoCertConfig.name;
+            List<Role> userRoles = new ArrayList<>();
+            userRoles.add(Role.valueOf(ssoCertConfig.role));
+            gdUser.username = ssoCertConfig.name;
+            gdUser.roles = userRoles;
+            gdUser.isEmployee = false;
+
+            return !Objects.isNull(ssoCertConfig);
+        } catch (Exception ex) {
+            String errorMsg = "Error reading config file.";
+            throw new Vps4Exception("AUTHORIZATION_ERROR", errorMsg);
+        }
     }
 }

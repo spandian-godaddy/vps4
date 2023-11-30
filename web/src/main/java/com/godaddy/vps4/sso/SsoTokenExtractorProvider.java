@@ -37,20 +37,20 @@ public class SsoTokenExtractorProvider implements Provider<SsoTokenExtractor> {
         if (allowJomaxCookie) {
             return getLegacySsoTokenExtractor(ssoService, ssoTimeoutMs);
         } else if (fallbackSsoUrl == null) {
-            return getSsoTokenExtractor(ssoService, ssoTimeoutMs);
+            return getSsoTokenExtractor(ssoService);
         }
 
         SsoService oteSsoService = getKeyService(fallbackSsoUrl);
-        SsoTokenExtractor oteSsoTokenExtractor = getSsoTokenExtractor(oteSsoService, ssoTimeoutMs);
-        return getSsoTokenExtractor(ssoService, ssoTimeoutMs, oteSsoTokenExtractor);
+        SsoTokenExtractor oteSsoTokenExtractor = getSsoTokenExtractor(oteSsoService);
+        return getSsoTokenExtractor(ssoService, oteSsoTokenExtractor);
     }
 
-    SsoTokenExtractor getSsoTokenExtractor(SsoService ssoService, long ssoTimeoutMs) {
-        return new Vps4SsoTokenExtractor(ssoService, ssoTimeoutMs);
+    SsoTokenExtractor getSsoTokenExtractor(SsoService ssoService) {
+        return new Vps4SsoTokenExtractor(ssoService);
     }
 
-    SsoTokenExtractor getSsoTokenExtractor(SsoService ssoService, long ssoTimeoutMs, SsoTokenExtractor fallbackExtractor) {
-        return new FallbackSsoTokenExtractor(ssoService, ssoTimeoutMs, fallbackExtractor);
+    SsoTokenExtractor getSsoTokenExtractor(SsoService ssoService, SsoTokenExtractor fallbackExtractor) {
+        return new FallbackSsoTokenExtractor(ssoService, fallbackExtractor);
     }
 
     SsoTokenExtractor getLegacySsoTokenExtractor(SsoService ssoService, long ssoTimeoutMs) {

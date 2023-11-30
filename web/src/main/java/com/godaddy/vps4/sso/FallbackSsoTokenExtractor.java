@@ -15,8 +15,8 @@ public class FallbackSsoTokenExtractor extends Vps4SsoTokenExtractor {
 
     final SsoTokenExtractor fallbackExtractor;
 
-    public FallbackSsoTokenExtractor(SsoService ssoService, long ssoTimeoutMs, SsoTokenExtractor fallbackExtractor) {
-        super(ssoService, ssoTimeoutMs);
+    public FallbackSsoTokenExtractor(SsoService ssoService, SsoTokenExtractor fallbackExtractor) {
+        super(ssoService);
         this.fallbackExtractor = fallbackExtractor;
     }
 

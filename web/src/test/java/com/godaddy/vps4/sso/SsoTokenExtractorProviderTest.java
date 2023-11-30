@@ -85,7 +85,7 @@ public class SsoTokenExtractorProviderTest {
     private SsoTokenExtractorProvider getPatchedSsoTokenExtractorProvider() {
         return new SsoTokenExtractorProvider(mockConfig) {
             @Override
-            SsoTokenExtractor getSsoTokenExtractor(SsoService ssoService, long ssTimeoutMs) {
+            SsoTokenExtractor getSsoTokenExtractor(SsoService ssoService) {
                 return mockOteSsoExtractor;
             }
         };

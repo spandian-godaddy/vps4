@@ -1,13 +1,11 @@
 package com.godaddy.vps4.sso;
 
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 
-import com.nimbusds.jwt.ReadOnlyJWTClaimsSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,38 +13,16 @@ import com.godaddy.hfs.sso.SsoService;
 import com.godaddy.hfs.sso.SsoTokenExtractor;
 import com.godaddy.hfs.sso.TokenExpiredException;
 import com.godaddy.hfs.sso.VerificationException;
+import com.godaddy.hfs.sso.TokenInvalidException;
 import com.godaddy.hfs.sso.token.IdpSsoToken;
 import com.godaddy.hfs.sso.token.SsoToken;
+import com.godaddy.hfs.sso.token.SsoTokenReader;
 
 public class Vps4SsoTokenExtractor extends SsoTokenExtractor {
     private static final Logger logger = LoggerFactory.getLogger(Vps4SsoTokenExtractor.class);
-    private final long sessionTimeoutMs;
 
-    public Vps4SsoTokenExtractor(SsoService ssoService, long sessionTimeoutMs) {
-        super(ssoService, sessionTimeoutMs);
-        this.sessionTimeoutMs = sessionTimeoutMs;
-    }
-
-    @Override
-    public void validate(SsoToken token) throws VerificationException, TokenExpiredException {
-        if (!this.verify(token.jwt)) {
-            throw new VerificationException("Unable to validate token");
-        } else if (isExpired(token.claims, sessionTimeoutMs)) {
-            throw new TokenExpiredException("Token has expired");
-        }
-    }
-
-    protected static boolean isExpired(ReadOnlyJWTClaimsSet claims, long sessionTimeoutMs) {
-        Date issueTime = claims.getIssueTime();
-        if (issueTime == null) {
-            throw new IllegalArgumentException("JWT does not have an 'issue time' field");
-        }
-
-        long issued = claims.getIssueTime().getTime();
-
-        long now = System.currentTimeMillis();
-
-        return now > (issued + sessionTimeoutMs);
+    public Vps4SsoTokenExtractor(SsoService ssoService) {
+        super(ssoService, SsoTokenReader.BUSINESS_IMPACT_VALIDITY_LEVEL_MEDIUM);
     }
 
     /*
@@ -89,6 +65,9 @@ public class Vps4SsoTokenExtractor extends SsoTokenExtractor {
             catch (TokenExpiredException e) {
                 logger.warn("Token has expired", e);
             }
+           catch (TokenInvalidException e) {
+                logger.warn("Token is invalid", e);
+           }
         }
 
         return null;

@@ -13,6 +13,7 @@ import com.godaddy.vps4.web.dns.ActionCommandHelper;
 import com.godaddy.vps4.web.dns.DnsResource;
 import com.godaddy.vps4.web.dns.ObjectMapperProvider;
 import com.godaddy.vps4.web.dns.ReverseDnsLookup;
+import com.godaddy.vps4.web.entitlementAction.ChatterboxResource;
 import com.godaddy.vps4.web.featureFlag.ConfigFeatureMaskModule;
 import com.godaddy.vps4.web.intervention.InterventionResource;
 import com.godaddy.vps4.web.mailrelay.VmMailRelayResource;
@@ -103,6 +104,7 @@ public class WebModule extends AbstractModule {
         bind(PlatformMigrationResource.class);
         bind(VmBootscriptResource.class);
         bind(InterventionResource.class);
+        bind(ChatterboxResource.class);
 
         bind(CommandsResource.class);
         bind(CommandsViewResource.class);

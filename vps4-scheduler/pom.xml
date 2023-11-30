@@ -264,7 +264,7 @@
         <dependency>
             <groupId>com.godaddy.hfs</groupId>
             <artifactId>hfs-sso</artifactId>
-            <version>${hfs-base-version}</version>
+            <version>1.3.0</version>
         </dependency>
 
         <dependency>
