@@ -54,6 +54,12 @@
                             <url>https://gdartifactory1.jfrog.io/artifactory/java-hostingcore-local/</url>
                             <layout>default</layout>
                         </repository>
+                        <repository>
+                            <id>java-sso</id>
+                            <name>java sso local repo</name>
+                            <url>https://gdartifactory1.jfrog.io/artifactory/java-sso-local/</url>
+                            <layout>default</layout>
+                        </repository>
                     </repositories>
                 </profile>
             </profiles>
@@ -63,6 +69,11 @@
             <servers>
                 <server>
                     <id>default</id>
+                    <username>ci_hostingcore</username>
+                    <password>CHANGE-THIS</password>
+                </server>
+                <server>
+                    <id>java-sso</id>
                     <username>ci_hostingcore</username>
                     <password>CHANGE-THIS</password>
                 </server>
