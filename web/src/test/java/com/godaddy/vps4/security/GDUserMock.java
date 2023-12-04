@@ -2,6 +2,8 @@ package com.godaddy.vps4.security;
 
 import static org.mockito.Mockito.when;
 
+import com.godaddy.hfs.sso.token.SsoToken;
+import com.nimbusds.jwt.SignedJWT;
 import org.mockito.Mockito;
 
 import com.godaddy.vps4.web.security.GDUser;
@@ -46,6 +48,9 @@ public class GDUserMock {
     }
 
     public static GDUser create(String shopperId, boolean isEmployee, boolean isAdmin, List<Role> roles) {
+        SsoToken token = Mockito.mock(SsoToken.class);
+        SignedJWT signedJWT = Mockito.mock(SignedJWT.class);
+
         GDUser gdUser = Mockito.mock(GDUser.class);
         when(gdUser.isShopper()).thenReturn(shopperId!=null);
         when(gdUser.isEmployee()).thenReturn(isEmployee);
@@ -54,6 +59,9 @@ public class GDUserMock {
         when(gdUser.isEmployeeToShopper()).thenReturn(isEmployee && shopperId != null);
         when(gdUser.getUsername()).thenReturn("tester");
         when(gdUser.roles()).thenReturn(roles);
+        when(signedJWT.getParsedString()).thenReturn("fakeJwtToken");
+        when(token.getJwt()).thenReturn(signedJWT);
+        when(gdUser.getToken()).thenReturn(token);
         return gdUser;
     }
 }

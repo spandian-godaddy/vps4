@@ -1,20 +1,20 @@
 package com.godaddy.vps4.firewall.jdbc;
 
 import com.godaddy.hfs.jdbc.Sql;
-import com.godaddy.vps4.firewall.FirewallService;
-import com.godaddy.vps4.firewall.FirewallSite;
+import com.godaddy.vps4.firewall.FirewallDataService;
+import com.godaddy.vps4.firewall.model.VmFirewallSite;
 
 import javax.inject.Inject;
 import javax.sql.DataSource;
 import java.util.List;
 import java.util.UUID;
 
-public class JdbcFirewallService implements FirewallService {
+public class JdbcFirewallDataService implements FirewallDataService {
 
     private final DataSource dataSource;
 
     @Inject
-    public JdbcFirewallService(DataSource dataSource) {
+    public JdbcFirewallDataService(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
@@ -28,7 +28,7 @@ public class JdbcFirewallService implements FirewallService {
     }
 
     @Override
-    public List<FirewallSite> getActiveFirewallSitesOfVm(UUID vmId) {
+    public List<VmFirewallSite> getActiveFirewallSitesOfVm(UUID vmId) {
         return Sql.with(dataSource).exec(
                 "SELECT vfs.domain, vfs.site_id, vfs.valid_until as \"vfs_valid_until\"," +
                         " vfs.valid_on as \"vfs_valid_on\", vfs.vm_id as \"vfs_vm_id\", ia.*, family(ia.ip_address)" +
@@ -39,7 +39,7 @@ public class JdbcFirewallService implements FirewallService {
     }
 
     @Override
-    public FirewallSite getFirewallSiteFromId(String siteId) {
+    public VmFirewallSite getFirewallSiteFromId(String siteId) {
         return Sql.with(dataSource).exec(
                 "SELECT vfs.domain, vfs.site_id, vfs.valid_until as \"vfs_valid_until\"," +
                         " vfs.valid_on as \"vfs_valid_on\", vfs.vm_id as \"vfs_vm_id\", ia.*, family(ia.ip_address)" +

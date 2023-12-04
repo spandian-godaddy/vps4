@@ -6,9 +6,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class Vps4SsoToken {
     private static final int SUCCESS = 1;
 
-    private final int code;
-    private final String message;
-    private final String data;
+    public final int code;
+    public final String message;
+    public final String data;
 
     @JsonCreator
     public Vps4SsoToken(@JsonProperty("code") int code,

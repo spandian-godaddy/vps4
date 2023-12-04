@@ -1,6 +1,6 @@
 package com.godaddy.vps4.firewall.jdbc;
 
-import com.godaddy.vps4.firewall.FirewallSite;
+import com.godaddy.vps4.firewall.model.VmFirewallSite;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.jdbc.IpAddressMapper;
 import com.godaddy.vps4.util.TimestampUtils;
@@ -21,10 +21,10 @@ public class FirewallSiteMapper {
         return IpAddressMapper.mapIpAddress(rs);
     }
 
-    public static FirewallSite mapFirewallSite(ResultSet rs) throws SQLException {
+    public static VmFirewallSite mapFirewallSite(ResultSet rs) throws SQLException {
         IpAddress ipAddress = mapIpAddress(rs);
 
-        return new FirewallSite(
+        return new VmFirewallSite(
                 UUID.fromString(rs.getString("vfs_vm_id")),
                 ipAddress,
                 rs.getString("domain"),

@@ -32,5 +32,12 @@ public class Vps4SsoModule extends AbstractModule {
                         "entitlements.api.keyPath",
                         "entitlements.api.certPath"))
                 .in(Singleton.class);
+
+        bind(Vps4SsoService.class)
+                .toProvider(getClientCertAuthServiceProvider(Vps4SsoService.class,
+                "sso.url",
+                "sso.api.keyPath",
+                "sso.api.certPath"))
+                .in(Singleton.class);
     }
 }

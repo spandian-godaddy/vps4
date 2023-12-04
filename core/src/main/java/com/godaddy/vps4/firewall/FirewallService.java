@@ -1,13 +1,11 @@
 package com.godaddy.vps4.firewall;
 
-import java.util.List;
-import java.util.UUID;
+import com.godaddy.vps4.firewall.model.FirewallDetail;
+import com.godaddy.vps4.firewall.model.FirewallSite;
 
 public interface FirewallService {
+    FirewallSite[] getAllFirewallSites(String shopperId, String customerJwt);
 
-    void createFirewallSite(UUID vmId, long ipAddressId, String domain, String siteId);
-    FirewallSite getFirewallSiteFromId(String siteId);
-    List<FirewallSite> getActiveFirewallSitesOfVm(UUID vmId);
 
-    void destroyFirewallSite(String siteId);
+    FirewallDetail getFirewallSiteDetail(String shopperId, String customerJwt, String siteId);
 }

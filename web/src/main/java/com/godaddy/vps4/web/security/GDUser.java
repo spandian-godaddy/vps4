@@ -23,6 +23,10 @@ public class GDUser {
         return shopperId;
     }
 
+    public SsoToken getToken() {
+        return token;
+    }
+
     public boolean isShopper() {
         return shopperId != null;
     }

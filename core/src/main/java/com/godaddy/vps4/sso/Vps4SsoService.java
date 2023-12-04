@@ -16,4 +16,8 @@ public interface Vps4SsoService {
     @POST
     @Path("/token")
     Vps4SsoToken getToken(@FormParam("realm") String realm);
+
+    @POST
+    @Path("/delegation")
+    Vps4SsoToken getDelegationToken(@FormParam("realm") String realm, @FormParam("subordinate_user") String subordinateUser);
 }
