@@ -172,14 +172,16 @@ public class SsoRequestAuthenticator implements RequestAuthenticator<GDUser> {
                 .findAny()
                 .orElse(null);
 
-            gdUser.username = ssoCertConfig.name;
-            List<Role> userRoles = new ArrayList<>();
-            userRoles.add(Role.valueOf(ssoCertConfig.role));
-            gdUser.username = ssoCertConfig.name;
-            gdUser.roles = userRoles;
-            gdUser.isEmployee = false;
-
-            return !Objects.isNull(ssoCertConfig);
+            if (!Objects.isNull(ssoCertConfig)) {
+                gdUser.username = ssoCertConfig.name;
+                List<Role> userRoles = new ArrayList<>();
+                userRoles.add(Role.valueOf(ssoCertConfig.role));
+                gdUser.username = ssoCertConfig.name;
+                gdUser.roles = userRoles;
+                gdUser.isEmployee = false;
+                return true;
+            }
+            return false;
         } catch (Exception ex) {
             String errorMsg = "Error reading config file.";
             throw new Vps4Exception("AUTHORIZATION_ERROR", errorMsg);
