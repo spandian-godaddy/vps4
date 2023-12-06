@@ -6,6 +6,8 @@ import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.orchestration.vm.Vps4SyncVmStatus;
 import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.ServerSpec;
+import com.godaddy.vps4.vm.ServerType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VmMetric;
 import com.godaddy.vps4.vm.VmOutage;
@@ -56,6 +58,9 @@ public class Vps4ClearVmOutageTest {
         request.virtualMachine.primaryIpAddress.ipAddress = "192.168.1.3";
         request.virtualMachine.orionGuid = UUID.randomUUID();
         request.virtualMachine.vmId = UUID.randomUUID();
+        request.virtualMachine.spec = new ServerSpec();
+        request.virtualMachine.spec.serverType = new ServerType();
+        request.virtualMachine.spec.serverType.serverType = ServerType.Type.VIRTUAL;
         when(request.virtualMachine.isActive()).thenReturn(true);
 
         credit = mock(VirtualMachineCredit.class);
@@ -206,5 +211,12 @@ public class Vps4ClearVmOutageTest {
     public void syncsVmStatus() {
         vps4ClearVmOutage.executeWithAction(context, request);
         verify(context, times(1)).execute("Vps4SyncVmStatus", Vps4SyncVmStatus.class, request);
+    }
+
+    @Test
+    public void doesNotSyncDedicatedServerStatus() {
+        request.virtualMachine.spec.serverType.serverType = ServerType.Type.DEDICATED;
+        vps4ClearVmOutage.executeWithAction(context, request);
+        verify(context, times(0)).execute("Vps4SyncVmStatus", Vps4SyncVmStatus.class, request);
     }
 }

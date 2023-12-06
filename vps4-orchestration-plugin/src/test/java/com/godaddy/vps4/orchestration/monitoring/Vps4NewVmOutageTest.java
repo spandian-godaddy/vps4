@@ -228,4 +228,11 @@ public class Vps4NewVmOutageTest {
         vps4NewVmOutage.executeWithAction(context, request);
         verify(context, times(1)).execute("Vps4SyncVmStatus", Vps4SyncVmStatus.class, request);
     }
+
+    @Test
+    public void doesNotSyncDedicatedServerStatus() {
+        request.virtualMachine.spec.serverType.serverType = ServerType.Type.DEDICATED;
+        vps4NewVmOutage.executeWithAction(context, request);
+        verify(context, times(0)).execute("Vps4SyncVmStatus", Vps4SyncVmStatus.class, request);
+    }
 }

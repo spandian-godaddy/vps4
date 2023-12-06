@@ -115,7 +115,9 @@ public class Vps4NewVmOutage extends ActionCommand<Vps4NewVmOutage.Request, Void
     }
 
     private void syncVmStatus(Request request) {
-        context.execute("Vps4SyncVmStatus", Vps4SyncVmStatus.class, request);
+        if (request.virtualMachine.spec.isVirtualMachine()) {
+            context.execute("Vps4SyncVmStatus", Vps4SyncVmStatus.class, request);
+        }
     }
     
     public static class Request extends VmActionRequest {
