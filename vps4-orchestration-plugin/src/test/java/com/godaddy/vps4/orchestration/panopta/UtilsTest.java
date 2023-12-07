@@ -1,5 +1,6 @@
 package com.godaddy.vps4.orchestration.panopta;
 
+import static com.godaddy.vps4.orchestration.panopta.Utils.getNonManagedTemplateId;
 import static com.godaddy.vps4.orchestration.panopta.Utils.getServerTemplateId;
 import static com.godaddy.vps4.orchestration.panopta.Utils.getTemplateIds;
 import static org.junit.Assert.assertEquals;
@@ -61,12 +62,33 @@ public class UtilsTest {
     }
 
     @Test
-    public void  testDcAlertTemplate() {
+    public void testDcAlertTemplate() {
         String[] result = getTemplateIds(config, credit);
         verify(config, times(1)).get("panopta.api.templates.base.linux");
         verify(config, times(1)).get("panopta.api.templates.webhook");
         assertEquals(2, result.length);
         assertSame("test-template-base-linux", result[0]);
         assertSame("dc-alert-template", result[1]);
+    }
+
+    @Test
+    public void testGetNonManagedTemplateIdForBase() {
+        // Setting managed to true since we use this to get the non-managed template to remove.
+        when(credit.isManaged()).thenReturn(true);
+
+        String result = getNonManagedTemplateId(config, credit);
+
+        assertSame("test-template-base-linux", result);
+    }
+
+    @Test
+    public void testGetNonManagedTemplateIdForAddon() {
+        // Setting managed to true since we use this to get the non-managed template to remove.
+        when(credit.isManaged()).thenReturn(true);
+        when(credit.hasMonitoring()).thenReturn(true);
+
+        String result = getNonManagedTemplateId(config, credit);
+
+        assertSame("test-template-addon-windows", result);
     }
 }

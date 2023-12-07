@@ -29,7 +29,7 @@ public interface PanoptaApiServerService {
     @Path("/{server_id}/template/{template_id}")
     void removeTemplate(@PathParam("server_id") long serverId,
                         @QueryParam("partner_customer_key") String partnerCustomerKey,
-                        @PathParam("template_id") String templateId);
+                        @PathParam("template_id") String templateId, PanoptaApiRemoveTemplateRequest request);
 
     @GET
     @Path("/{server_id}/agent_resource")

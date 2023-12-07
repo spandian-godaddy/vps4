@@ -5,6 +5,8 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import com.godaddy.vps4.orchestration.panopta.UpdateManagedPanoptaTemplate;
+import com.godaddy.vps4.panopta.PanoptaService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,10 +28,12 @@ public class Vps4PlanChange implements Command<Vps4PlanChange.Request, Void> {
 
     private static final Logger logger = LoggerFactory.getLogger(Vps4PlanChange.class);
     private final VirtualMachineService virtualMachineService;
+    private final PanoptaService panoptaService;
 
     @Inject
-    public Vps4PlanChange(VirtualMachineService virtualMachineService) {
+    public Vps4PlanChange(VirtualMachineService virtualMachineService, PanoptaService panoptaService) {
         this.virtualMachineService = virtualMachineService;
+        this.panoptaService = panoptaService;
     }
 
     public static class Request extends VmActionRequest {
@@ -44,6 +48,7 @@ public class Vps4PlanChange implements Command<Vps4PlanChange.Request, Void> {
             logger.info("Processing managed level change for account {} to level {}", req.vm.vmId,
                     req.credit.getManagedLevel());
             updateVirtualMachineManagedLevel(context, req);
+            updatePanoptaTemplate(context, req);
         }
         logger.info("Managed level {} for vm {} in request, matches managed level {} in credit. No action taken.",
                 req.vm.managedLevel, req.vm.vmId, req.credit.getManagedLevel());
@@ -57,5 +62,18 @@ public class Vps4PlanChange implements Command<Vps4PlanChange.Request, Void> {
             virtualMachineService.updateVirtualMachine(req.credit.getProductId(), paramsToUpdate);
             return null;
         }, Void.class);
+    }
+
+    private void updatePanoptaTemplate(CommandContext context, Request req) {
+        logger.info("Updating Panopta template for account {} to level {}", req.vm.vmId, req.credit.getManagedLevel());
+
+        if (req.vm.managedLevel != req.credit.getManagedLevel() && req.credit.getManagedLevel() == 2) {
+            UpdateManagedPanoptaTemplate.Request request = new UpdateManagedPanoptaTemplate.Request();
+            request.vmId = req.vm.vmId;
+            request.orionGuid = req.credit.getOrionGuid();
+            request.partnerCustomerKey = panoptaService.getPartnerCustomerKey(req.credit.getShopperId());
+
+            context.execute(UpdateManagedPanoptaTemplate.class, request);
+        }
     }
 }

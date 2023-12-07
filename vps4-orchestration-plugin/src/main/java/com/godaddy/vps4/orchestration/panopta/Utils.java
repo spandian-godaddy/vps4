@@ -16,4 +16,11 @@ public class Utils {
         String dcAlertTemplate = config.get("panopta.api.templates.webhook");
         return new String[] { serverTemplate, dcAlertTemplate };
     }
+
+    public static String getNonManagedTemplateId(Config config, VirtualMachineCredit credit) {
+        String templateType = credit.hasMonitoring() ? "addon" : "base";
+        String templateOS = credit.getOperatingSystem().toLowerCase();
+
+        return config.get("panopta.api.templates." + templateType + "." + templateOS);
+    }
 }

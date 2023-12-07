@@ -24,7 +24,7 @@ public interface PanoptaService {
 
     void applyTemplates(long serverId, String partnerCustomerKey, String[] templates);
 
-    void removeTemplate(long serverId, String partnerCustomerKey, String templateId);
+    void removeTemplate(long serverId, String partnerCustomerKey, String templateId, String strategy);
 
     PanoptaServer getServer(UUID vmId);
 
@@ -51,6 +51,8 @@ public interface PanoptaService {
     List<PanoptaGraph> getUsageGraphs(UUID vmId, String timescale) throws PanoptaServiceException;
 
     List<PanoptaGraph> getNetworkGraphs(UUID vmId, String timescale) throws PanoptaServiceException;
+
+    String getPartnerCustomerKey(String shopperId);
 
     void pauseServerMonitoring(UUID vmId);
 

@@ -30,6 +30,7 @@ import com.godaddy.vps4.orchestration.network.RemoveIpFromBlacklist;
 import com.godaddy.vps4.orchestration.panopta.AddAdditionalFqdnPanopta;
 import com.godaddy.vps4.orchestration.panopta.ApplyPanoptaTemplates;
 import com.godaddy.vps4.orchestration.panopta.PausePanoptaMonitoring;
+import com.godaddy.vps4.orchestration.panopta.UpdateManagedPanoptaTemplate;
 import com.godaddy.vps4.orchestration.panopta.ResumePanoptaMonitoring;
 import com.godaddy.vps4.orchestration.panopta.SetupPanopta;
 import com.godaddy.vps4.orchestration.panopta.Vps4RemoveDomainMonitoring;
@@ -149,6 +150,7 @@ public class Vps4CommandModule extends AbstractModule {
         bind(RemovePanoptaMonitoring.class);
         bind(SetupPanopta.class);
         bind(ApplyPanoptaTemplates.class);
+        bind(UpdateManagedPanoptaTemplate.class);
         bind(InstallPanoptaAgent.class);
         bind(UninstallPanoptaAgent.class);
         bind(WaitForPanoptaAgentSync.class);

@@ -903,4 +903,9 @@ public class DefaultPanoptaServiceTest {
 
         assertEquals(expected, defaultPanoptaService.getOutageMetrics(vmId));
     }
+
+    @Test
+    public void testGetPartnerCustomerKey() {
+        assertEquals(partnerCustomerKey, defaultPanoptaService.getPartnerCustomerKey(shopperId));
+    }
 }

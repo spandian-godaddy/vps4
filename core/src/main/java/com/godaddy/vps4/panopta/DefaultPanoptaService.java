@@ -205,8 +205,10 @@ public class DefaultPanoptaService implements PanoptaService {
     }
 
     @Override
-    public void removeTemplate(long serverId, String partnerCustomerKey, String templateId) {
-        panoptaApiServerService.removeTemplate(serverId, partnerCustomerKey, templateId);
+    public void removeTemplate(long serverId, String partnerCustomerKey, String templateId, String strategy) {
+        logger.info("Removing templateId {} from serverId: {}", templateId, serverId);
+        PanoptaApiRemoveTemplateRequest request = new PanoptaApiRemoveTemplateRequest(strategy);
+        panoptaApiServerService.removeTemplate(serverId, partnerCustomerKey, templateId, request);
     }
 
     @Override
@@ -508,7 +510,8 @@ public class DefaultPanoptaService implements PanoptaService {
         }
     }
 
-    private String getPartnerCustomerKey(String shopperId) {
+    @Override
+    public String getPartnerCustomerKey(String shopperId) {
         return config.get("panopta.api.partner.customer.key.prefix") + shopperId;
     }
 

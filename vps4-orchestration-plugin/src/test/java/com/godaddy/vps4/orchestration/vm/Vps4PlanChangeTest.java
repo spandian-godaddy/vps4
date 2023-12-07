@@ -12,6 +12,8 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
 
+import com.godaddy.vps4.orchestration.panopta.UpdateManagedPanoptaTemplate;
+import com.godaddy.vps4.panopta.PanoptaService;
 import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.DataCenterService;
 import org.junit.Test;
@@ -26,14 +28,21 @@ import gdg.hfs.orchestration.CommandContext;
 
 public class Vps4PlanChangeTest {
     VirtualMachineService virtualMachineService = mock(VirtualMachineService.class);
+    PanoptaService panoptaService = mock(PanoptaService.class);
     CommandContext context = mock(CommandContext.class);
-    Vps4PlanChange command = new Vps4PlanChange(virtualMachineService);
+    Vps4PlanChange command = new Vps4PlanChange(virtualMachineService, panoptaService);
 
     @SuppressWarnings("unchecked")
     @Test
     public void testChangePlanCallsUpdateVmManagedLevel() {
         runChangeManagedLevelToManagedTest();
         verify(context, times(1)).execute(eq("UpdateVmManagedLevel"), any(Function.class), eq(Void.class));
+    }
+
+    @Test
+    public void testChangePlanCallsUpdateManagedPanoptaTemplate() {
+        runChangeManagedLevelToManagedTest();
+        verify(context, times(1)).execute(eq(UpdateManagedPanoptaTemplate.class), any(UpdateManagedPanoptaTemplate.Request.class));
     }
 
     @SuppressWarnings("unchecked")
