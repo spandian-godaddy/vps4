@@ -39,14 +39,14 @@ public class JdbcFirewallDataService implements FirewallDataService {
     }
 
     @Override
-    public VmFirewallSite getFirewallSiteFromId(String siteId) {
+    public VmFirewallSite getFirewallSiteFromId(UUID vmId, String siteId) {
         return Sql.with(dataSource).exec(
                 "SELECT vfs.domain, vfs.site_id, vfs.valid_until as \"vfs_valid_until\"," +
                         " vfs.valid_on as \"vfs_valid_on\", vfs.vm_id as \"vfs_vm_id\", ia.*, family(ia.ip_address)" +
                         " FROM vm_firewall_site vfs join ip_address ia on vfs.ip_address_id = ia.address_id" +
-                        " WHERE vfs.site_id = ? ORDER BY vfs.valid_on",
+                        " WHERE vfs.site_id = ? AND vfs.vm_id = ? ORDER BY vfs.valid_on",
                 Sql.nextOrNull(FirewallSiteMapper::mapFirewallSite),
-                siteId);
+                siteId, vmId);
     }
 
     @Override

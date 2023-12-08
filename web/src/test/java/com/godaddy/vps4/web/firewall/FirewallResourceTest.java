@@ -2,12 +2,15 @@ package com.godaddy.vps4.web.firewall;
 
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
+import com.godaddy.vps4.firewall.FirewallDataService;
 import com.godaddy.vps4.firewall.FirewallService;
 import com.godaddy.vps4.firewall.model.FirewallDetail;
 import com.godaddy.vps4.firewall.model.FirewallSite;
 import com.godaddy.vps4.firewall.model.FirewallStatus;
+import com.godaddy.vps4.firewall.model.VmFirewallSite;
 import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.vm.*;
+import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.vm.VmResource;
 import org.junit.Before;
@@ -15,6 +18,8 @@ import org.junit.Test;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
@@ -87,46 +92,48 @@ public class FirewallResourceTest {
 
         when(vmResource.getVm(vmId)).thenReturn(vm);
         when(creditService.getVirtualMachineCredit(vm.orionGuid)).thenReturn(credit);
-        when(firewallService.getAllFirewallSites(anyString(), anyString())).thenReturn(new FirewallSite[]{firewallSite});
-        when(firewallService.getFirewallSiteDetail(anyString(), anyString(), anyString())).thenReturn(firewallDetail);
+
+        when(firewallService.getFirewallSites(anyString(), anyString(), any())).thenReturn(Collections.singletonList(firewallSite));
+        when(firewallService.getFirewallSiteDetail(anyString(), anyString(), anyString(), any())).thenReturn(firewallDetail);
     }
 
     @Test
     public void testGetFirewallSitesShopper() {
         resource = new FirewallResource(userShopper, vmResource, creditService, firewallService);
-        FirewallSite[] response = resource.getFirewallSites(vmId);
+        List<FirewallSite> response = resource.getActiveFirewallSites(vmId);
         verify(vmResource, times(1)).getVm(eq(vm.vmId));
         verify(creditService, times(1)).getVirtualMachineCredit(eq(vm.orionGuid));
         verify(firewallService, times(1))
-                .getAllFirewallSites(credit.getShopperId(), userShopper.getToken().getJwt().getParsedString());
+                .getFirewallSites(credit.getShopperId(), userShopper.getToken().getJwt().getParsedString(), vm.vmId);
 
-        assertEquals(1, response.length);
-        assertSame(firewallSite, response[0]);
+        assertEquals(1, response.size());
+        assertSame(firewallSite, response.get(0));
     }
 
     @Test
     public void testGetFirewallSitesE2S() {
         resource = new FirewallResource(userEmployee2Shopper, vmResource, creditService, firewallService);
-        FirewallSite[] response = resource.getFirewallSites(vmId);
+        List<FirewallSite> response = resource.getActiveFirewallSites(vmId);
         verify(vmResource, times(1)).getVm(eq(vm.vmId));
         verify(creditService, times(1)).getVirtualMachineCredit(eq(vm.orionGuid));
         verify(firewallService, times(1))
-                .getAllFirewallSites(credit.getShopperId(), userShopper.getToken().getJwt().getParsedString());
+                .getFirewallSites(credit.getShopperId(), userShopper.getToken().getJwt().getParsedString(), vm.vmId);
 
-        assertEquals(1, response.length);
-        assertSame(firewallSite, response[0]);
+        assertEquals(1, response.size());
+        assertSame(firewallSite, response.get(0));
     }
 
     @Test
     public void testGetFirewallSitesEmployee() {
         resource = new FirewallResource(userEmployee, vmResource, creditService, firewallService);
-        FirewallSite[] response = resource.getFirewallSites(vmId);
+        List<FirewallSite> response = resource.getActiveFirewallSites(vmId);
         verify(vmResource, times(1)).getVm(eq(vm.vmId));
         verify(creditService, times(1)).getVirtualMachineCredit(eq(vm.orionGuid));
-        verify(firewallService, times(1)).getAllFirewallSites(credit.getShopperId(), null);
+        verify(firewallService, times(1))
+                .getFirewallSites(credit.getShopperId(), null, vm.vmId);
 
-        assertEquals(1, response.length);
-        assertSame(firewallSite, response[0]);
+        assertEquals(1, response.size());
+        assertSame(firewallSite, response.get(0));
     }
 
     @Test
@@ -136,7 +143,7 @@ public class FirewallResourceTest {
         verify(vmResource, times(1)).getVm(eq(vm.vmId));
         verify(creditService, times(1)).getVirtualMachineCredit(eq(vm.orionGuid));
         verify(firewallService, times(1))
-                .getFirewallSiteDetail(credit.getShopperId(), userShopper.getToken().getJwt().getParsedString(), firewallDetail.siteId);
+                .getFirewallSiteDetail(credit.getShopperId(), userShopper.getToken().getJwt().getParsedString(), firewallDetail.siteId, vm.vmId);
 
         assertSame(firewallDetail, response);
     }
@@ -148,7 +155,7 @@ public class FirewallResourceTest {
         verify(vmResource, times(1)).getVm(eq(vm.vmId));
         verify(creditService, times(1)).getVirtualMachineCredit(eq(vm.orionGuid));
         verify(firewallService, times(1))
-                .getFirewallSiteDetail(credit.getShopperId(), userShopper.getToken().getJwt().getParsedString(), firewallDetail.siteId);
+                .getFirewallSiteDetail(credit.getShopperId(), userShopper.getToken().getJwt().getParsedString(), firewallDetail.siteId, vm.vmId);
 
         assertSame(firewallDetail, response);
     }
@@ -160,7 +167,7 @@ public class FirewallResourceTest {
         verify(vmResource, times(1)).getVm(eq(vm.vmId));
         verify(creditService, times(1)).getVirtualMachineCredit(eq(vm.orionGuid));
         verify(firewallService, times(1))
-                .getFirewallSiteDetail(credit.getShopperId(), null, firewallDetail.siteId);
+                .getFirewallSiteDetail(credit.getShopperId(), null, firewallDetail.siteId, vm.vmId);
 
         assertSame(firewallDetail, response);
     }

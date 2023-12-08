@@ -2,13 +2,15 @@ package com.godaddy.vps4.web.firewall;
 
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
+import com.godaddy.vps4.firewall.FirewallDataService;
 import com.godaddy.vps4.firewall.model.FirewallDetail;
 import com.godaddy.vps4.firewall.model.FirewallSite;
 import com.godaddy.vps4.firewall.FirewallService;
+import com.godaddy.vps4.firewall.model.VmFirewallSite;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.web.Vps4Api;
+import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.GDUser;
-import com.godaddy.vps4.web.security.RequiresRole;
 import com.godaddy.vps4.web.vm.VmResource;
 import com.google.inject.Inject;
 import io.swagger.annotations.Api;
@@ -17,6 +19,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
+import java.util.List;
 import java.util.UUID;
 
 @Vps4Api
@@ -53,21 +56,20 @@ public class FirewallResource {
     }
 
     @GET
-    @RequiresRole(roles = {GDUser.Role.ADMIN}) // TODO: remove after finishing VPS4-4544
     @Path("/{vmId}/firewallSites")
-    public FirewallSite[] getFirewallSites(@PathParam("vmId") UUID vmId) {
+    public List<FirewallSite> getActiveFirewallSites(@PathParam("vmId") UUID vmId) {
         VirtualMachine vm = vmResource.getVm(vmId);  // auth validation
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(vm.orionGuid);
-        return firewallService.getAllFirewallSites(credit.getShopperId(), getCustomerJwt());
+
+        return firewallService.getFirewallSites(credit.getShopperId(), getCustomerJwt(), vmId);
     }
 
     @GET
-    @RequiresRole(roles = {GDUser.Role.ADMIN}) // TODO: remove after finishing VPS4-4544
     @Path("/{vmId}/firewallSites/{siteId}")
     public FirewallDetail getFirewallSiteDetail(@PathParam("vmId") UUID vmId, @PathParam("siteId") String siteId) {
         VirtualMachine vm = vmResource.getVm(vmId);  // auth validation
-        // TODO: do a db query to make sure site belongs to vmId
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(vm.orionGuid);
-        return firewallService.getFirewallSiteDetail(credit.getShopperId(), getCustomerJwt(), siteId);
+
+        return firewallService.getFirewallSiteDetail(credit.getShopperId(), getCustomerJwt(), siteId, vmId);
     }
 }

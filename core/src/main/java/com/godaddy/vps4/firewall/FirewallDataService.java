@@ -8,7 +8,7 @@ import java.util.UUID;
 public interface FirewallDataService {
 
     void createFirewallSite(UUID vmId, long ipAddressId, String domain, String siteId);
-    VmFirewallSite getFirewallSiteFromId(String siteId);
+    VmFirewallSite getFirewallSiteFromId(UUID vmId, String siteId);
     List<VmFirewallSite> getActiveFirewallSitesOfVm(UUID vmId);
 
     void destroyFirewallSite(String siteId);

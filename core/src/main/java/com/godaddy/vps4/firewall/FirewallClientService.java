@@ -6,6 +6,7 @@ import com.godaddy.vps4.firewall.model.FirewallSite;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
+import java.util.List;
 
 @Path("/")
 @Consumes(MediaType.APPLICATION_JSON)
@@ -13,7 +14,7 @@ import javax.ws.rs.core.MediaType;
 public interface FirewallClientService {
     @GET
     @Path("/sites")
-    FirewallSite[] getFirewallSites(@HeaderParam("Authorization") String ssoJwt);
+    List<FirewallSite> getFirewallSites(@HeaderParam("Authorization") String ssoJwt);
 
     @GET
     @Path("/sites/{siteId}")

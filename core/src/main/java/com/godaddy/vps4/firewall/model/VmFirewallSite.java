@@ -21,4 +21,6 @@ public class VmFirewallSite {
         this.validUntil = validUntil;
     }
 
+    public VmFirewallSite() {
+    }
 }

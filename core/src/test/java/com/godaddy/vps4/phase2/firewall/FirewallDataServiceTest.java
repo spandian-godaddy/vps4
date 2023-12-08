@@ -22,7 +22,7 @@ import java.util.UUID;
 
 import static org.junit.Assert.*;
 
-public class FirewallServiceTest {
+public class FirewallDataServiceTest {
 
     VirtualMachine vm;
     Vps4User user;
@@ -60,7 +60,7 @@ public class FirewallServiceTest {
     public void testInsertFirewallSite() {
         injector.getInstance(FirewallDataService.class).createFirewallSite(vm.vmId,
                 vm.primaryIpAddress.addressId, "fakedomain.com", "fakeSiteId");
-        VmFirewallSite vmFirewallSite = injector.getInstance(FirewallDataService.class).getFirewallSiteFromId("fakeSiteId");
+        VmFirewallSite vmFirewallSite = injector.getInstance(FirewallDataService.class).getFirewallSiteFromId(vm.vmId, "fakeSiteId");
         String infinity = "+292278994-08-16T23:00:00Z";
 
         assertEquals("fakedomain.com", vmFirewallSite.domain);
@@ -70,12 +70,24 @@ public class FirewallServiceTest {
         assertEquals(infinity, vmFirewallSite.validUntil.toString());
     }
 
+
+    @Test
+    public void testGetFirewallSiteWrongIdAndVmId() {
+        injector.getInstance(FirewallDataService.class).createFirewallSite(vm.vmId,
+                vm.primaryIpAddress.addressId, "fakedomain.com", "fakeSiteId");
+        VmFirewallSite vmFirewallSiteNotFound = injector.getInstance(FirewallDataService.class).getFirewallSiteFromId(vm.vmId, "fakeSiteId2");
+        VmFirewallSite vmFirewallSiteWrongVmId = injector.getInstance(FirewallDataService.class).getFirewallSiteFromId(UUID.randomUUID(), "fakeSiteId");
+
+        assertNull(vmFirewallSiteNotFound);
+        assertNull(vmFirewallSiteWrongVmId);
+    }
+
     @Test
     public void testDestroyFirewallSite() {
         injector.getInstance(FirewallDataService.class).createFirewallSite(vm.vmId,
                 vm.primaryIpAddress.addressId, "fakedomain.com", "fakeSiteId");
         injector.getInstance(FirewallDataService.class).destroyFirewallSite("fakeSiteId");
-        VmFirewallSite vmFirewallSite = injector.getInstance(FirewallDataService.class).getFirewallSiteFromId("fakeSiteId");
+        VmFirewallSite vmFirewallSite = injector.getInstance(FirewallDataService.class).getFirewallSiteFromId(vm.vmId, "fakeSiteId");
         assertEquals("fakedomain.com", vmFirewallSite.domain);
         assertEquals(vm.vmId, vmFirewallSite.vmId);
         assertEquals("fakeSiteId", vmFirewallSite.siteId);
