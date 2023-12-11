@@ -26,8 +26,9 @@ import com.godaddy.vps4.web.monitoring.VmMonitoringResource;
 import com.godaddy.vps4.web.monitoring.VmOutageResource;
 import com.godaddy.vps4.web.network.NetworkResource;
 import com.godaddy.vps4.web.notification.NotificationsResource;
+import com.godaddy.vps4.web.open.AvailabilityResource;
+import com.godaddy.vps4.web.open.UnavailablePackagesResource;
 import com.godaddy.vps4.web.ohbackup.OhBackupResource;
-import com.godaddy.vps4.web.open.OpenAvailabilityResource;
 import com.godaddy.vps4.web.plan.PlanResource;
 import com.godaddy.vps4.web.security.Vps4ContainerRequestFilterModule;
 import com.godaddy.vps4.web.sysadmin.SysAdminResource;
@@ -141,7 +142,8 @@ public class WebModule extends AbstractModule {
         bind(CommandsResource.class);
         bind(CommandsViewResource.class);
 
-        bind(OpenAvailabilityResource.class);
+        bind(AvailabilityResource.class);
+        bind(UnavailablePackagesResource.class);
 
         install(new ActionCancelModule());
         install(new Vps4ContainerRequestFilterModule());

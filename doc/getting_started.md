@@ -1,3 +1,4 @@
+
 # Getting Started developing on VPS4
 
 ## Access Rights
@@ -95,6 +96,8 @@
 | /base/hfs.api.key              | hfs.api.key             | dev         | core/src/main/resources/com/godaddy/vps4/config/base/hfs.api.key              |
 | /local/messaging.api.crt       | messaging.api.crt       | dev         | core/src/main/resources/com/godaddy/vps4/config/local/messaging.api.crt       |
 | /local/messaging.api.key       | messaging.api.key       | dev         | core/src/main/resources/com/godaddy/vps4/config/local/messaging.api.key       |
+| /local/entitlements.api.crt    | entitlements.api.crt    | dev         | core/src/main/resources/com/godaddy/vps4/config/local/entitlements.api.crt    |
+| /local/entitlements.api.key    | entitlements.api.key    | dev         | core/src/main/resources/com/godaddy/vps4/config/local/entitlements.api.key    |
 | /local/password_encryption.key | password_encryption.key | dev         | core/src/main/resources/com/godaddy/vps4/config/local/password_encryption.key |
 
 ## Database Configuration

@@ -9,6 +9,7 @@ import com.godaddy.vps4.firewall.FirewallModule;
 import com.godaddy.vps4.entitlement.EntitlementsModule;
 import com.godaddy.vps4.jsd.JsdModule;
 import com.godaddy.vps4.move.VmMoveModule;
+import com.godaddy.vps4.productPackage.PackageModule;
 import com.godaddy.vps4.web.firewall.FirewallDataModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -137,6 +138,7 @@ public class Vps4Injector {
         modules.add(new Vps4SsoModule());
         modules.add(new FirewallModule());
         modules.add(new VmMoveModule());
+        modules.add(new PackageModule());
         modules.add(binder -> {
             binder.bind(ObjectMapper.class).toProvider(ObjectMapperProvider.class);
         });

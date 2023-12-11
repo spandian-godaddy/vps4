@@ -6,7 +6,6 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Matchers.isNull;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -30,17 +29,17 @@ import com.godaddy.vps4.web.vm.InventoryDetails;
 import com.godaddy.vps4.web.vm.InventoryResource;
 
 @RunWith(MockitoJUnitRunner.class)
-public class OpenAvailabilityResourceTest {
+public class AvailabilityResourceTest {
     @Mock private InventoryResource inventoryResource;
     @Mock private VirtualMachineService virtualMachineService;
 
     private List<InventoryDetails> inventory;
-    private OpenAvailabilityResource resource;
+    private AvailabilityResource resource;
 
     @Before
     public void setUp() {
         setUpInventory();
-        resource = new OpenAvailabilityResource(inventoryResource, virtualMachineService);
+        resource = new AvailabilityResource(inventoryResource, virtualMachineService);
     }
 
     private void setUpInventory() {
@@ -73,7 +72,7 @@ public class OpenAvailabilityResourceTest {
 
     @Test
     public void requiresNoRoles() {
-        Class<OpenAvailabilityResource> resourceClass = OpenAvailabilityResource.class;
+        Class<AvailabilityResource> resourceClass = AvailabilityResource.class;
         assertEquals(0, resourceClass.getAnnotation(RequiresRole.class).roles().length);
     }
 

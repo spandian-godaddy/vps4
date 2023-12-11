@@ -27,12 +27,12 @@ import io.swagger.annotations.Api;
 @Path("/open/ded/availability")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-public class OpenAvailabilityResource {
+public class AvailabilityResource {
     private final InventoryResource inventoryResource;
     private final VirtualMachineService virtualMachineService;
 
     @Inject
-    public OpenAvailabilityResource(InventoryResource inventoryResource, VirtualMachineService virtualMachineService) {
+    public AvailabilityResource(InventoryResource inventoryResource, VirtualMachineService virtualMachineService) {
         this.inventoryResource = inventoryResource;
         this.virtualMachineService = virtualMachineService;
     }
