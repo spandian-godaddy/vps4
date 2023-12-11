@@ -8,6 +8,7 @@ import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
@@ -53,14 +54,14 @@ public class VmIntentResource {
 
     @GET
     @Path("/{vmId}/intents")
-    public List<Intent> getVmIntents(UUID vmId) {
+    public List<Intent> getVmIntents(@PathParam("vmId") UUID vmId) {
         List<Intent> intents = getVmIntentOptions();
         return intents.subList(0, 2);    
     }
 
     @POST
     @Path("/{vmId}/intents")
-    public List<Intent> setVmIntents(UUID vmId, List<Integer> intentIds, String otherIntentDescription) {
+    public List<Intent> setVmIntents(@PathParam("vmId") UUID vmId, List<Integer> intentIds, String otherIntentDescription) {
         List<Intent> intents = getVmIntentOptions();
         return intents.subList(0, 2);   
     }
