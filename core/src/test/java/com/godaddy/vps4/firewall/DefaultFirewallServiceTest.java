@@ -14,8 +14,14 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.eq;
 
 public class DefaultFirewallServiceTest {
     private FirewallClientService firewallClientService = mock(FirewallClientService.class);
@@ -48,12 +54,11 @@ public class DefaultFirewallServiceTest {
         vmFirewallSite = new VmFirewallSite();
         vmFirewallSite.siteId = firewallSite.siteId;
 
-
-
         token = new Vps4SsoToken(1,"fakeMessage", shopperJwt);
         when(vps4SsoService.getDelegationToken("idp", shopperId)).thenReturn(token);
         when(firewallClientService.getFirewallSites(anyString())).thenReturn(Collections.singletonList(firewallSite));
         when(firewallClientService.getFirewallSiteDetail(anyString(), anyString())).thenReturn(firewallSiteDetail);
+
         when(firewallDataService.getFirewallSiteFromId(eq(vmId), anyString())).thenReturn(vmFirewallSite);
         when(firewallDataService.getActiveFirewallSitesOfVm(eq(vmId))).thenReturn(Collections.singletonList(vmFirewallSite));
 
@@ -82,6 +87,7 @@ public class DefaultFirewallServiceTest {
     @Test
     public void testGetFirewallSitesDbEmptyList() {
         when(firewallDataService.getActiveFirewallSitesOfVm(eq(vmId))).thenReturn(Collections.emptyList());
+
         List<FirewallSite> response = service.getFirewallSites(shopperId, "customerJwt", vmId);
         verify(vps4SsoService, times(0)).getDelegationToken("idp", shopperId);
         verify(firewallClientService, times(1)).getFirewallSites("sso-jwt customerJwt");
@@ -122,6 +128,31 @@ public class DefaultFirewallServiceTest {
     @Test(expected = NotFoundException.class)
     public void testGetFirewallSiteDetailDbNotFoundThrowsException() {
         when(firewallDataService.getFirewallSiteFromId(eq(vmId), anyString())).thenReturn(null);
+
         service.getFirewallSiteDetail(shopperId, "customerJwt", firewallSiteDetail.siteId, vmId);
     }
+
+    @Test
+    public void testDeleteFirewallSiteSuccessful() {
+        service.deleteFirewallSite(shopperId, null, firewallSiteDetail.siteId);
+        verify(vps4SsoService, times(1)).getDelegationToken("idp", shopperId);
+        verify(firewallClientService, times(1)).deleteFirewallSite("sso-jwt " + shopperJwt, firewallSiteDetail.siteId);
+    }
+
+    @Test
+    public void testDeleteFirewallSiteNullSiteId() {
+        service.deleteFirewallSite(shopperId, null, firewallSiteDetail.siteId);
+        verify(vps4SsoService, times(1)).getDelegationToken("idp", shopperId);
+        verify(firewallClientService, times(1)).deleteFirewallSite("sso-jwt " + shopperJwt, firewallSiteDetail.siteId);
+    }
+
+    @Test
+    public void testDeleteFirewallSiteNullResponse() {
+        when(firewallClientService.deleteFirewallSite(anyString(), anyString())).thenReturn(null);
+
+        service.deleteFirewallSite(shopperId, null, firewallSiteDetail.siteId);
+        verify(vps4SsoService, times(1)).getDelegationToken("idp", shopperId);
+        verify(firewallClientService, times(1)).deleteFirewallSite("sso-jwt " + shopperJwt, firewallSiteDetail.siteId);
+    }
+
 }

@@ -1,6 +1,7 @@
 package com.godaddy.vps4.firewall;
 
 
+import com.godaddy.vps4.firewall.model.FirewallDestroyResponse;
 import com.godaddy.vps4.firewall.model.FirewallDetail;
 import com.godaddy.vps4.firewall.model.FirewallSite;
 
@@ -19,4 +20,9 @@ public interface FirewallClientService {
     @GET
     @Path("/sites/{siteId}")
     FirewallDetail getFirewallSiteDetail(@HeaderParam("Authorization") String ssoJwt, @PathParam("siteId") String siteId);
+
+    @DELETE
+    @Path("/sites/{siteId}")
+    FirewallDestroyResponse deleteFirewallSite(@HeaderParam("Authorization") String ssoJwt, @PathParam("siteId") String siteId);
+
 }

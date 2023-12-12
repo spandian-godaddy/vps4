@@ -71,7 +71,8 @@ public enum ActionType {
     MOVE_OUT(62),
     MOVE_IN(63),
     INTERVENTION(64),
-    MOVE_BACK(65);
+    MOVE_BACK(65),
+    DELETE_FIREWALL(66);
 
     private final int typeId;
 

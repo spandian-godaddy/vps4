@@ -6,6 +6,8 @@ import com.godaddy.vps4.config.ConfigModule;
 import com.godaddy.vps4.cpanel.CpanelModule;
 import com.godaddy.vps4.credit.CreditModule;
 import com.godaddy.vps4.entitlement.EntitlementsModule;
+import com.godaddy.vps4.firewall.FirewallDataModule;
+import com.godaddy.vps4.firewall.FirewallModule;
 import com.godaddy.vps4.hfs.HfsClientModule;
 import com.godaddy.vps4.hfs.HfsVmTrackingRecordModule;
 import com.godaddy.vps4.ipblacklist.IpBlacklistModule;
@@ -82,7 +84,9 @@ public class Vps4CommandPlugin implements CommandPlugin {
             new CpanelModule(),
             new Vps4SsoModule(),
             new MessagingModule(),
-            new EntitlementsModule()
+            new EntitlementsModule(),
+            new FirewallModule(),
+            new FirewallDataModule()
         );
 
         return new GuiceCommandProvider(injector);

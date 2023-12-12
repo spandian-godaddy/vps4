@@ -86,7 +86,7 @@ public class FirewallDataServiceTest {
     public void testDestroyFirewallSite() {
         injector.getInstance(FirewallDataService.class).createFirewallSite(vm.vmId,
                 vm.primaryIpAddress.addressId, "fakedomain.com", "fakeSiteId");
-        injector.getInstance(FirewallDataService.class).destroyFirewallSite("fakeSiteId");
+        injector.getInstance(FirewallDataService.class).destroyFirewallSite(vm.vmId, "fakeSiteId");
         VmFirewallSite vmFirewallSite = injector.getInstance(FirewallDataService.class).getFirewallSiteFromId(vm.vmId, "fakeSiteId");
         assertEquals("fakedomain.com", vmFirewallSite.domain);
         assertEquals(vm.vmId, vmFirewallSite.vmId);
@@ -105,7 +105,7 @@ public class FirewallDataServiceTest {
         injector.getInstance(FirewallDataService.class)
                 .createFirewallSite(vm.vmId, vm.primaryIpAddress.addressId,"fakedomain3.com", "fakeSiteId3");
         injector.getInstance(FirewallDataService.class)
-                .destroyFirewallSite("fakeSiteId3");
+                .destroyFirewallSite(vm.vmId, "fakeSiteId3");
 
         List<VmFirewallSite> vmFirewallSites = injector.getInstance(FirewallDataService.class).getActiveFirewallSitesOfVm(vm.vmId);
 

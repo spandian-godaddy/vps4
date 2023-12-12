@@ -11,5 +11,5 @@ public interface FirewallDataService {
     VmFirewallSite getFirewallSiteFromId(UUID vmId, String siteId);
     List<VmFirewallSite> getActiveFirewallSitesOfVm(UUID vmId);
 
-    void destroyFirewallSite(String siteId);
+    void destroyFirewallSite(UUID vmId, String siteId);
 }

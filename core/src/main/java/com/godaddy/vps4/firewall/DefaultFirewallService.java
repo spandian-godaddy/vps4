@@ -46,8 +46,10 @@ public class DefaultFirewallService implements FirewallService {
     public List<FirewallSite> getFirewallSites(String shopperId, String customerJwt, UUID vmId) {
         List<VmFirewallSite> vmFirewallSiteList = firewallDataService.getActiveFirewallSitesOfVm(vmId);
         List<FirewallSite> firewallSites =  firewallClientService.getFirewallSites(getAuthToken(shopperId, customerJwt));
-        List<String> vmFirewallSiteIds = vmFirewallSiteList.stream().map(site -> site.siteId).collect(Collectors.toList());
-        firewallSites = firewallSites.stream().filter(firewallSite -> vmFirewallSiteIds.contains(firewallSite.siteId)).collect(Collectors.toList());
+
+        List<String> vmFirewallSiteIds = vmFirewallSiteList.stream().map(site -> site.siteId.toLowerCase()).collect(Collectors.toList());
+        firewallSites = firewallSites.stream().filter(firewallSite ->
+                vmFirewallSiteIds.contains(firewallSite.siteId.toLowerCase())).collect(Collectors.toList());
         return firewallSites;
     }
 
@@ -58,5 +60,10 @@ public class DefaultFirewallService implements FirewallService {
             throw new NotFoundException("Could not find site id " + siteId + " belonging to vmId " + vmId);
         }
         return firewallClientService.getFirewallSiteDetail(getAuthToken(shopperId, customerJwt), siteId);
+    }
+
+    @Override
+    public void deleteFirewallSite(String shopperId, String customerJwt, String siteId) {
+        firewallClientService.deleteFirewallSite(getAuthToken(shopperId, customerJwt), siteId);
     }
 }

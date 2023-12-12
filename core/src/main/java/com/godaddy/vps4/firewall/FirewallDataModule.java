@@ -1,4 +1,4 @@
-package com.godaddy.vps4.web.firewall;
+package com.godaddy.vps4.firewall;
 
 import com.godaddy.vps4.firewall.FirewallDataService;
 import com.godaddy.vps4.firewall.jdbc.JdbcFirewallDataService;

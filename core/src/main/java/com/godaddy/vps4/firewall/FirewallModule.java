@@ -7,6 +7,7 @@ public class FirewallModule extends AbstractModule {
     @Override
     public void configure() {
         install(new FirewallClientServiceModule());
+
         bind(FirewallService.class).to(DefaultFirewallService.class).in(Scopes.SINGLETON);
     }
 }

@@ -50,8 +50,8 @@ public class JdbcFirewallDataService implements FirewallDataService {
     }
 
     @Override
-    public void destroyFirewallSite(String siteId) {
-        Sql.with(dataSource).exec("UPDATE vm_firewall_site SET valid_until = now_utc() WHERE site_id = ?",
-                null, siteId);
+    public void destroyFirewallSite(UUID vmId, String siteId) {
+        Sql.with(dataSource).exec("UPDATE vm_firewall_site SET valid_until = now_utc() WHERE vm_id = ? AND site_id = ?",
+                null, vmId, siteId);
     }
 }

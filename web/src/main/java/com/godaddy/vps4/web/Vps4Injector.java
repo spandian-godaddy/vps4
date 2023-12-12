@@ -9,8 +9,8 @@ import com.godaddy.vps4.firewall.FirewallModule;
 import com.godaddy.vps4.entitlement.EntitlementsModule;
 import com.godaddy.vps4.jsd.JsdModule;
 import com.godaddy.vps4.move.VmMoveModule;
+import com.godaddy.vps4.firewall.FirewallDataModule;
 import com.godaddy.vps4.productPackage.PackageModule;
-import com.godaddy.vps4.web.firewall.FirewallDataModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
