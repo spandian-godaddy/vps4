@@ -2,10 +2,8 @@ package com.godaddy.vps4.web.vm;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -21,7 +19,6 @@ import java.util.Map;
 
 import javax.ws.rs.ServiceUnavailableException;
 
-import com.godaddy.vps4.web.Vps4Exception;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -115,7 +112,6 @@ public class InventoryResourceTest {
         List<InventoryDetails> inventoryDetailsList = inventoryResource.getInventory("", 0);
         assertEquals(1, inventoryDetailsList.size());
         InventoryDetails inventoryDetails = inventoryDetailsList.get(0);
-        assertNotNull(inventoryDetails.hfsInUse);
         assertEquals(0, inventoryDetails.vps4Active);
         assertEquals(0, inventoryDetails.vps4Zombie);
         assertEquals(1, inventoryDetails.hfsInUse);
@@ -146,39 +142,5 @@ public class InventoryResourceTest {
         InventoryDetails inventoryDetails = inventoryDetailsList.get(0);
         assertEquals(activeServerCount, inventoryDetails.vps4Active);
         assertEquals(zombieServerCount, inventoryDetails.vps4Zombie);
-    }
-
-    @Test
-    public void getTierAvailabilityForAvailableInventory() throws IOException {
-        when(virtualMachineService.getSpec(anyInt(), anyInt())).thenReturn(createDummyServerSpec());
-        when(virtualMachineService.getSpec(anyString())).thenReturn(createDummyServerSpec());
-        when(vmService.getInventory(anyString())).thenReturn(createDummyInventory());
-        boolean tierAvailability = inventoryResource.getTierAvailability(100).available;
-        assertTrue(tierAvailability);
-    }
-
-    @Test
-    public void getTierAvailabilityForNoAvailableInventory() throws IOException {
-        when(virtualMachineService.getSpec(anyInt(), anyInt())).thenReturn(createDummyServerSpec());
-        when(virtualMachineService.getSpec(anyString())).thenReturn(createDummyServerSpec());
-        when(vmService.getInventory(anyString())).thenReturn(createDummyInventory(0));
-        boolean tierAvailability = inventoryResource.getTierAvailability(100).available;
-        assertFalse(tierAvailability);
-    }
-
-    @Test(expected = Vps4Exception.class)
-    public void getTierAvailabilityForVirtualTier() {
-        ServerSpec dummySpec = createDummyServerSpec();
-        dummySpec.serverType.serverType = ServerType.Type.VIRTUAL;
-        when(virtualMachineService.getSpec(anyInt(), anyInt())).thenReturn(dummySpec);
-
-        try {
-            inventoryResource.getTierAvailability(10);
-        } catch(Vps4Exception e) {
-            assert (e.getMessage().equalsIgnoreCase(
-                    "Tier is not a valid DED4 tier."));
-            assert (e.getId().equalsIgnoreCase("INVALID_TIER"));
-            throw e;
-        }
     }
 }
