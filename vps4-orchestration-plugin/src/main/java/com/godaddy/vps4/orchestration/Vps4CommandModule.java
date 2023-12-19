@@ -7,6 +7,7 @@ import com.godaddy.vps4.orchestration.cpanel.WaitForPackageInstall;
 import com.godaddy.vps4.orchestration.cpanel.Vps4AddAddOnDomain;
 import com.godaddy.vps4.orchestration.cpanel.Vps4ValidateDomainConfig;
 import com.godaddy.vps4.orchestration.dns.Vps4CreateDnsPtrRecord;
+import com.godaddy.vps4.orchestration.firewall.Vps4ModifyFirewallSite;
 import com.godaddy.vps4.orchestration.firewall.Vps4RemoveFirewallSite;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.InstallPanoptaAgent;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.UninstallPanoptaAgent;
@@ -182,5 +183,6 @@ public class Vps4CommandModule extends AbstractModule {
         bind(Vps4MoveIn.class);
         bind(Vps4MoveBack.class);
         bind(Vps4RemoveFirewallSite.class);
+        bind(Vps4ModifyFirewallSite.class);
     }
 }

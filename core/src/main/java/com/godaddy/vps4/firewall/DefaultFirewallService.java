@@ -1,8 +1,11 @@
 package com.godaddy.vps4.firewall;
 
+import com.godaddy.vps4.firewall.model.FirewallBypassWAF;
 import com.godaddy.vps4.firewall.model.FirewallDetail;
-import com.godaddy.vps4.firewall.model.FirewallSite;
+import com.godaddy.vps4.firewall.model.FirewallClientUpdateRequest;
+import com.godaddy.vps4.firewall.model.FirewallCacheLevel;
 import com.godaddy.vps4.firewall.model.VmFirewallSite;
+import com.godaddy.vps4.firewall.model.FirewallSite;
 import com.godaddy.vps4.sso.Vps4SsoService;
 import com.godaddy.vps4.sso.models.Vps4SsoToken;
 import org.slf4j.Logger;
@@ -65,5 +68,13 @@ public class DefaultFirewallService implements FirewallService {
     @Override
     public void deleteFirewallSite(String shopperId, String customerJwt, String siteId) {
         firewallClientService.deleteFirewallSite(getAuthToken(shopperId, customerJwt), siteId);
+    }
+
+    @Override
+    public void updateFirewallSite(String shopperId, String customerJwt, String siteId, FirewallCacheLevel cacheLevel, FirewallBypassWAF bypassWAF) {
+        FirewallClientUpdateRequest req = new FirewallClientUpdateRequest();
+        req.bypassWAF = bypassWAF == null ? null : bypassWAF.toString();
+        req.cacheLevel = cacheLevel == null ? null : cacheLevel.toString();
+        firewallClientService.modifyFirewallSite(getAuthToken(shopperId, customerJwt), siteId, req);
     }
 }

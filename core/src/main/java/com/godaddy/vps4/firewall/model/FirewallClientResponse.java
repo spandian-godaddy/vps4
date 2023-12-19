@@ -1,6 +1,6 @@
 package com.godaddy.vps4.firewall.model;
 
-public class FirewallDestroyResponse {
+public class FirewallClientResponse {
     public String siteId;
     public int revision;
 }

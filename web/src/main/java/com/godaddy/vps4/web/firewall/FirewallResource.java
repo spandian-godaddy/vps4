@@ -5,12 +5,14 @@ import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.firewall.model.FirewallDetail;
 import com.godaddy.vps4.firewall.model.FirewallSite;
 import com.godaddy.vps4.firewall.FirewallService;
+import com.godaddy.vps4.orchestration.firewall.Vps4ModifyFirewallSite;
 import com.godaddy.vps4.orchestration.firewall.Vps4RemoveFirewallSite;
 import com.godaddy.vps4.util.Cryptography;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VmAction;
+import com.godaddy.vps4.web.PATCH;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.vm.VmResource;
@@ -77,7 +79,7 @@ public class FirewallResource {
     }
 
     private void validateFirewallConflictingActions(UUID vmId){
-        validateNoConflictingActions(vmId, actionService, ActionType.DELETE_FIREWALL);
+        validateNoConflictingActions(vmId, actionService, ActionType.DELETE_FIREWALL, ActionType.MODIFY_FIREWALL);
     }
 
     @GET
@@ -114,5 +116,26 @@ public class FirewallResource {
 
         return createActionAndExecute(actionService, commandService, vmId,
                 ActionType.DELETE_FIREWALL,  request, "Vps4RemoveFirewallSite", user);
+    }
+
+    @PATCH
+    @Path("/{vmId}/firewallSites/{siteId}")
+    public VmAction updateFirewallSite(@PathParam("vmId") UUID vmId, @PathParam("siteId") String siteId,
+                                       VmUpdateFirewallRequest vmUpdateFirewallRequest) {
+        VirtualMachine vm = vmResource.getVm(vmId);  // auth validation
+        VirtualMachineCredit credit = creditService.getVirtualMachineCredit(vm.orionGuid);
+
+        validateFirewallConflictingActions(vmId);
+
+        Vps4ModifyFirewallSite.Request request = new Vps4ModifyFirewallSite.Request();
+        request.siteId = siteId;
+        request.vmId = vmId;
+        request.shopperId = credit.getShopperId();
+        request.encryptedCustomerJwt = cryptography.encrypt(getCustomerJwt());
+        request.bypassWAF = vmUpdateFirewallRequest.bypassWAF;
+        request.cacheLevel = vmUpdateFirewallRequest.cacheLevel;
+
+        return createActionAndExecute(actionService, commandService, vmId,
+                ActionType.MODIFY_FIREWALL,  request, "Vps4ModifyFirewallSite", user);
     }
 }

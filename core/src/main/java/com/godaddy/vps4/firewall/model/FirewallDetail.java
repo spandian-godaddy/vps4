@@ -8,6 +8,7 @@ public class FirewallDetail {
     public FirewallVerificationMethod verificationMethod;
     public String provider;
     public String cacheLevel;
+    public String bypassWAF;
     public String imageOptimization;
     public FirewallProductData productData;
     public FirewallDetail() {

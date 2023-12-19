@@ -229,11 +229,10 @@ public class FirewallResourceTest {
         assertEquals("Vps4RemoveFirewallSite", cmdGroup.commands.get(0).command);
     }
 
-
     @Test
     public void testDeleteFirewallSiteConflictingAction() {
         Action conflictAction = mock(Action.class);
-        List<ActionType> conflictTypes = Arrays.asList(ActionType.DELETE_FIREWALL);
+        List<ActionType> conflictTypes = Arrays.asList(ActionType.DELETE_FIREWALL, ActionType.MODIFY_FIREWALL);
         resource = new FirewallResource(userEmployee, vmResource, creditService, firewallService,
                 cryptography, actionService, commandService);
 
@@ -242,6 +241,45 @@ public class FirewallResourceTest {
             when(actionService.getIncompleteActions(vmId)).thenReturn(Collections.singletonList(conflictAction));
             try {
                 resource.deleteFirewallSite(vmId, firewallDetail.siteId);
+                fail();
+            } catch (Vps4Exception e) {
+                assertEquals("CONFLICTING_INCOMPLETE_ACTION", e.getId());
+            }
+        }
+    }
+
+    @Test
+    public void testUpdateFirewallSiteCreatesAction() {
+        resource = new FirewallResource(userEmployee, vmResource, creditService, firewallService,
+                cryptography, actionService, commandService);
+        resource.updateFirewallSite(vmId, firewallDetail.siteId, new VmUpdateFirewallRequest());
+        verify(actionService, times(1))
+                .createAction(vmId, ActionType.MODIFY_FIREWALL, "{}", userEmployee.getUsername());
+    }
+
+    @Test
+    public void testUpdateFirewallSiteExecutesCommand() {
+        resource = new FirewallResource(userEmployee, vmResource, creditService, firewallService,
+                cryptography, actionService, commandService);
+        resource.updateFirewallSite(vmId, firewallDetail.siteId, new VmUpdateFirewallRequest());
+        ArgumentCaptor<CommandGroupSpec> argument = ArgumentCaptor.forClass(CommandGroupSpec.class);
+        verify(commandService).executeCommand(argument.capture());
+        CommandGroupSpec cmdGroup = argument.getValue();
+        assertEquals("Vps4ModifyFirewallSite", cmdGroup.commands.get(0).command);
+    }
+
+    @Test
+    public void testUpdateFirewallSiteConflictingAction() {
+        Action conflictAction = mock(Action.class);
+        List<ActionType> conflictTypes = Arrays.asList(ActionType.DELETE_FIREWALL, ActionType.MODIFY_FIREWALL);
+        resource = new FirewallResource(userEmployee, vmResource, creditService, firewallService,
+                cryptography, actionService, commandService);
+
+        for (ActionType type : conflictTypes) {
+            conflictAction.type = type;
+            when(actionService.getIncompleteActions(vmId)).thenReturn(Collections.singletonList(conflictAction));
+            try {
+                resource.updateFirewallSite(vmId, firewallDetail.siteId, new VmUpdateFirewallRequest());
                 fail();
             } catch (Vps4Exception e) {
                 assertEquals("CONFLICTING_INCOMPLETE_ACTION", e.getId());
