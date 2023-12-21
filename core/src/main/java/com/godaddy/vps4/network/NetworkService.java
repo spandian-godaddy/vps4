@@ -27,5 +27,7 @@ public interface NetworkService {
 
     List<IpAddress> getActiveIpAddresses(long hfsVmId, int internetProtocolVersion);
 
+    IpAddress getActiveIpAddressOfVm(UUID vmId, String ipAddress);
+
     int getActiveIpAddressesCount(UUID vmId, int internetProtocolVersion);
 }

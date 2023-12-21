@@ -101,4 +101,11 @@ public class JdbcNetworkService implements NetworkService {
                 Sql.listOf(IpAddressMapper::mapIpAddress), hfsVmId, IpAddress.IpAddressType.SECONDARY.getId(), internetProtocolVersion);
     }
 
+    @Override
+    public IpAddress getActiveIpAddressOfVm(UUID vmId, String ipAddress) {
+        return Sql.with(dataSource).exec(
+                "SELECT ip.*, family(ip.ip_address) FROM ip_address ip " + " WHERE vm_id = ? AND ip_address = ?::inet and valid_until > now_utc()",
+                Sql.nextOrNull(IpAddressMapper::mapIpAddress), vmId, ipAddress);
+    }
+
 }

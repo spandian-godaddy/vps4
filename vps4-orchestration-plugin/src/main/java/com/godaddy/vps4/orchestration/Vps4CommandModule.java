@@ -7,8 +7,12 @@ import com.godaddy.vps4.orchestration.cpanel.WaitForPackageInstall;
 import com.godaddy.vps4.orchestration.cpanel.Vps4AddAddOnDomain;
 import com.godaddy.vps4.orchestration.cpanel.Vps4ValidateDomainConfig;
 import com.godaddy.vps4.orchestration.dns.Vps4CreateDnsPtrRecord;
+import com.godaddy.vps4.orchestration.firewall.Vps4ClearFirewallCache;
 import com.godaddy.vps4.orchestration.firewall.Vps4ModifyFirewallSite;
 import com.godaddy.vps4.orchestration.firewall.Vps4RemoveFirewallSite;
+import com.godaddy.vps4.orchestration.firewall.Vps4SubmitFirewallCreation;
+import com.godaddy.vps4.orchestration.firewall.WaitForFirewallClearCacheJob;
+import com.godaddy.vps4.orchestration.firewall.WaitForFirewallCreationJob;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.InstallPanoptaAgent;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.UninstallPanoptaAgent;
 import com.godaddy.vps4.orchestration.mailrelay.Vps4SetMailRelayQuota;
@@ -184,5 +188,9 @@ public class Vps4CommandModule extends AbstractModule {
         bind(Vps4MoveBack.class);
         bind(Vps4RemoveFirewallSite.class);
         bind(Vps4ModifyFirewallSite.class);
+        bind(Vps4ClearFirewallCache.class);
+        bind(Vps4SubmitFirewallCreation.class);
+        bind(WaitForFirewallClearCacheJob.class);
+        bind(WaitForFirewallCreationJob.class);
     }
 }

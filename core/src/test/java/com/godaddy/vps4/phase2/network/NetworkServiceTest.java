@@ -2,6 +2,7 @@ package com.godaddy.vps4.phase2.network;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.time.Instant;
@@ -232,5 +233,21 @@ public class NetworkServiceTest {
 
         List<IpAddress> ips = networkService.getActiveIpAddresses(vm.hfsVmId, 6);
         assertEquals(1, ips.size());
+    }
+
+    @Test
+    public void testGetActiveIpAddressOfVmId() {
+        networkService.createIpAddress(126, vm.vmId, "192.168.1.1", IpAddress.IpAddressType.SECONDARY);
+        networkService.createIpAddress(127, vm.vmId, "127.0.0.1", IpAddress.IpAddressType.SECONDARY);
+
+        networkService.createIpAddress(126, vm.vmId, "2001:0db8:85a3:0000:0000:8a2e:0370:7334", IpAddress.IpAddressType.SECONDARY);
+
+        IpAddress ip = networkService.getActiveIpAddressOfVm(vm.vmId, "192.168.1.1");
+        IpAddress wrongIp = networkService.getActiveIpAddressOfVm(vm.vmId, "192.168.1.2");
+
+        assertEquals("192.168.1.1", ip.ipAddress);
+        assertEquals(126, ip.hfsAddressId);
+        assertEquals(IpAddress.IpAddressType.SECONDARY, ip.ipAddressType);
+        assertNull(wrongIp);
     }
 }

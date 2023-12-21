@@ -8,4 +8,6 @@ public class FirewallClientCreateResponse {
         this.siteId = siteId;
         this.revision = revision;
     }
+
+    public FirewallClientCreateResponse() {} // needed for deserialization
 }

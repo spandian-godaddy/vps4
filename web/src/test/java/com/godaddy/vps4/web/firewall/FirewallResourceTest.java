@@ -2,10 +2,12 @@ package com.godaddy.vps4.web.firewall;
 
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
+import com.godaddy.vps4.firewall.FirewallDataService;
 import com.godaddy.vps4.firewall.FirewallService;
 import com.godaddy.vps4.firewall.model.FirewallDetail;
 import com.godaddy.vps4.firewall.model.FirewallSite;
 import com.godaddy.vps4.firewall.model.FirewallStatus;
+import com.godaddy.vps4.firewall.model.VmFirewallSite;
 import com.godaddy.vps4.jdbc.ResultSubset;
 import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.util.Cryptography;
@@ -55,6 +57,7 @@ public class FirewallResourceTest {
     private VmResource vmResource = mock(VmResource.class);
     private CreditService creditService = mock(CreditService.class);
     private FirewallService firewallService = mock(FirewallService.class);
+    private FirewallDataService firewallDataService = mock(FirewallDataService.class);
     private ActionService actionService = mock(ActionService.class);
     private CommandService commandService = mock(CommandService.class);
     private Cryptography cryptography = mock(Cryptography.class);
@@ -122,6 +125,8 @@ public class FirewallResourceTest {
         when(firewallService.getFirewallSites(anyString(), anyString(), any())).thenReturn(Collections.singletonList(firewallSite));
         when(firewallService.getFirewallSiteDetail(anyString(), anyString(), anyString(), any())).thenReturn(firewallDetail);
 
+        when(firewallDataService.getActiveFirewallSitesOfVm(eq(vmId))).thenReturn(Arrays.asList(new VmFirewallSite()));
+
         when(actionService.getAction(anyLong())).thenReturn(vmAction);
         when(actionService.getActionList(any())).thenReturn(actions);
 
@@ -130,7 +135,7 @@ public class FirewallResourceTest {
 
     @Test
     public void testGetFirewallSitesShopper() {
-        resource = new FirewallResource(userShopper, vmResource, creditService, firewallService,
+        resource = new FirewallResource(userShopper, vmResource, creditService, firewallService, firewallDataService,
                 cryptography, actionService, commandService);
         List<FirewallSite> response = resource.getActiveFirewallSites(vmId);
         verify(vmResource, times(1)).getVm(eq(vm.vmId));
@@ -144,7 +149,7 @@ public class FirewallResourceTest {
 
     @Test
     public void testGetFirewallSitesE2S() {
-        resource = new FirewallResource(userEmployee2Shopper, vmResource, creditService, firewallService,
+        resource = new FirewallResource(userEmployee2Shopper, vmResource, creditService, firewallService, firewallDataService,
                 cryptography, actionService, commandService);
         List<FirewallSite> response = resource.getActiveFirewallSites(vmId);
         verify(vmResource, times(1)).getVm(eq(vm.vmId));
@@ -158,7 +163,7 @@ public class FirewallResourceTest {
 
     @Test
     public void testGetFirewallSitesEmployee() {
-        resource = new FirewallResource(userEmployee, vmResource, creditService, firewallService,
+        resource = new FirewallResource(userEmployee, vmResource, creditService, firewallService, firewallDataService,
                 cryptography, actionService, commandService);
         List<FirewallSite> response = resource.getActiveFirewallSites(vmId);
         verify(vmResource, times(1)).getVm(eq(vm.vmId));
@@ -172,7 +177,7 @@ public class FirewallResourceTest {
 
     @Test
     public void testGetFirewallSiteDetailShopper() {
-        resource = new FirewallResource(userShopper, vmResource, creditService, firewallService,
+        resource = new FirewallResource(userShopper, vmResource, creditService, firewallService, firewallDataService,
                 cryptography, actionService, commandService);
         FirewallDetail response = resource.getFirewallSiteDetail(vmId, firewallDetail.siteId);
         verify(vmResource, times(1)).getVm(eq(vm.vmId));
@@ -185,7 +190,7 @@ public class FirewallResourceTest {
 
     @Test
     public void testGetFirewallSiteDetailE2S() {
-        resource = new FirewallResource(userEmployee2Shopper, vmResource, creditService, firewallService,
+        resource = new FirewallResource(userEmployee2Shopper, vmResource, creditService, firewallService, firewallDataService,
                 cryptography, actionService, commandService);
         FirewallDetail response = resource.getFirewallSiteDetail(vmId, firewallDetail.siteId);
         verify(vmResource, times(1)).getVm(eq(vm.vmId));
@@ -198,7 +203,7 @@ public class FirewallResourceTest {
 
     @Test
     public void testGetFirewallSiteDetailEmployee() {
-        resource = new FirewallResource(userEmployee, vmResource, creditService, firewallService,
+        resource = new FirewallResource(userEmployee, vmResource, creditService, firewallService, firewallDataService,
                 cryptography, actionService, commandService);
         FirewallDetail response = resource.getFirewallSiteDetail(vmId, firewallDetail.siteId);
         verify(vmResource, times(1)).getVm(eq(vm.vmId));
@@ -211,16 +216,16 @@ public class FirewallResourceTest {
 
     @Test
     public void testDeleteFirewallSiteCreatesAction() {
-        resource = new FirewallResource(userEmployee, vmResource, creditService, firewallService,
+        resource = new FirewallResource(userEmployee, vmResource, creditService, firewallService, firewallDataService,
                 cryptography, actionService, commandService);
         resource.deleteFirewallSite(vmId, firewallDetail.siteId);
         verify(actionService, times(1))
-                .createAction(vmId, ActionType.DELETE_FIREWALL, "{}", userEmployee.getUsername());
+                .createAction(vmId, ActionType.DELETE_CDN, "{}", userEmployee.getUsername());
     }
 
     @Test
     public void testDeleteFirewallSiteExecutesCommand() {
-        resource = new FirewallResource(userEmployee, vmResource, creditService, firewallService,
+        resource = new FirewallResource(userEmployee, vmResource, creditService, firewallService, firewallDataService,
                 cryptography, actionService, commandService);
         resource.deleteFirewallSite(vmId, firewallDetail.siteId);
         ArgumentCaptor<CommandGroupSpec> argument = ArgumentCaptor.forClass(CommandGroupSpec.class);
@@ -232,8 +237,8 @@ public class FirewallResourceTest {
     @Test
     public void testDeleteFirewallSiteConflictingAction() {
         Action conflictAction = mock(Action.class);
-        List<ActionType> conflictTypes = Arrays.asList(ActionType.DELETE_FIREWALL, ActionType.MODIFY_FIREWALL);
-        resource = new FirewallResource(userEmployee, vmResource, creditService, firewallService,
+        List<ActionType> conflictTypes = Arrays.asList(ActionType.DELETE_CDN, ActionType.MODIFY_CDN, ActionType.CREATE_CDN);
+        resource = new FirewallResource(userEmployee, vmResource, creditService, firewallService, firewallDataService,
                 cryptography, actionService, commandService);
 
         for (ActionType type : conflictTypes) {
@@ -250,16 +255,16 @@ public class FirewallResourceTest {
 
     @Test
     public void testUpdateFirewallSiteCreatesAction() {
-        resource = new FirewallResource(userEmployee, vmResource, creditService, firewallService,
+        resource = new FirewallResource(userEmployee, vmResource, creditService, firewallService, firewallDataService,
                 cryptography, actionService, commandService);
         resource.updateFirewallSite(vmId, firewallDetail.siteId, new VmUpdateFirewallRequest());
         verify(actionService, times(1))
-                .createAction(vmId, ActionType.MODIFY_FIREWALL, "{}", userEmployee.getUsername());
+                .createAction(vmId, ActionType.MODIFY_CDN, "{}", userEmployee.getUsername());
     }
 
     @Test
     public void testUpdateFirewallSiteExecutesCommand() {
-        resource = new FirewallResource(userEmployee, vmResource, creditService, firewallService,
+        resource = new FirewallResource(userEmployee, vmResource, creditService, firewallService, firewallDataService,
                 cryptography, actionService, commandService);
         resource.updateFirewallSite(vmId, firewallDetail.siteId, new VmUpdateFirewallRequest());
         ArgumentCaptor<CommandGroupSpec> argument = ArgumentCaptor.forClass(CommandGroupSpec.class);
@@ -271,8 +276,8 @@ public class FirewallResourceTest {
     @Test
     public void testUpdateFirewallSiteConflictingAction() {
         Action conflictAction = mock(Action.class);
-        List<ActionType> conflictTypes = Arrays.asList(ActionType.DELETE_FIREWALL, ActionType.MODIFY_FIREWALL);
-        resource = new FirewallResource(userEmployee, vmResource, creditService, firewallService,
+        List<ActionType> conflictTypes = Arrays.asList(ActionType.DELETE_CDN, ActionType.MODIFY_CDN, ActionType.CREATE_CDN);
+        resource = new FirewallResource(userEmployee, vmResource, creditService, firewallService, firewallDataService,
                 cryptography, actionService, commandService);
 
         for (ActionType type : conflictTypes) {
@@ -286,4 +291,98 @@ public class FirewallResourceTest {
             }
         }
     }
+
+    @Test
+    public void testCreateFirewallSiteCreatesAction() {
+        resource = new FirewallResource(userEmployee, vmResource, creditService, firewallService, firewallDataService,
+                cryptography, actionService, commandService);
+        resource.createFirewallSite(vmId, new VmCreateFirewallRequest());
+        verify(actionService, times(1))
+                .createAction(vmId, ActionType.CREATE_CDN, "{}", userEmployee.getUsername());
+    }
+
+    @Test
+    public void testCreateFirewallSiteExecutesCommand() {
+        resource = new FirewallResource(userEmployee, vmResource, creditService, firewallService, firewallDataService,
+                cryptography, actionService, commandService);
+        resource.createFirewallSite(vmId, new VmCreateFirewallRequest());
+        ArgumentCaptor<CommandGroupSpec> argument = ArgumentCaptor.forClass(CommandGroupSpec.class);
+        verify(commandService).executeCommand(argument.capture());
+        CommandGroupSpec cmdGroup = argument.getValue();
+        assertEquals("Vps4SubmitFirewallCreation", cmdGroup.commands.get(0).command);
+    }
+
+    @Test
+    public void testCreateFirewallSiteConflictingAction() {
+        Action conflictAction = mock(Action.class);
+        List<ActionType> conflictTypes = Arrays.asList(ActionType.DELETE_CDN, ActionType.MODIFY_CDN, ActionType.CREATE_CDN);
+        resource = new FirewallResource(userEmployee, vmResource, creditService, firewallService, firewallDataService,
+                cryptography, actionService, commandService);
+
+        for (ActionType type : conflictTypes) {
+            conflictAction.type = type;
+            when(actionService.getIncompleteActions(vmId)).thenReturn(Collections.singletonList(conflictAction));
+            try {
+                resource.createFirewallSite(vmId, new VmCreateFirewallRequest());
+                fail();
+            } catch (Vps4Exception e) {
+                assertEquals("CONFLICTING_INCOMPLETE_ACTION", e.getId());
+            }
+        }
+    }
+
+    @Test
+    public void testCreateFirewallSiteReachesLimit() {
+        VmFirewallSite fillerSite = new VmFirewallSite();
+        when(firewallDataService.getActiveFirewallSitesOfVm(eq(vmId))).thenReturn(Arrays.asList(fillerSite, fillerSite, fillerSite, fillerSite, fillerSite));
+
+        resource = new FirewallResource(userEmployee, vmResource, creditService, firewallService, firewallDataService,
+                cryptography, actionService, commandService);
+        try {
+            resource.createFirewallSite(vmId, new VmCreateFirewallRequest());
+            fail();
+        } catch (Vps4Exception e) {
+            assertEquals("SIZE_LIMIT_REACHED", e.getId());
+        }
+    }
+
+    @Test
+    public void testClearCacheFirewallSiteCreatesAction() {
+        resource = new FirewallResource(userEmployee, vmResource, creditService, firewallService, firewallDataService,
+                cryptography, actionService, commandService);
+        resource.clearFirewallSiteCache(vmId, firewallDetail.siteId);
+        verify(actionService, times(1))
+                .createAction(vmId, ActionType.CLEAR_CDN_CACHE, "{}", userEmployee.getUsername());
+    }
+
+    @Test
+    public void testClearCacheFirewallSiteExecutesCommand() {
+        resource = new FirewallResource(userEmployee, vmResource, creditService, firewallService, firewallDataService,
+                cryptography, actionService, commandService);
+        resource.clearFirewallSiteCache(vmId, firewallDetail.siteId);
+        ArgumentCaptor<CommandGroupSpec> argument = ArgumentCaptor.forClass(CommandGroupSpec.class);
+        verify(commandService).executeCommand(argument.capture());
+        CommandGroupSpec cmdGroup = argument.getValue();
+        assertEquals("Vps4ClearFirewallCache", cmdGroup.commands.get(0).command);
+    }
+
+    @Test
+    public void testClearCacheConflictingAction() {
+        Action conflictAction = mock(Action.class);
+        List<ActionType> conflictTypes = Arrays.asList(ActionType.CLEAR_CDN_CACHE);
+        resource = new FirewallResource(userEmployee, vmResource, creditService, firewallService, firewallDataService,
+                cryptography, actionService, commandService);
+
+        for (ActionType type : conflictTypes) {
+            conflictAction.type = type;
+            when(actionService.getIncompleteActions(vmId)).thenReturn(Collections.singletonList(conflictAction));
+            try {
+                resource.clearFirewallSiteCache(vmId, firewallDetail.siteId);
+                fail();
+            } catch (Vps4Exception e) {
+                assertEquals("CONFLICTING_INCOMPLETE_ACTION", e.getId());
+            }
+        }
+    }
+
 }

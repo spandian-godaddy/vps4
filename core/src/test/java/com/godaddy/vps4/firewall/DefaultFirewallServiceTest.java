@@ -1,13 +1,18 @@
 package com.godaddy.vps4.firewall;
 
+import com.godaddy.vps4.firewall.model.FirewallBypassWAF;
+import com.godaddy.vps4.firewall.model.FirewallCacheLevel;
+import com.godaddy.vps4.firewall.model.FirewallClientInvalidateCacheResponse;
+import com.godaddy.vps4.firewall.model.FirewallClientInvalidateStatusResponse;
+import com.godaddy.vps4.firewall.model.FirewallClientUpdateRequest;
 import com.godaddy.vps4.firewall.model.FirewallDetail;
+import com.godaddy.vps4.firewall.model.FirewallClientCreateRequest;
+import com.godaddy.vps4.firewall.model.FirewallVerificationMethod;
+
 import com.godaddy.vps4.firewall.model.FirewallSite;
 import com.godaddy.vps4.firewall.model.FirewallStatus;
 import com.godaddy.vps4.firewall.model.VmFirewallSite;
-import com.godaddy.vps4.firewall.model.FirewallBypassWAF;
-import com.godaddy.vps4.firewall.model.FirewallClientUpdateRequest;
-import com.godaddy.vps4.firewall.model.FirewallCacheLevel;
-
+import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.sso.Vps4SsoService;
 import com.godaddy.vps4.sso.models.Vps4SsoToken;
 import org.junit.Before;
@@ -40,6 +45,9 @@ public class DefaultFirewallServiceTest {
     private FirewallService service;
     @Captor
     private ArgumentCaptor<FirewallClientUpdateRequest> modifyFirewallArgumentCaptor;
+    @Captor
+    private ArgumentCaptor<FirewallClientCreateRequest> createFirewallArgumentCaptor;
+
 
     String shopperId = "12345678";
     String shopperJwt = "fakeShopperJwt";
@@ -48,6 +56,8 @@ public class DefaultFirewallServiceTest {
     FirewallSite firewallSite;
     VmFirewallSite vmFirewallSite;
     FirewallDetail firewallSiteDetail;
+    FirewallClientInvalidateCacheResponse invalidateCacheResponse;
+    FirewallClientInvalidateStatusResponse invalidateStatusResponse;
 
     @Before
     public void setupTest() {
@@ -70,6 +80,8 @@ public class DefaultFirewallServiceTest {
         when(vps4SsoService.getDelegationToken("idp", shopperId)).thenReturn(token);
         when(firewallClientService.getFirewallSites(anyString())).thenReturn(Collections.singletonList(firewallSite));
         when(firewallClientService.getFirewallSiteDetail(anyString(), anyString())).thenReturn(firewallSiteDetail);
+        when(firewallClientService.invalidateFirewallCache(anyString(), anyString())).thenReturn(invalidateCacheResponse);
+        when(firewallClientService.getFirewallInvalidateStatus(anyString(), anyString(), anyString())).thenReturn(invalidateStatusResponse);
 
         when(firewallDataService.getFirewallSiteFromId(eq(vmId), anyString())).thenReturn(vmFirewallSite);
         when(firewallDataService.getActiveFirewallSitesOfVm(eq(vmId))).thenReturn(Collections.singletonList(vmFirewallSite));
@@ -201,5 +213,53 @@ public class DefaultFirewallServiceTest {
         when(firewallClientService.modifyFirewallSite(anyString(), anyString(), any())).thenThrow(new NotFoundException());
 
         service.updateFirewallSite(shopperId, null, firewallSiteDetail.siteId, null, FirewallBypassWAF.DISABLED);
+    }
+
+    @Test
+    public void testClearFirewallSiteCacheSuccessful() {
+        FirewallClientInvalidateCacheResponse response = service.invalidateFirewallCache(shopperId, null, firewallSiteDetail.siteId);
+        verify(vps4SsoService, times(1)).getDelegationToken("idp", shopperId);
+        verify(firewallClientService, times(1))
+                .invalidateFirewallCache(eq("sso-jwt " + shopperJwt), eq(firewallSiteDetail.siteId));
+
+        assertSame(invalidateCacheResponse, response);
+    }
+
+    @Test
+    public void testCreateFirewallSiteSuccessful() {
+        IpAddress address = new IpAddress();
+        address.ipAddress = "fakeIpAddress";
+        service.createFirewall(shopperId, null, "fakedomain.com", address,
+                FirewallCacheLevel.CACHING_DISABLED.toString(), FirewallBypassWAF.DISABLED.toString());
+        verify(vps4SsoService, times(1)).getDelegationToken("idp", shopperId);
+        verify(firewallClientService, times(1))
+                .createFirewallSite(eq("sso-jwt " + shopperJwt), createFirewallArgumentCaptor.capture());
+
+        FirewallClientCreateRequest req = createFirewallArgumentCaptor.getValue();
+
+        assertEquals(FirewallBypassWAF.DISABLED.toString(), req.bypassWAF);
+        assertEquals(FirewallCacheLevel.CACHING_DISABLED.toString(), req.cacheLevel);
+        assertEquals(1, req.origins.length);
+        assertEquals(1, req.autoMinify.length);
+
+        assertEquals(address.ipAddress, req.origins[0].address);
+        assertEquals("js", req.autoMinify[0]);
+        assertEquals("fakedomain.com", req.domain);
+        assertEquals("WSSWAFBasic", req.planId);
+        assertEquals("CLOUDFLARE", req.provider);
+        assertEquals("https", req.sslRedirect);
+        assertEquals("off", req.imageOptimization);
+        assertEquals(FirewallVerificationMethod.TXT.toString(), req.verificationMethod);
+        assertEquals(null, req.subdomains);
+    }
+
+    @Test
+    public void testGetFirewallInvalidateCacheStatusSuccessful() {
+        FirewallClientInvalidateStatusResponse response = service.getFirewallInvalidateCacheStatus(shopperId, null, firewallSiteDetail.siteId, "fakeInvalidationId");
+        verify(vps4SsoService, times(1)).getDelegationToken("idp", shopperId);
+        verify(firewallClientService, times(1))
+                .getFirewallInvalidateStatus(eq("sso-jwt " + shopperJwt), eq(firewallSiteDetail.siteId), eq("fakeInvalidationId"));
+
+        assertSame(invalidateStatusResponse, response);
     }
 }

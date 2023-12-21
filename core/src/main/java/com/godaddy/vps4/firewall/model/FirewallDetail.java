@@ -4,7 +4,7 @@ public class FirewallDetail {
     public String siteId;
     public String domain;
     public String planId;
-    public String status;
+    public FirewallStatus status;
     public FirewallVerificationMethod verificationMethod;
     public String provider;
     public String cacheLevel;
@@ -13,7 +13,7 @@ public class FirewallDetail {
     public FirewallProductData productData;
     public FirewallDetail() {
     }
-    public FirewallDetail(String siteId, String domain, String planId, String status, FirewallVerificationMethod verificationMethod,
+    public FirewallDetail(String siteId, String domain, String planId, FirewallStatus status, FirewallVerificationMethod verificationMethod,
                           String provider, String cacheLevel, String imageOptimization, FirewallProductData productData) {
         this.siteId = siteId;
         this.domain = domain;
