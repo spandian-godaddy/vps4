@@ -1,0 +1,1 @@
+ALTER TABLE vm_firewall_site RENAME TO vm_cdn_site;

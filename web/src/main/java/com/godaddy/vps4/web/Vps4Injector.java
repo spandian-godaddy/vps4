@@ -5,11 +5,11 @@ import java.util.List;
 
 import javax.inject.Singleton;
 
-import com.godaddy.vps4.firewall.FirewallModule;
+import com.godaddy.vps4.cdn.CdnModule;
 import com.godaddy.vps4.entitlement.EntitlementsModule;
 import com.godaddy.vps4.jsd.JsdModule;
 import com.godaddy.vps4.move.VmMoveModule;
-import com.godaddy.vps4.firewall.FirewallDataModule;
+import com.godaddy.vps4.cdn.CdnDataModule;
 import com.godaddy.vps4.productPackage.PackageModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -130,13 +130,13 @@ public class Vps4Injector {
         modules.add(new IpBlacklistModule());
         modules.add(new ShopperNotesModule());
         modules.add(new NotificationsModule());
-        modules.add(new FirewallDataModule());
+        modules.add(new CdnDataModule());
         modules.add(new ResellerModule());
         modules.add(new CustomNotesModule());
         modules.add(new OhModule());
         modules.add(new JsdModule());
         modules.add(new Vps4SsoModule());
-        modules.add(new FirewallModule());
+        modules.add(new CdnModule());
         modules.add(new VmMoveModule());
         modules.add(new PackageModule());
         modules.add(binder -> {
