@@ -9,6 +9,7 @@ import javax.cache.expiry.Duration;
 import com.godaddy.hfs.vm.ServerUsageStats;
 import com.godaddy.vps4.mailrelay.MailRelayService.CachedMailRelayHistory;
 import com.godaddy.vps4.panopta.DefaultPanoptaService;
+import com.godaddy.vps4.web.vm.HfsInventoryDataWrapper;
 
 public class CacheSettings {
 
@@ -60,6 +61,14 @@ public class CacheSettings {
                     .setTypes(String.class, DefaultPanoptaService.CachedMonitoringGraphs.class)
                     .setExpiryPolicyFactory(
                             CreatedExpiryPolicy.factoryOf(Duration.FIVE_MINUTES))
+                    .setStatisticsEnabled(false));
+
+        cacheManager.createCache(CacheName.OVH_INVENTORY,
+                new MutableConfiguration<String, HfsInventoryDataWrapper>()
+                    .setStoreByValue(true)
+                    .setTypes(String.class, HfsInventoryDataWrapper.class)
+                    .setExpiryPolicyFactory(
+                            CreatedExpiryPolicy.factoryOf(Duration.ONE_MINUTE))
                     .setStatisticsEnabled(false));
     }
 }

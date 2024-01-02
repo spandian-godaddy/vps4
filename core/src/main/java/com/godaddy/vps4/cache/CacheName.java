@@ -12,4 +12,6 @@ public interface CacheName {
 
     String PANOPTA_METRIC_GRAPH = "panopta.metric.graph";
 
+    String OVH_INVENTORY = "ovh.inventory";
+
 }
