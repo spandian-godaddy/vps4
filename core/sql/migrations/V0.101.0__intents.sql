@@ -19,4 +19,5 @@ insert into intent (id, name) values (1, 'WEBSITE_HOSTING'),
                                  (7, 'DATA_ANALYTICS'),
                                  (8, 'VOICE_OVER_IP'),
                                  (9, 'PROXY_SERVER'),
-                                 (10, 'OTHER');
+                                 (10, 'OTHER')
+ON CONFLICT DO NOTHING;
