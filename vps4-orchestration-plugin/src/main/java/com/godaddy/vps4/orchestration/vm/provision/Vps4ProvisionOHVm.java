@@ -4,11 +4,15 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.godaddy.hfs.config.Config;
 import com.godaddy.hfs.vm.Vm;
 import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
+import com.godaddy.vps4.intent.IntentService;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.vm.Vps4AddIpAddress;
 import com.godaddy.vps4.orchestration.vm.Vps4DestroyOHVm;
@@ -20,8 +24,6 @@ import com.godaddy.vps4.vm.VmUserService;
 
 import gdg.hfs.orchestration.CommandMetadata;
 import gdg.hfs.orchestration.CommandRetryStrategy;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @CommandMetadata(
         name = "ProvisionOHVm",
@@ -42,9 +44,18 @@ public class Vps4ProvisionOHVm extends Vps4ProvisionVm {
             CreditService creditService,
             Config config,
             HfsVmTrackingRecordService hfsVmTrackingRecordService,
-            VmAlertService vmAlertService) {
-        super(actionService, vmService, virtualMachineService, vmUserService, networkService,
-              creditService, config, hfsVmTrackingRecordService, vmAlertService);
+            VmAlertService vmAlertService,
+            IntentService intentService) {
+        super(actionService, 
+              vmService, 
+              virtualMachineService, 
+              vmUserService, 
+              networkService,
+              creditService, 
+              config, 
+              hfsVmTrackingRecordService, 
+              vmAlertService,
+              intentService);
     }
 
     /* NO IP management for Optimized Hosting Vms. However, we still track vm-ip mapping in VPS4 Db. */

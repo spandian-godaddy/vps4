@@ -17,9 +17,6 @@ import java.util.Random;
 import java.util.UUID;
 import java.util.function.Function;
 
-import com.godaddy.vps4.credit.VirtualMachineCredit;
-import com.godaddy.vps4.orchestration.messaging.SendSetupCompletedEmail;
-import com.godaddy.vps4.orchestration.messaging.SetupCompletedEmailRequest;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -33,12 +30,16 @@ import com.godaddy.hfs.vm.VmAction.Status;
 import com.godaddy.hfs.vm.VmAddress;
 import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.credit.CreditService;
+import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
+import com.godaddy.vps4.intent.IntentService;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.hfs.dns.CreateDnsPtrRecord;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetHostname;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
 import com.godaddy.vps4.orchestration.hfs.vm.CreateVm;
+import com.godaddy.vps4.orchestration.messaging.SendSetupCompletedEmail;
+import com.godaddy.vps4.orchestration.messaging.SetupCompletedEmailRequest;
 import com.godaddy.vps4.orchestration.panopta.SetupPanopta;
 import com.godaddy.vps4.orchestration.vm.provision.ProvisionRequest;
 import com.godaddy.vps4.orchestration.vm.provision.Vps4ProvisionDedicated;
@@ -69,6 +70,7 @@ public class Vps4ProvisionDedicatedTest {
     VmAlertService vmAlertService = mock(VmAlertService.class);
     Config config = mock(Config.class);
     SendSetupCompletedEmail sendSetupCompletedEmail = mock(SendSetupCompletedEmail.class);
+    IntentService intentService = mock(IntentService.class);
 
     @Captor private ArgumentCaptor<Function<CommandContext, Void>> setCommonNameLambdaCaptor;
     @Captor private ArgumentCaptor<SetPassword.Request> setPasswordCaptor;
@@ -76,10 +78,16 @@ public class Vps4ProvisionDedicatedTest {
     @Captor private ArgumentCaptor<CreateDnsPtrRecord.Request> reverseDnsNameRequestCaptor;
     @Captor private ArgumentCaptor<SetupPanopta.Request> setupPanoptaRequestArgCaptor;
     @Captor private ArgumentCaptor<SetupCompletedEmailRequest> setupCompletedEmailRequestArgCaptor;
-    Vps4ProvisionDedicated command = new Vps4ProvisionDedicated(actionService, vmService, virtualMachineService,
-                                                                vmUserService, networkService,
-                                                                creditService, config, hfsVmTrackingRecordService,
-                                                                vmAlertService);
+    Vps4ProvisionDedicated command = new Vps4ProvisionDedicated(actionService, 
+                                                                vmService, 
+                                                                virtualMachineService,
+                                                                vmUserService, 
+                                                                networkService,
+                                                                creditService, 
+                                                                config, 
+                                                                hfsVmTrackingRecordService,
+                                                                vmAlertService,
+                                                                intentService);
 
     CommandContext context = mock(CommandContext.class);
 

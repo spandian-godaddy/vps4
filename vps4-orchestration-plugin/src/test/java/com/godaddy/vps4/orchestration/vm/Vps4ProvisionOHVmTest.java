@@ -14,7 +14,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.io.IOException;
 import java.util.Random;
 import java.util.UUID;
 import java.util.function.Function;
@@ -38,6 +37,7 @@ import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
+import com.godaddy.vps4.intent.IntentService;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetHostname;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
@@ -77,6 +77,7 @@ public class Vps4ProvisionOHVmTest {
     MailRelayService mailRelayService = mock(MailRelayService.class);
     Config config = mock(Config.class);
     SendSetupCompletedEmail sendSetupCompletedEmail = mock(SendSetupCompletedEmail.class);
+    IntentService intentService = mock(IntentService.class);
 
     @Captor private ArgumentCaptor<Function<CommandContext, Void>> setCommonNameLambdaCaptor;
     @Captor private ArgumentCaptor<SetPassword.Request> setPasswordCaptor;
@@ -85,10 +86,16 @@ public class Vps4ProvisionOHVmTest {
     @Captor private ArgumentCaptor<SetupCompletedEmailRequest> setupCompletedEmailRequestArgCaptor;
     @Captor private ArgumentCaptor<Vps4AddIpAddress.Request> addIpAddressRequestCaptor;
 
-    Vps4ProvisionOHVm command = new Vps4ProvisionOHVm(actionService, vmService, virtualMachineService,
-                                                      vmUserService, networkService,
-                                                      creditService, config, hfsVmTrackingRecordService,
-                                                      vmAlertService);
+    Vps4ProvisionOHVm command = new Vps4ProvisionOHVm(actionService, 
+                                                      vmService, 
+                                                      virtualMachineService,
+                                                      vmUserService, 
+                                                      networkService,
+                                                      creditService, 
+                                                      config, 
+                                                      hfsVmTrackingRecordService,
+                                                      vmAlertService,
+                                                      intentService);
 
     CommandContext context = mock(CommandContext.class);
 

@@ -2,6 +2,7 @@ package com.godaddy.vps4.web.vm;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import javax.ws.rs.Consumes;
@@ -12,57 +13,66 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
+import com.godaddy.vps4.intent.IntentService;
+import com.godaddy.vps4.intent.IntentUtils;
+import com.godaddy.vps4.intent.model.Intent;
 import com.godaddy.vps4.web.Vps4Api;
+import com.godaddy.vps4.web.Vps4Exception;
 import com.google.inject.Inject;
 
 import io.swagger.annotations.Api;
 
+
 @Vps4Api
-@Api(tags = { "vms" })
+@Api(tags = {"vms"})
 @Path("/api/vms")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class VmIntentResource {
+    private final IntentService intentService;
+    private final VmResource vmResource;
+    List<Intent> intents;
+    Map<Integer, Intent> intentOptions;
 
     @Inject
-    public VmIntentResource() {        
+    public VmIntentResource(IntentService intentService, VmResource vmResource) {
+        this.intentService = intentService;        
+        this.vmResource = vmResource;   
+        intents = intentService.getIntents();
+        intentOptions = IntentUtils.getIntentsMap(intents);
     }
 
     @GET
     @Path("/intents")
     public List<Intent> getVmIntentOptions() {
-        String[] intentOptions = new String[] {"Website Hosting", 
-                             "Application Development and Testing", 
-                             "Game Server", 
-                             "File Storage and Backup", 
-                             "Remote Desktop Access", 
-                             "Email Server", 
-                             "Data Analytics", 
-                             "Voice over IP (VoIP) Server", 
-                             "Proxy Server", 
-                             "Other" };
-
-        List<Intent> intents = new ArrayList<>();
-        for (int i = 0; i < intentOptions.length; i++) {
-            Intent intent = new Intent();
-            intent.id = i;
-            intent.name = intentOptions[i];
-            intents.add(intent);
-        }
         return intents;
     }
 
     @GET
     @Path("/{vmId}/intents")
     public List<Intent> getVmIntents(@PathParam("vmId") UUID vmId) {
-        List<Intent> intents = getVmIntentOptions();
-        return intents.subList(0, 2);    
+        vmResource.getVm(vmId); // auth validation
+        return intentService.getVmIntents(vmId);
     }
 
     @POST
     @Path("/{vmId}/intents")
     public List<Intent> setVmIntents(@PathParam("vmId") UUID vmId, List<Integer> intentIds, String otherIntentDescription) {
-        List<Intent> intents = getVmIntentOptions();
-        return intents.subList(0, 2);   
+        vmResource.getVm(vmId); // auth validation
+        List<Intent> vmIntents = new ArrayList<>();
+
+        for (Integer intentId : intentIds) {
+            Intent intent = intentOptions.get(intentId);
+            if (intent != null) {
+                vmIntents.add(new Intent(intent));
+                if(intent.name.equals("OTHER")) {
+                    intent.description = otherIntentDescription;
+                }
+            }
+            else {
+                throw new Vps4Exception("INVALID_INTENT_ID", "ID " + intentId + " is not a valid intent ID");
+            }
+        }
+        return intentService.setVmIntents(vmId, vmIntents);
     }
 }

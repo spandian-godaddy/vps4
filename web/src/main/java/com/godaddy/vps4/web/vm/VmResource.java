@@ -1,5 +1,46 @@
 package com.godaddy.vps4.web.vm;
 
+import static com.godaddy.vps4.web.util.RequestValidation.getAndValidateCreditE2S;
+import static com.godaddy.vps4.web.util.RequestValidation.getAndValidateUserAccountCredit;
+import static com.godaddy.vps4.web.util.RequestValidation.validateAndReturnEnumValue;
+import static com.godaddy.vps4.web.util.RequestValidation.validateCreditIsNotInUse;
+import static com.godaddy.vps4.web.util.RequestValidation.validateDcIdIsAllowed;
+import static com.godaddy.vps4.web.util.RequestValidation.validateDedResellerSelectedDc;
+import static com.godaddy.vps4.web.util.RequestValidation.validateNoConflictingActions;
+import static com.godaddy.vps4.web.util.RequestValidation.validatePassword;
+import static com.godaddy.vps4.web.util.RequestValidation.validateRequestedImage;
+import static com.godaddy.vps4.web.util.RequestValidation.validateServerIsActiveOrUnknown;
+import static com.godaddy.vps4.web.util.RequestValidation.validateServerIsStoppedOrUnknown;
+import static com.godaddy.vps4.web.util.RequestValidation.validateUserIsShopper;
+import static com.godaddy.vps4.web.util.RequestValidation.validateVmExists;
+import static com.godaddy.vps4.web.util.VmHelper.createActionAndExecute;
+
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+import javax.inject.Inject;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.DefaultValue;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.MediaType;
+
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.godaddy.hfs.config.Config;
 import com.godaddy.hfs.vm.Vm;
 import com.godaddy.hfs.vm.VmExtendedInfo;
@@ -22,12 +63,12 @@ import com.godaddy.vps4.vm.DataCenter;
 import com.godaddy.vps4.vm.DataCenterService;
 import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.PleskLicenseType;
+import com.godaddy.vps4.vm.ProvisionVirtualMachineParameters;
 import com.godaddy.vps4.vm.ProvisionVmInfo;
 import com.godaddy.vps4.vm.ServerSpec;
 import com.godaddy.vps4.vm.ServerType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
-import com.godaddy.vps4.vm.ProvisionVirtualMachineParameters;
 import com.godaddy.vps4.vm.VirtualMachineType;
 import com.godaddy.vps4.vm.VmAction;
 import com.godaddy.vps4.web.Vps4Api;
@@ -37,44 +78,11 @@ import com.godaddy.vps4.web.Vps4UserNotFound;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.security.RequiresRole;
 import com.godaddy.vps4.web.util.ResellerConfigHelper;
+
 import gdg.hfs.orchestration.CommandService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.inject.Inject;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.*;
-import java.util.stream.Collectors;
-
-import static com.godaddy.vps4.web.util.RequestValidation.getAndValidateUserAccountCredit;
-import static com.godaddy.vps4.web.util.RequestValidation.validateAndReturnEnumValue;
-import static com.godaddy.vps4.web.util.RequestValidation.validateCreditIsNotInUse;
-import static com.godaddy.vps4.web.util.RequestValidation.validateDcIdIsAllowed;
-import static com.godaddy.vps4.web.util.RequestValidation.validateDedResellerSelectedDc;
-import static com.godaddy.vps4.web.util.RequestValidation.validateNoConflictingActions;
-import static com.godaddy.vps4.web.util.RequestValidation.validatePassword;
-import static com.godaddy.vps4.web.util.RequestValidation.validateRequestedImage;
-import static com.godaddy.vps4.web.util.RequestValidation.validateServerIsActiveOrUnknown;
-import static com.godaddy.vps4.web.util.RequestValidation.validateServerIsStoppedOrUnknown;
-import static com.godaddy.vps4.web.util.RequestValidation.validateUserIsShopper;
-import static com.godaddy.vps4.web.util.RequestValidation.validateVmExists;
-import static com.godaddy.vps4.web.util.RequestValidation.getAndValidateCreditE2S;
-import static com.godaddy.vps4.web.util.VmHelper.createActionAndExecute;
 
 @Vps4Api
 @Api(tags = {"vms"})
@@ -203,6 +211,11 @@ public class VmResource {
         }
     }
 
+    public static class ProvisionVmIntent {
+        public List<Integer> intentIds;
+        public String otherIntentDescription;
+    }
+
     public static class ProvisionVmRequest {
         public String name;
         public UUID orionGuid;
@@ -211,40 +224,41 @@ public class VmResource {
         public String username;
         public String password;
         public boolean useBetaMonitoring;
+        public ProvisionVmIntent intents;
     }
 
     @POST
     @Path("/")
-    public VmAction provisionVm(ProvisionVmRequest provisionRequest) {
-        logger.info("provisioning vm with orionGuid {}", provisionRequest.orionGuid);
+    public VmAction provisionVm(ProvisionVmRequest provisionVmRequest) {
+        logger.info("provisioning vm with orionGuid {}", provisionVmRequest.orionGuid);
 
         int[] validDcIds = Arrays.stream(config.get("vps4.datacenter.ids").split(","))
                                  .mapToInt(Integer::parseInt)
                                  .toArray();
-        validateDcIdIsAllowed(validDcIds, provisionRequest.dataCenterId);
+        validateDcIdIsAllowed(validDcIds, provisionVmRequest.dataCenterId);
         validateUserIsShopper(user);
-        VirtualMachineCredit vmCredit = getAndValidateUserAccountCredit(creditService, provisionRequest.orionGuid, user.getShopperId());
+        VirtualMachineCredit vmCredit = getAndValidateUserAccountCredit(creditService, provisionVmRequest.orionGuid, user.getShopperId());
         if (vmCredit.isDed4()) {
-            validateDedResellerSelectedDc(dcService, vmCredit.getResellerId(), provisionRequest.dataCenterId);
+            validateDedResellerSelectedDc(dcService, vmCredit.getResellerId(), provisionVmRequest.dataCenterId);
         }
 
-        Image image = imageResource.getImage(provisionRequest.image);
+        Image image = imageResource.getImage(provisionVmRequest.image);
         validateRequestedImage(vmCredit, image);
-        validatePassword(provisionRequest.password);
+        validatePassword(provisionVmRequest.password);
 
-        int previousRelays = getPreviousRelaysForVirtualServers(provisionRequest, image);
+        int previousRelays = getPreviousRelaysForVirtualServers(provisionVmRequest, image);
         ProvisionVirtualMachineParameters params;
         VirtualMachine virtualMachine;
         Vps4User vps4User = vps4UserService.getOrCreateUserForShopper(user.getShopperId(), vmCredit.getResellerId(), vmCredit.getCustomerId());
 
         validateCreditIsNotInUse(vmCredit);
         try {
-            params = new ProvisionVirtualMachineParameters(vps4User.getId(), provisionRequest.dataCenterId, sgidPrefix,
-                                                           provisionRequest.orionGuid, provisionRequest.name,
+            params = new ProvisionVirtualMachineParameters(vps4User.getId(), provisionVmRequest.dataCenterId, sgidPrefix,
+                                                           provisionVmRequest.orionGuid, provisionVmRequest.name,
                                                            vmCredit.getTier(), vmCredit.getManagedLevel(),
-                                                           provisionRequest.image);
+                                                           provisionVmRequest.image);
             virtualMachine = virtualMachineService.provisionVirtualMachine(params);
-            creditService.claimVirtualMachineCredit(provisionRequest.orionGuid, provisionRequest.dataCenterId,
+            creditService.claimVirtualMachineCredit(provisionVmRequest.orionGuid, provisionVmRequest.dataCenterId,
                                                     virtualMachine.vmId);
             virtualMachineService.setMonitoringPlanFeature(virtualMachine.vmId, vmCredit.getMonitoring() != 0);
         } catch (Exception e) {
@@ -256,48 +270,47 @@ public class VmResource {
         int mailRelayQuota = Integer.parseInt(
                 ResellerConfigHelper.getResellerConfig(config, vmCredit.getResellerId(), "mailrelay.quota", "5000"));
 
-        ProvisionVmInfo vmInfo =
-                new ProvisionVmInfo(virtualMachine.vmId,
-                                    vmCredit.isManaged(),
-                                    vmCredit.hasMonitoring(),
-                                    virtualMachine.image,
-                                    project.getVhfsSgid(),
-                                    mailRelayQuota,
-                                    virtualMachine.spec.diskGib,
-                                    previousRelays);
+        ProvisionVmInfo vmInfo = new ProvisionVmInfo(virtualMachine.vmId,
+                                                     vmCredit.isManaged(),
+                                                     vmCredit.hasMonitoring(),
+                                                     virtualMachine.image,
+                                                     project.getVhfsSgid(),
+                                                     mailRelayQuota,
+                                                     virtualMachine.spec.diskGib,
+                                                     previousRelays);
         if(image.hasPlesk()) {
             vmInfo.pleskLicenseType = validateAndReturnEnumValue(PleskLicenseType.class, vmCredit.getControlPanel());
         }
 
-        vmInfo.isPanoptaEnabled = provisionRequest.useBetaMonitoring;
+        vmInfo.isPanoptaEnabled = provisionVmRequest.useBetaMonitoring;
         logger.info("vmInfo: {}", vmInfo);
-        byte[] encryptedPassword = cryptography.encrypt(provisionRequest.password);
-        String zone = getZone(provisionRequest.dataCenterId, virtualMachine.spec.serverType.platform.getZone());
+        byte[] encryptedPassword = cryptography.encrypt(provisionVmRequest.password);
+        String zone = getZone(provisionVmRequest.dataCenterId, virtualMachine.spec.serverType.platform.getZone());
 
-        ProvisionRequest request =
-                createProvisionRequest(provisionRequest.image,
-                                       provisionRequest.username,
+        ProvisionRequest provisionRequest =
+                createProvisionRequest(provisionVmRequest.image,
+                                       provisionVmRequest.username,
                                        project,
                                        virtualMachine.spec,
                                        vmInfo,
                                        user.getShopperId(),
-                                       provisionRequest.name,
-                                       provisionRequest.orionGuid,
+                                       provisionVmRequest.name,
+                                       provisionVmRequest.orionGuid,
                                        encryptedPassword,
                                        vmCredit.getResellerId(),
-                                       zone);
+                                       zone, 
+                                       provisionVmRequest.intents);
 
         String provisionClassName = virtualMachine.spec.serverType.platform.getProvisionCommand();
 
-        return createActionAndExecute(actionService, commandService, virtualMachine.vmId, ActionType.CREATE_VM, request,
+        return createActionAndExecute(actionService, commandService, virtualMachine.vmId, ActionType.CREATE_VM, provisionRequest,
                                       provisionClassName, user);
     }
 
     private String getZone(int dataCenterId, String platformZone) {
         DataCenter dc = dataCenterService.getDataCenter(dataCenterId);
         String zoneConfigLabel = dc.dataCenterName + "." + platformZone;
-        String zone = config.get(zoneConfigLabel);
-        return zone;
+        return config.get(zoneConfigLabel);
     }
 
     private int getPreviousRelaysForVirtualServers(ProvisionVmRequest provisionRequest, Image image) {
@@ -330,7 +343,8 @@ public class VmResource {
                                                     UUID orionGuid,
                                                     byte[] encryptedPassword,
                                                     String resellerId,
-                                                    String zone) {
+                                                    String zone,
+                                                    ProvisionVmIntent intents) {
         ProvisionRequest request = new ProvisionRequest();
         request.image_name = image;
         request.username = username;
@@ -343,6 +357,10 @@ public class VmResource {
         request.encryptedPassword = encryptedPassword;
         request.zone = zone;
         request.privateLabelId = resellerId;
+        if(intents != null){
+            request.intentIds = intents.intentIds;
+            request.intentOtherDescription = intents.otherIntentDescription;
+        }
         return request;
     }
 

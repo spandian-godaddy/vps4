@@ -10,6 +10,7 @@ import com.godaddy.vps4.cdn.CdnDataModule;
 import com.godaddy.vps4.cdn.CdnModule;
 import com.godaddy.vps4.hfs.HfsClientModule;
 import com.godaddy.vps4.hfs.HfsVmTrackingRecordModule;
+import com.godaddy.vps4.intent.IntentModule;
 import com.godaddy.vps4.ipblacklist.IpBlacklistModule;
 import com.godaddy.vps4.jdbc.DatabaseModule;
 import com.godaddy.vps4.jsd.JsdModule;
@@ -32,11 +33,10 @@ import com.godaddy.vps4.vm.VmModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
+import ch.qos.logback.classic.Level;
 import gdg.hfs.orchestration.CommandPlugin;
 import gdg.hfs.orchestration.CommandProvider;
 import gdg.hfs.orchestration.GuiceCommandProvider;
-
-import ch.qos.logback.classic.Level;
 
 public class Vps4CommandPlugin implements CommandPlugin {
 
@@ -85,6 +85,7 @@ public class Vps4CommandPlugin implements CommandPlugin {
             new Vps4SsoModule(),
             new MessagingModule(),
             new EntitlementsModule(),
+            new IntentModule(),
             new CdnModule(),
             new CdnDataModule()
         );

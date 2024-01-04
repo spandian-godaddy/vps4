@@ -29,12 +29,12 @@ Orchestration engine when run can be configured to pickup plugin commands found 
     Use classpath of module: vps4-orchestration-runner
 ```
 
-**FOR ECLIPSE USERS:**
-Eclipse doesn't recognise this module as a java project hence doesnt allow creation of a run-configuration using this module.
+**FOR ECLIPSE AND VSCODE USERS:**
+Your IDE doesn't recognise this module as a java project hence doesnt allow creation of a run-configuration using this module.
 To fix this, create 2 files with the following content in the vps4-orchestration-runner folder. Once these files are in place, eclipse should allow creation of the above run-configs.
 **NOTE**: Do not check in the below 2 files into source control as these files are specific to only Eclipse. 
 
-1 _.project_ file
+1 .project file
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>

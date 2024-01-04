@@ -15,12 +15,13 @@ import static com.godaddy.vps4.vm.CreateVmStep.SetupAutomaticBackupSchedule;
 import static com.godaddy.vps4.vm.CreateVmStep.SetupComplete;
 import static com.godaddy.vps4.vm.CreateVmStep.StartingServerSetup;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import javax.inject.Inject;
 
-import com.godaddy.vps4.orchestration.hfs.mailrelay.SetMailRelayQuota;
-import com.godaddy.vps4.orchestration.hfs.plesk.SetPleskOutgoingEmailIp;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,15 +33,20 @@ import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
+import com.godaddy.vps4.intent.IntentService;
+import com.godaddy.vps4.intent.IntentUtils;
+import com.godaddy.vps4.intent.model.Intent;
 import com.godaddy.vps4.network.IpAddress.IpAddressType;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.ActionCommand;
 import com.godaddy.vps4.orchestration.hfs.cpanel.ConfigureCpanel;
 import com.godaddy.vps4.orchestration.hfs.cpanel.ConfigureCpanel.ConfigureCpanelRequest;
+import com.godaddy.vps4.orchestration.hfs.mailrelay.SetMailRelayQuota;
 import com.godaddy.vps4.orchestration.hfs.network.AllocateIp;
 import com.godaddy.vps4.orchestration.hfs.network.BindIp;
 import com.godaddy.vps4.orchestration.hfs.plesk.ConfigurePlesk;
 import com.godaddy.vps4.orchestration.hfs.plesk.ConfigurePlesk.ConfigurePleskRequest;
+import com.godaddy.vps4.orchestration.hfs.plesk.SetPleskOutgoingEmailIp;
 import com.godaddy.vps4.orchestration.hfs.plesk.SetPleskOutgoingEmailIp.SetPleskOutgoingEmailIpRequest;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetHostname;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
@@ -88,6 +94,7 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
     private final Config config;
     private final HfsVmTrackingRecordService hfsVmTrackingRecordService;
     private final VmAlertService vmAlertService;
+    private final IntentService intentService;
 
     protected ProvisionRequest request;
     private ActionState state;
@@ -104,7 +111,8 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
             CreditService creditService,
             Config config,
             HfsVmTrackingRecordService hfsVmTrackingRecordService,
-            VmAlertService vmAlertService) {
+            VmAlertService vmAlertService, 
+            IntentService intentService) {
         super(actionService);
         this.vmService = vmService;
         this.virtualMachineService = virtualMachineService;
@@ -114,6 +122,7 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
         this.config = config;
         this.hfsVmTrackingRecordService = hfsVmTrackingRecordService;
         this.vmAlertService = vmAlertService;
+        this.intentService = intentService;
     }
 
     @Override
@@ -131,6 +140,8 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
         Vm hfsVm = vmService.getVm(hfsVmId);
 
         String primaryIpAddress = setupPrimaryIp(hfsVm);
+
+        setVmIntents(request.intentIds, request.intentOtherDescription, request.vmInfo.vmId);
 
         createMailRelay(primaryIpAddress);
 
@@ -163,6 +174,33 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
         setStep(SetupComplete);
         logger.info("provision vm finished: {}", request.vmInfo.vmId);
         return null;
+    }
+
+    private void setVmIntents(List<Integer> intentIds, String otherIntentDescription, UUID vmId) {
+        if(intentIds == null || intentIds.isEmpty()) {
+            return;
+        }
+
+        try {
+            Map<Integer, Intent> intentOptions = IntentUtils.getIntentsMap(intentService.getIntents());
+            List<Intent> vmIntents = new ArrayList<>();
+
+            for (Integer intentId : intentIds) {
+                Intent intent = intentOptions.get(intentId);
+                if (intent != null) {
+                    if(intent.name.equals("OTHER")) {
+                        intent.description = otherIntentDescription;
+                    }
+                    vmIntents.add(intent);
+                }
+                else {
+                    logger.warn("Intent id {} is not valid", intentId);
+                }
+            }
+            intentService.setVmIntents(vmId, vmIntents);
+        } catch (Exception e) {
+            logger.warn("Failed to set intents for vm: {}. Provisioning will continue", vmId, e);
+        }   
     }
 
     protected void validatePlanChangePending(UUID orionGuid) {

@@ -1,5 +1,6 @@
 package com.godaddy.vps4.orchestration.vm.provision;
 
+import java.util.List;
 import java.util.UUID;
 
 import com.godaddy.vps4.orchestration.vm.VmActionRequest;
@@ -17,4 +18,6 @@ public class ProvisionRequest extends VmActionRequest {
     public String username;
     public String zone;
     public String privateLabelId;
+    public List<Integer> intentIds;
+    public String intentOtherDescription;
 }

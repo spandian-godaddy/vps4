@@ -15,6 +15,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Random;
 import java.util.UUID;
 import java.util.function.Function;
@@ -37,6 +39,7 @@ import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
+import com.godaddy.vps4.intent.IntentService;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.hfs.cpanel.ConfigureCpanel;
 import com.godaddy.vps4.orchestration.hfs.network.AllocateIp;
@@ -81,6 +84,7 @@ public class Vps4ProvisionVmTest {
     Config config = mock(Config.class);
     HfsVmTrackingRecordService hfsVmTrackingRecordService = mock(HfsVmTrackingRecordService.class);
     VmAlertService vmAlertService = mock(VmAlertService.class);
+    IntentService intentService = mock(IntentService.class);
     @Captor
     private ArgumentCaptor<Function<CommandContext, Void>> setCommonNameLambdaCaptor;
     @Captor
@@ -98,9 +102,16 @@ public class Vps4ProvisionVmTest {
     @Captor
     private ArgumentCaptor<SetupCompletedEmailRequest> setupCompletedEmailRequestArgCaptor;
 
-    Vps4ProvisionVm command =
-            new Vps4ProvisionVm(actionService, vmService, virtualMachineService, vmUserService, networkService,
-                                 creditService, config, hfsVmTrackingRecordService, vmAlertService);
+    Vps4ProvisionVm command = new Vps4ProvisionVm(actionService, 
+                                                  vmService, 
+                                                  virtualMachineService, 
+                                                  vmUserService, 
+                                                  networkService,
+                                                  creditService, 
+                                                  config, 
+                                                  hfsVmTrackingRecordService, 
+                                                  vmAlertService,
+                                                  intentService);
 
     CommandContext context = mock(CommandContext.class);
 
@@ -415,5 +426,29 @@ public class Vps4ProvisionVmTest {
         command.executeWithAction(context, request);
 
         verify(context, never()).execute(eq(Vps4AddIpAddress.class), isA(Vps4AddIpAddress.Request.class));
+    }
+
+    @Test
+    public void setsVmIntents() {
+        request.intentIds = Arrays.asList(new Integer[] {1, 2, 10});
+        request.intentOtherDescription = "keep the change ya filthy animal";
+        command.executeWithAction(context, request);
+
+        verify(intentService, times(1)).setVmIntents(eq(vmId), any());
+    }
+    
+    @Test
+    public void setsVmIntentsNullIntents() {
+        command.executeWithAction(context, request);
+
+        verify(intentService, never()).setVmIntents(eq(vmId), any());
+    }
+
+        @Test
+    public void setsVmIntentsEmptyIntents() {
+        request.intentIds = new ArrayList<>();
+        command.executeWithAction(context, request);
+
+        verify(intentService, never()).setVmIntents(eq(vmId), any());
     }
 }

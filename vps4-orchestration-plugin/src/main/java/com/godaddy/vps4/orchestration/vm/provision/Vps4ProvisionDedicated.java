@@ -11,6 +11,7 @@ import com.godaddy.hfs.vm.Vm;
 import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
+import com.godaddy.vps4.intent.IntentService;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.hfs.dns.CreateDnsPtrRecord;
 import com.godaddy.vps4.orchestration.vm.VmActionRequest;
@@ -44,9 +45,18 @@ public class Vps4ProvisionDedicated extends Vps4ProvisionVm {
             CreditService creditService,
             Config config,
             HfsVmTrackingRecordService hfsVmTrackingRecordService,
-            VmAlertService vmAlertService) {
-        super(actionService, vmService, virtualMachineService, vmUserService, networkService,
-              creditService, config, hfsVmTrackingRecordService, vmAlertService);
+            VmAlertService vmAlertService,
+            IntentService intentService) {
+        super(actionService, 
+              vmService, 
+              virtualMachineService, 
+              vmUserService, 
+              networkService,
+              creditService, 
+              config, 
+              hfsVmTrackingRecordService, 
+              vmAlertService,
+              intentService);
     }
 
     /* Dedicated server hostname is set to OVH resource id */

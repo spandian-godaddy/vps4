@@ -1,5 +1,13 @@
 package com.godaddy.vps4.phase2;
 
+import java.sql.Timestamp;
+import java.time.Instant;
+import java.util.List;
+import java.util.Random;
+import java.util.UUID;
+
+import javax.sql.DataSource;
+
 import com.godaddy.hfs.jdbc.Sql;
 import com.godaddy.vps4.customNotes.CustomNotesService;
 import com.godaddy.vps4.customNotes.jdbc.JdbcCustomNotesService;
@@ -14,17 +22,10 @@ import com.godaddy.vps4.security.jdbc.JdbcVps4UserService;
 import com.godaddy.vps4.snapshot.Snapshot;
 import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
+import com.godaddy.vps4.vm.ProvisionVirtualMachineParameters;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
-import com.godaddy.vps4.vm.ProvisionVirtualMachineParameters;
 import com.godaddy.vps4.vm.jdbc.JdbcVirtualMachineService;
-
-import javax.sql.DataSource;
-import java.sql.Timestamp;
-import java.time.Instant;
-import java.util.List;
-import java.util.Random;
-import java.util.UUID;
 
 
 public class SqlTestData {
@@ -105,6 +106,7 @@ public class SqlTestData {
         VirtualMachineService virtualMachineService = new JdbcVirtualMachineService(dataSource);
         VirtualMachine vm = virtualMachineService.getVirtualMachine(vmId);
 
+        Sql.with(dataSource).exec("DELETE FROM vm_intent WHERE vm_id = ?", null, vmId);
         Sql.with(dataSource).exec("DELETE FROM vm_silenced_alert WHERE vm_id = ? ", null, vmId);
         Sql.with(dataSource).exec("DELETE FROM hfs_vm_tracking_record WHERE vm_id = ?", null, vmId);
         Sql.with(dataSource).exec("DELETE FROM vm_cdn_site WHERE vm_id = ? ", null, vmId);
