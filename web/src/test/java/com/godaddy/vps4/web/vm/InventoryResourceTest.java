@@ -30,6 +30,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.godaddy.hfs.vm.HfsInventoryData;
+import com.godaddy.hfs.vm.HfsInventoryDataWrapper;
 import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.cache.CacheName;
 import com.godaddy.vps4.vm.ServerSpec;

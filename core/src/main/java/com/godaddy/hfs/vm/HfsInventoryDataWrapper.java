@@ -1,8 +1,6 @@
-package com.godaddy.vps4.web.vm;
+package com.godaddy.hfs.vm;
 
 import java.util.List;
-
-import com.godaddy.hfs.vm.HfsInventoryData;
 
 public class HfsInventoryDataWrapper {
     public List<HfsInventoryData> value;

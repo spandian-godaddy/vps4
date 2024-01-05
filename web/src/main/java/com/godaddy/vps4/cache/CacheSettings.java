@@ -9,7 +9,7 @@ import javax.cache.expiry.Duration;
 import com.godaddy.hfs.vm.ServerUsageStats;
 import com.godaddy.vps4.mailrelay.MailRelayService.CachedMailRelayHistory;
 import com.godaddy.vps4.panopta.DefaultPanoptaService;
-import com.godaddy.vps4.web.vm.HfsInventoryDataWrapper;
+import com.godaddy.hfs.vm.HfsInventoryDataWrapper;
 
 public class CacheSettings {
 
