@@ -1,5 +1,7 @@
 package com.godaddy.vps4.orchestration;
 
+import com.godaddy.vps4.orchestration.cdn.Vps4ValidateCdn;
+import com.godaddy.vps4.orchestration.cdn.WaitForCdnValidationStatusJob;
 import com.godaddy.vps4.orchestration.console.Vps4RequestConsole;
 import com.godaddy.vps4.orchestration.cpanel.InstallPackage;
 import com.godaddy.vps4.orchestration.cpanel.Vps4InstallCPanelPackage;
@@ -192,5 +194,7 @@ public class Vps4CommandModule extends AbstractModule {
         bind(Vps4SubmitCdnCreation.class);
         bind(WaitForCdnClearCacheJob.class);
         bind(WaitForCdnCreationJob.class);
+        bind(Vps4ValidateCdn.class);
+        bind(WaitForCdnValidationStatusJob.class);
     }
 }

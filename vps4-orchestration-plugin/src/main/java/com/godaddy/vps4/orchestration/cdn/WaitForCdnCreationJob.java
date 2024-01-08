@@ -42,8 +42,8 @@ public class WaitForCdnCreationJob implements Command<WaitForCdnCreationJob.Requ
 
     public boolean isCdnVerificationInfoPopulated(CdnDetail cdnDetail) {
         return (cdnDetail.productData != null && cdnDetail.productData.cloudflare != null &&
-                (cdnDetail.productData.cloudflare.certificateValidation != null &&
-                cdnDetail.productData.cloudflare.certificateValidation != null));
+                (cdnDetail.productData.cloudflare.certificateValidation != null ||
+                cdnDetail.productData.cloudflare.domainValidation != null));
     }
 
 
@@ -56,8 +56,7 @@ public class WaitForCdnCreationJob implements Command<WaitForCdnCreationJob.Requ
                                                               logger,
                                                               () -> cdnService.getCdnSiteDetail(
                                                                       request.shopperId, customerJwt, request.siteId, request.vmId, true
-                                                              ));
-
+                                                              ), 10000);
         } while (cdnDetail != null && cdnDetail.status != CdnStatus.FAILED
                 && !isCdnVerificationInfoPopulated(cdnDetail));
 

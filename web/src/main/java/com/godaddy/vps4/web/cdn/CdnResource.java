@@ -11,6 +11,7 @@ import com.godaddy.vps4.orchestration.cdn.Vps4ClearCdnCache;
 import com.godaddy.vps4.orchestration.cdn.Vps4ModifyCdnSite;
 import com.godaddy.vps4.orchestration.cdn.Vps4RemoveCdnSite;
 import com.godaddy.vps4.orchestration.cdn.Vps4SubmitCdnCreation;
+import com.godaddy.vps4.orchestration.cdn.Vps4ValidateCdn;
 import com.godaddy.vps4.util.Cryptography;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
@@ -86,7 +87,8 @@ public class CdnResource {
     }
 
     private void validateCdnConflictingActions(UUID vmId){
-        validateNoConflictingActions(vmId, actionService, ActionType.DELETE_CDN, ActionType.MODIFY_CDN, ActionType.CREATE_CDN);
+        validateNoConflictingActions(vmId, actionService, ActionType.DELETE_CDN, ActionType.MODIFY_CDN, 
+        ActionType.CREATE_CDN, ActionType.VALIDATE_CDN);
     }
 
     private void validateCdnSizeLimit(UUID vmId){
@@ -137,6 +139,24 @@ public class CdnResource {
 
         return createActionAndExecute(actionService, commandService, vmId,
                 ActionType.CREATE_CDN, submitCdnCreationReq, "Vps4SubmitCdnCreation", user);
+    }
+
+    @POST
+    @Path("/{vmId}/cdn/{siteId}/validation")
+    public VmAction validateCdnSite(@PathParam("vmId") UUID vmId, @PathParam("siteId") String siteId) {
+        VirtualMachine vm = vmResource.getVm(vmId);  // auth validation
+        VirtualMachineCredit credit = creditService.getVirtualMachineCredit(vm.orionGuid);
+
+        validateCdnConflictingActions(vmId);
+
+        Vps4ValidateCdn.Request validateCdnReq = new Vps4ValidateCdn.Request();
+        validateCdnReq.siteId = siteId;
+        validateCdnReq.vmId = vmId;
+        validateCdnReq.shopperId = credit.getShopperId();
+        validateCdnReq.encryptedCustomerJwt = cryptography.encrypt(getCustomerJwt());
+
+        return createActionAndExecute(actionService, commandService, vmId,
+                ActionType.VALIDATE_CDN, validateCdnReq, "Vps4ValidateCdn", user);
     }
 
     @DELETE

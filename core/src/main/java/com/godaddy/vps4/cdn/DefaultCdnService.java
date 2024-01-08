@@ -88,7 +88,9 @@ public class DefaultCdnService implements CdnService {
 
     @Override
     public CdnClientInvalidateStatusResponse getCdnInvalidateCacheStatus(String shopperId, String customerJwt, String siteId, String invalidationId) {
-        return cdnClientService.getCdnInvalidateStatus(getAuthToken(shopperId, customerJwt), siteId, invalidationId);
+        CdnClientInvalidateStatusResponse res =  cdnClientService.getCdnInvalidateStatus(getAuthToken(shopperId, customerJwt), siteId, invalidationId);
+
+        return res;
     }
 
     @Override
@@ -107,6 +109,11 @@ public class DefaultCdnService implements CdnService {
         req.verificationMethod = CdnVerificationMethod.TXT.toString();
 
         return cdnClientService.createCdnSite(getAuthToken(shopperId, customerJwt), req);
+    }
+
+    @Override
+    public void validateCdn(String shopperId, String customerJwt, String siteId) {
+        cdnClientService.requestCdnValidation(getAuthToken(shopperId, customerJwt), siteId);
     }
 
     @Override

@@ -237,7 +237,7 @@ public class CdnResourceTest {
     @Test
     public void testDeleteCdnSiteConflictingAction() {
         Action conflictAction = mock(Action.class);
-        List<ActionType> conflictTypes = Arrays.asList(ActionType.DELETE_CDN, ActionType.MODIFY_CDN, ActionType.CREATE_CDN);
+        List<ActionType> conflictTypes = Arrays.asList(ActionType.DELETE_CDN, ActionType.MODIFY_CDN, ActionType.CREATE_CDN, ActionType.VALIDATE_CDN);
         resource = new CdnResource(userEmployee, vmResource, creditService, cdnService, cdnDataService,
                 cryptography, actionService, commandService);
 
@@ -276,7 +276,7 @@ public class CdnResourceTest {
     @Test
     public void testUpdateCdnSiteConflictingAction() {
         Action conflictAction = mock(Action.class);
-        List<ActionType> conflictTypes = Arrays.asList(ActionType.DELETE_CDN, ActionType.MODIFY_CDN, ActionType.CREATE_CDN);
+        List<ActionType> conflictTypes = Arrays.asList(ActionType.DELETE_CDN, ActionType.MODIFY_CDN, ActionType.CREATE_CDN, ActionType.VALIDATE_CDN);
         resource = new CdnResource(userEmployee, vmResource, creditService, cdnService, cdnDataService,
                 cryptography, actionService, commandService);
 
@@ -315,7 +315,7 @@ public class CdnResourceTest {
     @Test
     public void testCreateCdnSiteConflictingAction() {
         Action conflictAction = mock(Action.class);
-        List<ActionType> conflictTypes = Arrays.asList(ActionType.DELETE_CDN, ActionType.MODIFY_CDN, ActionType.CREATE_CDN);
+        List<ActionType> conflictTypes = Arrays.asList(ActionType.DELETE_CDN, ActionType.MODIFY_CDN, ActionType.CREATE_CDN, ActionType.VALIDATE_CDN);
         resource = new CdnResource(userEmployee, vmResource, creditService, cdnService, cdnDataService,
                 cryptography, actionService, commandService);
 
@@ -385,4 +385,42 @@ public class CdnResourceTest {
         }
     }
 
+    @Test
+    public void testValidateCdnSiteCreatesAction() {
+        resource = new CdnResource(userEmployee, vmResource, creditService, cdnService, cdnDataService,
+                cryptography, actionService, commandService);
+        resource.validateCdnSite(vmId, cdnDetail.siteId);
+        verify(actionService, times(1))
+                .createAction(vmId, ActionType.VALIDATE_CDN, "{}", userEmployee.getUsername());
+    }
+
+    @Test
+    public void testValidateCdnSiteExecutesCommand() {
+        resource = new CdnResource(userEmployee, vmResource, creditService, cdnService, cdnDataService,
+                cryptography, actionService, commandService);
+        resource.validateCdnSite(vmId, cdnDetail.siteId);
+        ArgumentCaptor<CommandGroupSpec> argument = ArgumentCaptor.forClass(CommandGroupSpec.class);
+        verify(commandService).executeCommand(argument.capture());
+        CommandGroupSpec cmdGroup = argument.getValue();
+        assertEquals("Vps4ValidateCdn", cmdGroup.commands.get(0).command);
+    }
+
+    @Test
+    public void testValidateCdnConflictingAction() {
+        Action conflictAction = mock(Action.class);
+        List<ActionType> conflictTypes = Arrays.asList(ActionType.DELETE_CDN, ActionType.MODIFY_CDN, ActionType.CREATE_CDN, ActionType.VALIDATE_CDN);
+        resource = new CdnResource(userEmployee, vmResource, creditService, cdnService, cdnDataService,
+                cryptography, actionService, commandService);
+
+        for (ActionType type : conflictTypes) {
+            conflictAction.type = type;
+            when(actionService.getIncompleteActions(vmId)).thenReturn(Collections.singletonList(conflictAction));
+            try {
+                resource.validateCdnSite(vmId, cdnDetail.siteId);
+                fail();
+            } catch (Vps4Exception e) {
+                assertEquals("CONFLICTING_INCOMPLETE_ACTION", e.getId());
+            }
+        }
+    }
 }

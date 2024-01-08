@@ -5,6 +5,8 @@ public class CdnDetail {
     public String domain;
     public String planId;
     public CdnStatus status;
+
+    public CdnOrigin[] origins;
     public CdnVerificationMethod verificationMethod;
     public String provider;
     public String cacheLevel;
@@ -14,7 +16,7 @@ public class CdnDetail {
     public CdnDetail() {
     }
     public CdnDetail(String siteId, String domain, String planId, CdnStatus status, CdnVerificationMethod verificationMethod,
-                     String provider, String cacheLevel, String imageOptimization, CdnProductData productData) {
+                     CdnOrigin[] origins, String provider, String cacheLevel, String imageOptimization, CdnProductData productData) {
         this.siteId = siteId;
         this.domain = domain;
         this.planId = planId;
@@ -24,5 +26,6 @@ public class CdnDetail {
         this.cacheLevel = cacheLevel;
         this.imageOptimization = imageOptimization;
         this.productData = productData;
+        this.origins = origins;
     }
 }

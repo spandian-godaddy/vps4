@@ -55,12 +55,11 @@ public abstract class Utils {
         return null;
     }
 
-
-    public static <T> T runWithRetriesForServerAndProcessingErrorException(CommandContext context, Logger logger, RetryActionHandler<T> handler) {
+    public static <T> T runWithRetriesForServerAndProcessingErrorException(CommandContext context, Logger logger, RetryActionHandler<T> handler, int sleepDuration) {
         int serverErrorRetries = 0;
         int maxRetries = 5;
         while (serverErrorRetries < maxRetries) {
-            context.sleep(2000);
+            context.sleep(sleepDuration);
             try {
                 return handler.handle();
             }
@@ -75,5 +74,9 @@ public abstract class Utils {
             }
         }
         return null;
+    }
+
+    public static <T> T runWithRetriesForServerAndProcessingErrorException(CommandContext context, Logger logger, RetryActionHandler<T> handler) {
+        return runWithRetriesForServerAndProcessingErrorException(context, logger, handler, 2000);
     }
 }

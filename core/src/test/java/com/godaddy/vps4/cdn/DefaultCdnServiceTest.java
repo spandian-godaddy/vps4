@@ -262,4 +262,13 @@ public class DefaultCdnServiceTest {
 
         assertSame(invalidateStatusResponse, response);
     }
+
+    @Test
+    public void testValidateCdnSuccessful() {
+        service.validateCdn(shopperId, null, cdnSiteDetail.siteId);
+
+        verify(vps4SsoService, times(1)).getDelegationToken("idp", shopperId);
+        verify(cdnClientService, times(1))
+                .requestCdnValidation(eq("sso-jwt " + shopperJwt), eq(cdnSiteDetail.siteId));
+    }
 }

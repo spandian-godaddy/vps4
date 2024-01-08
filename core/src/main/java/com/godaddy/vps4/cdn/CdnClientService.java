@@ -41,6 +41,10 @@ public interface CdnClientService {
     CdnClientInvalidateStatusResponse getCdnInvalidateStatus(@HeaderParam("Authorization") String ssoJwt, @PathParam("siteId") String siteId, @PathParam("invalidationId") String invalidationId);
 
     @POST
+    @Path("/sites/{siteId}/validations")
+    void requestCdnValidation(@HeaderParam("Authorization") String ssoJwt, @PathParam("siteId") String siteId);
+
+    @POST
     @Path("/sites")
     CdnClientCreateResponse createCdnSite(@HeaderParam("Authorization") String ssoJwt, CdnClientCreateRequest request);
 

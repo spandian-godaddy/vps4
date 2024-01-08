@@ -19,6 +19,9 @@ public interface CdnService {
     CdnClientInvalidateCacheResponse invalidateCdnCache(String shopperId, String customerJwt, String siteId);
     CdnClientInvalidateStatusResponse getCdnInvalidateCacheStatus(String shopperId, String customerJwt, String siteId, String invalidationId);
     CdnClientCreateResponse createCdn(String shopperId, String customerJwt, String domain, IpAddress ipAddress, String cacheLevel, String bypassWAF);
+
+    void validateCdn(String shopperId, String customerJwt, String siteId);
+
     void deleteCdnSite(String shopperId, String customerJwt, String siteId);
     void updateCdnSite(String shopperId, String customerJwt, String siteId, CdnCacheLevel cacheLevel, CdnBypassWAF bypassWAF);
 }
