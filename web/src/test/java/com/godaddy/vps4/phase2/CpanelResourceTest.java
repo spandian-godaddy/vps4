@@ -38,6 +38,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.eq;
@@ -122,17 +124,22 @@ public class CpanelResourceTest {
     public void testGetWhmSessionInvalidImage(){
         try {
             getcPanelResource().getWHMSession(centVm.vmId);
-            Assert.fail();
+            fail();
         } catch (Vps4Exception e) {
             Assert.assertEquals("INVALID_IMAGE", e.getId());
         }
     }
 
     @Test
-    public void testGetWhmSessionIgnoresCpanelServiceException() throws Exception {
-        when(vps4CpanelService.createSession(anyLong(), Mockito.anyString(), Mockito.any()))
-                .thenThrow(new CpanelTimeoutException("Timed out"));
-        Assert.assertNull(getcPanelResource().getWHMSession(vm.vmId));
+    public void testGetWhmSessionErrorHandling() throws Exception {
+        try {
+            when(vps4CpanelService.createSession(anyLong(), Mockito.anyString(), Mockito.any()))
+                    .thenThrow(new CpanelTimeoutException("Timed out"));
+            getcPanelResource().getWHMSession(vm.vmId);
+            fail();
+        } catch (Vps4Exception e) {
+            assertEquals("SESSION_FAILED", e.getId());
+        }
     }
 
     // === cpanelSession Tests ===
@@ -151,7 +158,7 @@ public class CpanelResourceTest {
     public void testGetCPanelSessionInvalidImage(){
         try {
             getcPanelResource().getCPanelSession(centVm.vmId, "testuser", null, null);
-            Assert.fail();
+            fail();
         } catch (Vps4Exception e) {
             Assert.assertEquals("INVALID_IMAGE", e.getId());
         }
@@ -184,10 +191,15 @@ public class CpanelResourceTest {
     }
 
     @Test
-    public void testGetCPanelSessionIgnoresCpanelServiceException() throws Exception {
-        when(vps4CpanelService.createSession(anyLong(), Mockito.anyString(), Mockito.any()))
-                .thenThrow(new CpanelTimeoutException("Timed out"));
-        Assert.assertNull(getcPanelResource().getCPanelSession(vm.vmId, "testuser", null, null));
+    public void testGetCPanelSessionErrorHandling() throws Exception {
+        try {
+            when(vps4CpanelService.createSession(anyLong(), Mockito.anyString(), Mockito.any()))
+                    .thenThrow(new CpanelTimeoutException("Timed out"));
+            getcPanelResource().getCPanelSession(vm.vmId, "testuser", null, null);
+            fail();
+        } catch (Vps4Exception e) {
+            assertEquals("SESSION_FAILED", e.getId());
+        }
     }
 
     // === listAccounts Tests ===
@@ -206,7 +218,7 @@ public class CpanelResourceTest {
     public void testListCpanelAccountsInvalidImage(){
         try {
             getcPanelResource().listCpanelAccounts(centVm.vmId);
-            Assert.fail();
+            fail();
         }
         catch (Vps4Exception e) {
             Assert.assertEquals("INVALID_IMAGE", e.getId());
@@ -214,10 +226,16 @@ public class CpanelResourceTest {
     }
 
     @Test
-    public void testListCpanelAccountsIgnoresCpanelServiceException() throws Exception {
-        when(vps4CpanelService.listCpanelAccounts(anyLong()))
-                .thenThrow(new CpanelTimeoutException("Timed out"));
-        Assert.assertNull(getcPanelResource().listCpanelAccounts(vm.vmId));
+    public void testListCpanelAccountsErrorHandling() throws Exception {
+        try {
+            when(vps4CpanelService.listCpanelAccounts(anyLong()))
+                    .thenThrow(new CpanelTimeoutException("Timed out"));
+            getcPanelResource().listCpanelAccounts(vm.vmId);
+            fail();
+        } catch (Vps4Exception e) {
+            assertEquals("LIST_ACCOUNTS_FAILED", e.getId());
+            return;
+        }
     }
 
     // list add on domains test
@@ -236,7 +254,7 @@ public class CpanelResourceTest {
     public void testListAddonDomainsInvalidImage(){
         try {
             getcPanelResource().listAddOnDomains(centVm.vmId, "fakeuser");
-            Assert.fail();
+            fail();
         }
         catch (Vps4Exception e) {
             Assert.assertEquals("INVALID_IMAGE", e.getId());
@@ -244,10 +262,15 @@ public class CpanelResourceTest {
     }
 
     @Test
-    public void testListAddonDomainsIgnoresCpanelServiceException() throws Exception {
-        when(vps4CpanelService.listAddOnDomains(anyLong(), eq("fakeuser")))
-                .thenThrow(new CpanelTimeoutException("Timed out"));
-        Assert.assertNull(getcPanelResource().listAddOnDomains(vm.vmId, "fakeuser"));
+    public void testListAddonDomainsErrorHandling() throws Exception {
+        try {
+            when(vps4CpanelService.listAddOnDomains(anyLong(), eq("fakeuser")))
+                    .thenThrow(new CpanelTimeoutException("Timed out"));
+            getcPanelResource().listAddOnDomains(vm.vmId, "fakeuser");
+            fail();
+        } catch (Vps4Exception e) {
+            assertEquals("ADD_ON_DOMAINS_FAILED", e.getId());
+        }
     }
 
     @Test(expected=Vps4Exception.class)
@@ -268,7 +291,7 @@ public class CpanelResourceTest {
                 .thenThrow(new CpanelTimeoutException("Timed out"));
         try {
             getcPanelResource().listDomains(vm.vmId, CPanelDomainType.ALL);
-            Assert.fail();
+            fail();
         } catch (Vps4Exception e) {
             Assert.assertEquals("CPANEL_LIST_DOMAINS_FAILED", e.getId());
         }
@@ -311,7 +334,7 @@ public class CpanelResourceTest {
 
         try {
             getcPanelResource().createAddOnDomain(vm.vmId, username, req);
-            Assert.fail();
+            fail();
         } catch (Vps4Exception e) {
             Assert.assertEquals("CONFLICTING_INCOMPLETE_ACTION", e.getId());
         }
@@ -337,7 +360,7 @@ public class CpanelResourceTest {
         req.password = password;
         try {
             getcPanelResource().calculatePasswordStrength(vm.vmId, req);
-            Assert.fail();
+            fail();
         }
         catch (Vps4Exception e) {
             Assert.assertEquals("PASSWORD_STRENGTH_CALCULATION_FAILED", e.getId());
@@ -374,7 +397,7 @@ public class CpanelResourceTest {
             req.password = password;
             req.contactEmail = email;
             getcPanelResource().createAccount(vm.vmId, req);
-            Assert.fail();
+            fail();
         }
         catch (Vps4Exception e) {
             Assert.assertEquals("CREATE_CPANEL_ACCOUNT_FAILED", e.getId());
@@ -395,7 +418,7 @@ public class CpanelResourceTest {
         when(vps4CpanelService.listPackages(vm.hfsVmId)).thenThrow(new RuntimeException());
         try {
             getcPanelResource().listPackages(vm.vmId);
-            Assert.fail();
+            fail();
         }
         catch (Vps4Exception e) {
             Assert.assertEquals("LIST_PACKAGES_FAILED", e.getId());
@@ -414,7 +437,7 @@ public class CpanelResourceTest {
         when(vps4CpanelService.getVersion(vm.hfsVmId)).thenThrow(new RuntimeException());
         try {
             getcPanelResource().getVersion(vm.vmId);
-            Assert.fail();
+            fail();
         }
         catch (Vps4Exception e) {
             Assert.assertEquals("GET_VERSION_FAILED", e.getId());
@@ -445,7 +468,7 @@ public class CpanelResourceTest {
         when(vps4CpanelService.listInstalledInstallatronApplications(vm.hfsVmId, user.getUsername())).thenThrow(new RuntimeException());
         try {
             getcPanelResource().getInstalledInstallatronApps(vm.vmId, user.getUsername());
-            Assert.fail();
+            fail();
         }
         catch (Vps4Exception e) {
             Assert.assertEquals("LIST_INSTALLATRON_APPS_FAILED", e.getId());
@@ -482,7 +505,7 @@ public class CpanelResourceTest {
         when(vps4CpanelService.listInstalledRpmPackages(vm.hfsVmId)).thenThrow(new RuntimeException());
         try {
             getcPanelResource().getNginxManagerStatus(vm.vmId);
-            Assert.fail();
+            fail();
         }
         catch (Vps4Exception e) {
             Assert.assertEquals("GET_NGINX_STATUS_FAILED", e.getId());
@@ -494,7 +517,7 @@ public class CpanelResourceTest {
         when(vps4CpanelService.getVersion(vm.hfsVmId)).thenReturn("11.0002");
         try {
             getcPanelResource().getNginxManagerStatus(vm.vmId);
-            Assert.fail();
+            fail();
         }
         catch (Vps4Exception e) {
             Assert.assertEquals("GET_NGINX_STATUS_FAILED", e.getId());
@@ -528,7 +551,7 @@ public class CpanelResourceTest {
         req.packageName = "ea-nginx-random";
         try {
             getcPanelResource().installRpmPackage(vm.vmId, req);
-            Assert.fail();
+            fail();
         } catch (Vps4Exception e) {
             Assert.assertEquals("PACKAGE_NOT_ALLOWED", e.getId());
         }
@@ -541,7 +564,7 @@ public class CpanelResourceTest {
         req.packageName = "ea-nginx";
         try {
             getcPanelResource().installRpmPackage(vm.vmId, req);
-            Assert.fail();
+            fail();
         } catch (Vps4Exception e) {
             Assert.assertEquals("CONFLICTING_INCOMPLETE_ACTION", e.getId());
         }

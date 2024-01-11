@@ -84,17 +84,14 @@ public class CPanelResource {
     @GET
     @Path("{vmId}/cpanel/whmSession")
     public CPanelSession getWHMSession(@PathParam("vmId") UUID vmId) {
-        logger.info("get WHM session for vmId {}", vmId);
-
         VirtualMachine vm = resolveVirtualMachine(vmId);
 
         try {
             return cpanelService.createSession(vm.hfsVmId, "root", CpanelServiceType.whostmgrd);
         } catch (Exception e) {
             logger.warn("Could not provide WHM cpanel session for vmId {} , Exception: {} ", vmId, e);
+            throw new Vps4Exception("SESSION_FAILED", "Failed to create WHM session");
         }
-
-        return null;
     }
 
     @GET
@@ -102,7 +99,6 @@ public class CPanelResource {
     public CPanelSession getCPanelSession(@PathParam("vmId") UUID vmId, @QueryParam("username") String username,
                                           @QueryParam("installatronAppId") String appId,
                                           @QueryParam("installatronCommand") InstallatronCommand command) {
-        logger.info("get cPanel session for vmId {}", vmId);
         VirtualMachine vm = resolveVirtualMachine(vmId);
 
         try {
@@ -111,9 +107,8 @@ public class CPanelResource {
             return command != null ? appendGoToURI(session, command, appId) : session;
         } catch (Exception e) {
             logger.warn("Could not provide cpanel session for vmId {} , Exception: {} ", vmId, e);
+            throw new Vps4Exception("SESSION_FAILED", "Failed to create cPanel session");
         }
-
-        return null;
     }
 
     public enum InstallatronCommand {
@@ -153,42 +148,37 @@ public class CPanelResource {
             return cpanelService.listInstalledInstallatronApplications(vm.hfsVmId, username);
         } catch (Exception e) {
             logger.warn("Could not get list of installed Installatron applications for vmId {}", vmId);
-            throw new Vps4Exception("LIST_INSTALLATRON_APPS_FAILED", e.getMessage(), e);
+            throw new Vps4Exception("LIST_INSTALLATRON_APPS_FAILED", "Failed to get list of installed applications");
         }
     }
 
     @GET
     @Path("/{vmId}/cpanel/accounts")
     public List<CPanelAccount> listCpanelAccounts(@PathParam("vmId") UUID vmId) {
-        logger.info("GET listCpanelAccounts for VM: {}", vmId);
-
         VirtualMachine vm = resolveVirtualMachine(vmId);
 
         try {
             return cpanelService.listCpanelAccounts(vm.hfsVmId);
         } catch (Exception e) {
             logger.warn("Could not provide cpanel accounts for vmId {} , Exception: {} ", vmId, e);
+            throw new Vps4Exception("LIST_ACCOUNTS_FAILED", "Failed to get list of cPanel accounts");
         }
-        return null;
     }
 
     @GET
     @Path("/{vmId}/cpanel/{username}/addOnDomains")
     public List<String> listAddOnDomains(@PathParam("vmId") UUID vmId, @PathParam("username") String username) {
-        logger.info("GET listAddOnDomains for user {} on VM: {}", username, vmId);
-
         VirtualMachine vm = resolveVirtualMachine(vmId);
 
         try {
             return cpanelService.listAddOnDomains(vm.hfsVmId, username);
         } catch (CpanelInvalidUserException e) {
-            throw new Vps4Exception("INVALID_CPANEL_USER", e.getMessage());
+            throw new Vps4Exception("INVALID_CPANEL_USER", "Invalid cPanel user");
         }
         catch (Exception e) {
             logger.warn("Could not provide cpanel add on domains for user {} on vmId {} , Exception: {} ", username, vmId, e);
-
+            throw new Vps4Exception("ADD_ON_DOMAINS_FAILED", "Failed to get add on domains");
         }
-        return null;
     }
 
     @POST
@@ -220,14 +210,12 @@ public class CPanelResource {
     @GET
     @Path("/{vmId}/cpanel/domains")
     public List<CPanelDomain> listDomains(@PathParam("vmId") UUID vmId, @QueryParam("domainType")@DefaultValue("ALL") CPanelDomainType domainType) {
-        logger.info("GET domains with {} type(s) on VM: {}", domainType, vmId);
-
         VirtualMachine vm = resolveVirtualMachine(vmId);
 
         try {
             return cpanelService.listDomains(vm.hfsVmId, domainType);
         } catch (Exception e) {
-            throw new Vps4Exception("CPANEL_LIST_DOMAINS_FAILED", e.getMessage(), e);
+            throw new Vps4Exception("CPANEL_LIST_DOMAINS_FAILED", "Failed to get list of cPanel domains");
         }
     }
 
@@ -245,7 +233,7 @@ public class CPanelResource {
             return cpanelService.calculatePasswordStrength(vm.hfsVmId, passwordStrengthRequest.password);
         } catch (Exception e) {
             logger.warn("Could not calculate cpanel password strength for vmId {} , Exception: {} ", vmId, e);
-            throw new Vps4Exception("PASSWORD_STRENGTH_CALCULATION_FAILED", e.getMessage(), e);
+            throw new Vps4Exception("PASSWORD_STRENGTH_CALCULATION_FAILED", "Failed to calculate password strength");
         }
     }
 
@@ -268,7 +256,7 @@ public class CPanelResource {
                 createAccountRequest.password, createAccountRequest.plan, createAccountRequest.contactEmail);
         } catch (Exception e) {
             logger.warn("Could not create cpanel account for vmId {} , Exception: {} ", vmId, e);
-            throw new Vps4Exception("CREATE_CPANEL_ACCOUNT_FAILED", e.getMessage(), e);
+            throw new Vps4Exception("CREATE_CPANEL_ACCOUNT_FAILED", "Failed to create cPanel account");
         }
     }
 
@@ -280,7 +268,7 @@ public class CPanelResource {
             return cpanelService.listPackages(vm.hfsVmId);
         } catch (Exception e) {
             logger.warn("Could not list CPanel packages for vmId {} , Exception: {} ", vmId, e);
-            throw new Vps4Exception("LIST_PACKAGES_FAILED", e.getMessage(), e);
+            throw new Vps4Exception("LIST_PACKAGES_FAILED", "Failed to get list of packages");
         }
     }
 
@@ -305,7 +293,7 @@ public class CPanelResource {
             return new CpanelNginxStatusResponse(nginxStatus, accountCachingStatus);
         } catch (Exception e) {
             logger.warn("Could not retrieve CPanel nginx manager status for vmId {} ", vmId, e);
-            throw new Vps4Exception("GET_NGINX_STATUS_FAILED", e.getMessage(), e);
+            throw new Vps4Exception("GET_NGINX_STATUS_FAILED", "Failed to get NGINX status");
         }
     }
 
@@ -313,9 +301,9 @@ public class CPanelResource {
         // minimum compatible version is 11.102.0.0
         String[] actualVerArr = actualVersion.split("\\.");
         if(actualVerArr.length != 4) {
-            throw new Vps4Exception("INCORRECT_VERSION_FORMAT", "CPanel version format is incorrect.");
+            throw new Vps4Exception("INCORRECT_VERSION_FORMAT", "CPanel version format is incorrect");
         }
-        return Integer.parseInt(actualVerArr[0]) >= 11 ? Integer.parseInt(actualVerArr[1]) >= 102 : false;
+        return Integer.parseInt(actualVerArr[0]) >= 11 && Integer.parseInt(actualVerArr[1]) >= 102;
     }
 
     public static class CpanelNginxStatusResponse {
@@ -343,8 +331,8 @@ public class CPanelResource {
             CpanelVersionResponse response = new CpanelVersionResponse(version);
             return response;
         } catch (Exception e) {
-            logger.warn("Could not retrieve CPanel/WHM version for vmId {} , Exception: {} ", vmId, e);
-            throw new Vps4Exception("GET_VERSION_FAILED", e.getMessage(), e);
+            logger.warn("Could not retrieve cPanel/WHM version for vmId {} , Exception: {} ", vmId, e);
+            throw new Vps4Exception("GET_VERSION_FAILED", "Failed to get cPanel/WHM version");
         }
     }
 
@@ -363,7 +351,7 @@ public class CPanelResource {
         validateNoConflictingActions(vmId, actionService, ActionType.INSTALL_CPANEL_PACKAGE);
         List<String> approvedPackageList = Arrays.asList(config.get("cpanel.rpm.packages", "").split(","));
         if(!approvedPackageList.contains(request.packageName)) {
-            throw new Vps4Exception("PACKAGE_NOT_ALLOWED", "Package isn't in the list of approved CPanel rpm packages");
+            throw new Vps4Exception("PACKAGE_NOT_ALLOWED", "Package isn't in the list of approved cPanel RPM packages");
         }
 
         JSONObject packageJsonRequest = new JSONObject();
@@ -390,8 +378,8 @@ public class CPanelResource {
         try {
             cpanelService.updateNginx(vm.hfsVmId, updateNginxRequest.enabled, updateNginxRequest.usernames);
         } catch (Exception e) {
-            logger.warn("Could not enabled NGINX for vmId {}, username {}, Exception: {} ", vmId, updateNginxRequest.usernames, e);
-            throw new Vps4Exception("UPDATE_NGINX_FAILED", e.getMessage(), e);
+            logger.warn("Could not enable NGINX for vmId {}, username {}, Exception: {} ", vmId, updateNginxRequest.usernames, e);
+            throw new Vps4Exception("UPDATE_NGINX_FAILED", "Failed to update NGINX");
         }
     }
 
@@ -403,7 +391,7 @@ public class CPanelResource {
             cpanelService.clearNginxCache(vm.hfsVmId, usernames);
         } catch (Exception e) {
             logger.warn("Could not clear NGiNX cache for vmId {}, users {}, Exception: {} ", vmId, usernames, e);
-            throw new Vps4Exception("CLEAR_NGINX_CACHE_FAILED", e.getMessage(), e);
+            throw new Vps4Exception("CLEAR_NGINX_CACHE_FAILED", "Failed to clear NGINX cache");
         }
     }
 

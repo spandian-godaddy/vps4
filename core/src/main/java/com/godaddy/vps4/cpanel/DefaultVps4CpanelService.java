@@ -137,7 +137,7 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
 
     @Override
     public List<CPanelAccount> listCpanelAccounts(long hfsVmId)
-            throws CpanelAccessDeniedException, CpanelTimeoutException, IOException {
+            throws CpanelAccessDeniedException, CpanelTimeoutException {
 
         return withAccessToken(hfsVmId, cPanelClient -> {
 
