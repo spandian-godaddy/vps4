@@ -39,6 +39,14 @@ public class CacheSettings {
                                 AccessedExpiryPolicy.factoryOf(Duration.ETERNAL))
                         .setStatisticsEnabled(false));
 
+        cacheManager.createCache(CacheName.CPANEL_API_TOKEN_ACTION,
+                new MutableConfiguration<Long, Long>()
+                        .setStoreByValue(true)
+                        .setTypes(Long.class, Long.class)
+                        .setExpiryPolicyFactory(
+                                CreatedExpiryPolicy.factoryOf(Duration.TEN_MINUTES))
+                        .setStatisticsEnabled(false));
+
         cacheManager.createCache(CacheName.SERVER_USAGE,
                 new MutableConfiguration<Long, ServerUsageStats>()
                     .setStoreByValue(true)

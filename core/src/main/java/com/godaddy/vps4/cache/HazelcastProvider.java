@@ -81,7 +81,8 @@ public class HazelcastProvider implements Provider<HazelcastInstance> {
                                              CacheName.SERVER_USAGE,
                                              CacheName.CPANEL_API_TOKEN,
                                              CacheName.MAIL_RELAY_HISTORY,
-                                             CacheName.PANOPTA_METRIC_GRAPH}) {
+                                             CacheName.PANOPTA_METRIC_GRAPH,
+                                             CacheName.CPANEL_API_TOKEN_ACTION}) {
             config.getMapConfig(cacheName)
                   .setEvictionPolicy(EvictionPolicy.LRU)
                   .setMaxSizeConfig(new MaxSizeConfig(10000, MaxSizePolicy.PER_NODE));

@@ -24,7 +24,7 @@ public class CpanelModule extends AbstractModule {
             CPanelService cpanelService,
             CacheManager cacheManager) {
 
-        CpanelApiTokenService hfsApiToken = new HfsCpanelApiTokenService(cpanelService);
+        CpanelApiTokenService hfsApiToken = new HfsCpanelApiTokenService(cpanelService, cacheManager);
 
         CpanelApiTokenService jcacheApiTokenService = new JCacheCpanelApiTokenService(hfsApiToken, cacheManager);
 

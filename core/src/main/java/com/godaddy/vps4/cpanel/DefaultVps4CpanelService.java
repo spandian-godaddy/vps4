@@ -102,7 +102,7 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
 
             } catch (CpanelAccessDeniedException e) {
 
-                logger.warn("Access denied for cPanel VM {}, invalidating access token", hostname);
+                logger.info("Access denied for cPanel VM {}, invalidating access token", hostname);
 
                 // we weren't able to access the target VM, which may be due to an
                 // access token we thought was good, but has now been invalidated,
@@ -112,7 +112,7 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
                 lastThrown = e;
 
             } catch (IOException e) {
-                logger.debug("Unable to communicate with VM " + hfsVmId, e);
+                logger.info("Unable to communicate with VM " + hfsVmId, e);
                 // we timed out attempting to connect/read from the target VM
                 // or we had some other transport-level issue
                 lastThrown = e;
@@ -120,7 +120,7 @@ public class DefaultVps4CpanelService implements Vps4CpanelService {
                 try {
                     TimeUnit.SECONDS.sleep(1);
                 } catch (InterruptedException ie) {
-                    logger.debug("Interrupted while sleeping", ie);
+                    logger.info("Interrupted while sleeping", ie);
                 }
             }
         }
