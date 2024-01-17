@@ -25,24 +25,19 @@ public class VirtualMachineCredit {
     private int managedLevel;
     private String operatingSystem;
     private String controlPanel;
-    private Instant provisionDate;
     private String shopperId;
     private int monitoring;
     private AccountStatus accountStatus;
-    private DataCenter dataCenter;
-    private UUID productId;
-    private boolean fullyManagedEmailSent;
     private String resellerId;
-    private boolean planChangePending;
     private int pfid;
-    private Instant purchasedAt;
-    private boolean suspended;
     private UUID customerId;
     private Instant expireDate;
     private boolean autoRenew;
     private String mssql;
+    private ProdMeta prodMeta;
 
     private VirtualMachineCredit() {
+        prodMeta = new ProdMeta();
     }
 
     @JsonIgnore
@@ -62,7 +57,7 @@ public class VirtualMachineCredit {
 
     @JsonIgnore
     public boolean isUsable() {
-        return provisionDate == null;
+        return prodMeta.provisionDate == null;
     }
 
     @JsonProperty("hasMonitoring")
@@ -75,7 +70,7 @@ public class VirtualMachineCredit {
     }
 
     public Instant getPurchasedAt() {
-        return purchasedAt;
+        return prodMeta.purchasedAt;
     }
 
     public boolean isManaged() {
@@ -124,7 +119,7 @@ public class VirtualMachineCredit {
     }
 
     public Instant getProvisionDate() {
-        return provisionDate;
+        return prodMeta.provisionDate;
     }
 
     public String getShopperId() {
@@ -140,15 +135,15 @@ public class VirtualMachineCredit {
     }
 
     public DataCenter getDataCenter() {
-        return dataCenter;
+        return prodMeta.dataCenter;
     }
 
     public UUID getProductId() {
-        return productId;
+        return prodMeta.productId;
     }
 
     public boolean isFullyManagedEmailSent() {
-        return fullyManagedEmailSent;
+        return prodMeta.fullyManagedEmailSent;
     }
 
     public String getResellerId() {
@@ -156,7 +151,7 @@ public class VirtualMachineCredit {
     }
 
     public boolean isPlanChangePending() {
-        return planChangePending;
+        return prodMeta.planChangePending;
     }
 
     public int getPfid() {
@@ -164,7 +159,7 @@ public class VirtualMachineCredit {
     }
 
     public boolean isVmSuspended() {
-        return suspended;
+        return prodMeta.suspended;
     }
 
     public Instant getExpireDate() { return expireDate; }
@@ -212,13 +207,13 @@ public class VirtualMachineCredit {
             }
 
             if (productMeta != null) {
-                credit.provisionDate = getDateFromProductMeta(ProductMetaField.PROVISION_DATE.toString());
-                credit.purchasedAt = getDateFromProductMeta(ProductMetaField.PURCHASED_AT.toString());
-                credit.fullyManagedEmailSent = getFlagFromProductMeta(ProductMetaField.FULLY_MANAGED_EMAIL_SENT.toString());
-                credit.planChangePending = getFlagFromProductMeta(ProductMetaField.PLAN_CHANGE_PENDING.toString());
-                credit.dataCenter = getDataCenter();
-                credit.productId = getProductId();
-                credit.suspended = getFlagFromProductMeta(ProductMetaField.SUSPENDED.toString());
+                credit.prodMeta.provisionDate = getDateFromProductMeta(ProductMetaField.PROVISION_DATE.toString());
+                credit.prodMeta.purchasedAt = getDateFromProductMeta(ProductMetaField.PURCHASED_AT.toString());
+                credit.prodMeta.fullyManagedEmailSent = getFlagFromProductMeta(ProductMetaField.FULLY_MANAGED_EMAIL_SENT.toString());
+                credit.prodMeta.planChangePending = getFlagFromProductMeta(ProductMetaField.PLAN_CHANGE_PENDING.toString());
+                credit.prodMeta.dataCenter = getDataCenter();
+                credit.prodMeta.productId = getProductId();
+                credit.prodMeta.suspended = getFlagFromProductMeta(ProductMetaField.SUSPENDED.toString());
             }
 
             credit.shopperId = this.shopperId;
