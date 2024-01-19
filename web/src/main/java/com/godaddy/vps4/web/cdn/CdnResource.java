@@ -1,5 +1,6 @@
 package com.godaddy.vps4.web.cdn;
 
+import com.godaddy.vps4.cdn.model.CdnCacheLevel;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.cdn.CdnDataService;
@@ -39,6 +40,7 @@ import javax.ws.rs.core.MediaType;
 import java.util.List;
 import java.util.UUID;
 
+import static com.godaddy.vps4.web.util.RequestValidation.validateAndReturnEnumValue;
 import static com.godaddy.vps4.web.util.RequestValidation.validateNoConflictingActions;
 import static com.godaddy.vps4.web.util.VmHelper.createActionAndExecute;
 
@@ -135,7 +137,7 @@ public class CdnResource {
         submitCdnCreationReq.shopperId = credit.getShopperId();
         submitCdnCreationReq.encryptedCustomerJwt = cryptography.encrypt(getCustomerJwt());
         submitCdnCreationReq.bypassWAF = request.bypassWAF;
-        submitCdnCreationReq.cacheLevel = request.cacheLevel;
+        submitCdnCreationReq.cacheLevel = validateAndReturnEnumValue(CdnCacheLevel.class, request.cacheLevel);
 
         return createActionAndExecute(actionService, commandService, vmId,
                 ActionType.CREATE_CDN, submitCdnCreationReq, "Vps4SubmitCdnCreation", user);
@@ -210,7 +212,7 @@ public class CdnResource {
         request.shopperId = credit.getShopperId();
         request.encryptedCustomerJwt = cryptography.encrypt(getCustomerJwt());
         request.bypassWAF = vmUpdateCdnRequest.bypassWAF;
-        request.cacheLevel = vmUpdateCdnRequest.cacheLevel;
+        request.cacheLevel = validateAndReturnEnumValue(CdnCacheLevel.class, vmUpdateCdnRequest.cacheLevel);
 
         return createActionAndExecute(actionService, commandService, vmId,
                 ActionType.MODIFY_CDN,  request, "Vps4ModifyCdnSite", user);

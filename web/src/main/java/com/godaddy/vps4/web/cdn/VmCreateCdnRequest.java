@@ -8,12 +8,12 @@ public class VmCreateCdnRequest {
     public String domain;
     public String ipAddress;
     public CdnBypassWAF bypassWAF;
-    public CdnCacheLevel cacheLevel;
+    public String cacheLevel;
 
     // Empty constructor required for Jackson
     public VmCreateCdnRequest() {}
 
-    public VmCreateCdnRequest(CdnBypassWAF bypassWAF, CdnCacheLevel cacheLevel) {
+    public VmCreateCdnRequest(CdnBypassWAF bypassWAF, String cacheLevel) {
         this.bypassWAF = bypassWAF;
         this.cacheLevel = cacheLevel;
     }

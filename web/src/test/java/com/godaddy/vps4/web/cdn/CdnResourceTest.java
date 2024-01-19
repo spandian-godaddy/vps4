@@ -1,5 +1,6 @@
 package com.godaddy.vps4.web.cdn;
 
+import com.godaddy.vps4.cdn.model.CdnCacheLevel;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.cdn.CdnDataService;
@@ -9,6 +10,7 @@ import com.godaddy.vps4.cdn.model.CdnSite;
 import com.godaddy.vps4.cdn.model.CdnStatus;
 import com.godaddy.vps4.cdn.model.VmCdnSite;
 import com.godaddy.vps4.jdbc.ResultSubset;
+import com.godaddy.vps4.orchestration.cdn.Vps4SubmitCdnCreation;
 import com.godaddy.vps4.security.GDUserMock;
 import com.godaddy.vps4.util.Cryptography;
 import com.godaddy.vps4.vm.ServerSpec;
@@ -257,7 +259,9 @@ public class CdnResourceTest {
     public void testUpdateCdnSiteCreatesAction() {
         resource = new CdnResource(userEmployee, vmResource, creditService, cdnService, cdnDataService,
                 cryptography, actionService, commandService);
-        resource.updateCdnSite(vmId, cdnDetail.siteId, new VmUpdateCdnRequest());
+        VmUpdateCdnRequest req = new VmUpdateCdnRequest();
+        req.cacheLevel = "CACHING_OPTIMIZED";
+        resource.updateCdnSite(vmId, cdnDetail.siteId, req);
         verify(actionService, times(1))
                 .createAction(vmId, ActionType.MODIFY_CDN, "{}", userEmployee.getUsername());
     }
@@ -266,7 +270,9 @@ public class CdnResourceTest {
     public void testUpdateCdnSiteExecutesCommand() {
         resource = new CdnResource(userEmployee, vmResource, creditService, cdnService, cdnDataService,
                 cryptography, actionService, commandService);
-        resource.updateCdnSite(vmId, cdnDetail.siteId, new VmUpdateCdnRequest());
+        VmUpdateCdnRequest req = new VmUpdateCdnRequest();
+        req.cacheLevel = "CACHING_OPTIMIZED";
+        resource.updateCdnSite(vmId, cdnDetail.siteId, req);
         ArgumentCaptor<CommandGroupSpec> argument = ArgumentCaptor.forClass(CommandGroupSpec.class);
         verify(commandService).executeCommand(argument.capture());
         CommandGroupSpec cmdGroup = argument.getValue();
@@ -296,7 +302,9 @@ public class CdnResourceTest {
     public void testCreateCdnSiteCreatesAction() {
         resource = new CdnResource(userEmployee, vmResource, creditService, cdnService, cdnDataService,
                 cryptography, actionService, commandService);
-        resource.createCdnSite(vmId, new VmCreateCdnRequest());
+        VmCreateCdnRequest req = new VmCreateCdnRequest();
+        req.cacheLevel = "CACHING_OPTIMIZED";
+        resource.createCdnSite(vmId, req);
         verify(actionService, times(1))
                 .createAction(vmId, ActionType.CREATE_CDN, "{}", userEmployee.getUsername());
     }
@@ -305,7 +313,9 @@ public class CdnResourceTest {
     public void testCreateCdnSiteExecutesCommand() {
         resource = new CdnResource(userEmployee, vmResource, creditService, cdnService, cdnDataService,
                 cryptography, actionService, commandService);
-        resource.createCdnSite(vmId, new VmCreateCdnRequest());
+        VmCreateCdnRequest req = new VmCreateCdnRequest();
+        req.cacheLevel = "CACHING_OPTIMIZED";
+        resource.createCdnSite(vmId, req);
         ArgumentCaptor<CommandGroupSpec> argument = ArgumentCaptor.forClass(CommandGroupSpec.class);
         verify(commandService).executeCommand(argument.capture());
         CommandGroupSpec cmdGroup = argument.getValue();
