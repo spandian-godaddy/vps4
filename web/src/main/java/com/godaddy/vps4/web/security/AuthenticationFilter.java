@@ -20,7 +20,7 @@ import org.slf4j.LoggerFactory;
 import com.godaddy.vps4.web.Vps4Exception;
 
 /**
- * Examine a request using authenticators, attach the first authenticated user found to the a request attribute.
+ * Examine a request using authenticators, attach the first authenticated user found to the request attribute.
  *
  * No additional action is taken if an authenticated user is _not_ found, since all downstream actions may not necessarily require
  * authentication, it's up to downstream to take that action (like, for example, redirect to the SSO login page).
