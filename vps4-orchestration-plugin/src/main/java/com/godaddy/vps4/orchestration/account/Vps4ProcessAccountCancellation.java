@@ -2,15 +2,21 @@ package com.godaddy.vps4.orchestration.account;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.UUID;
 
 import javax.inject.Inject;
 
 import com.godaddy.hfs.config.Config;
+import com.godaddy.vps4.cdn.CdnDataService;
+import com.godaddy.vps4.cdn.model.CdnBypassWAF;
+import com.godaddy.vps4.cdn.model.CdnCacheLevel;
+import com.godaddy.vps4.cdn.model.VmCdnSite;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.hfs.HfsVmTrackingRecordService;
 import com.godaddy.vps4.orchestration.ActionCommand;
 import com.godaddy.vps4.orchestration.ActionRequest;
+import com.godaddy.vps4.orchestration.cdn.Vps4ModifyCdnSite;
 import com.godaddy.vps4.orchestration.hfs.vm.RescueVm;
 import com.godaddy.vps4.orchestration.hfs.vm.StopVm;
 import com.godaddy.vps4.orchestration.panopta.PausePanoptaMonitoring;
@@ -35,22 +41,24 @@ import gdg.hfs.orchestration.CommandRetryStrategy;
 public class Vps4ProcessAccountCancellation extends ActionCommand<Vps4ProcessAccountCancellation.Request,Void> {
 
     private CommandContext context;
-
     final ActionService vmActionService;
     private final VirtualMachineService virtualMachineService;
     private final Config config;
     private final HfsVmTrackingRecordService hfsVmTrackingRecordService;
+    private final CdnDataService cdnDataService;
 
     @Inject
     public Vps4ProcessAccountCancellation(ActionService vmActionService,
                                           VirtualMachineService virtualMachineService,
                                           Config config,
-                                          HfsVmTrackingRecordService hfsVmTrackingRecordService) {
+                                          HfsVmTrackingRecordService hfsVmTrackingRecordService,
+                                          CdnDataService cdnDataService) {
         super(vmActionService);
         this.vmActionService = vmActionService;
         this.virtualMachineService = virtualMachineService;
         this.config = config;
         this.hfsVmTrackingRecordService = hfsVmTrackingRecordService;
+        this.cdnDataService = cdnDataService;
     }
 
     @Override
@@ -61,6 +69,7 @@ public class Vps4ProcessAccountCancellation extends ActionCommand<Vps4ProcessAcc
                 UUID vmId = request.virtualMachineCredit.getProductId();
                 Instant validUntil = calculateValidUntil();
                 pausePanoptaMonitoring(vmId);
+                getAndPauseCdnSites(vmId, request.virtualMachineCredit);
                 markVmAsZombie(vmId);
                 UUID jobId = scheduleZombieVmCleanup(vmId, validUntil);
                 recordJobId(vmId, jobId);
@@ -134,6 +143,22 @@ public class Vps4ProcessAccountCancellation extends ActionCommand<Vps4ProcessAcc
         req.vmId = vmId;
         req.jobType = ScheduledJobType.ZOMBIE;
         context.execute("RecordScheduledJobId", Vps4RecordScheduledJobForVm.class, req);
+    }
+
+    public void getAndPauseCdnSites(UUID vmId, VirtualMachineCredit credit) {
+        List<VmCdnSite> cdnSites = cdnDataService.getActiveCdnSitesOfVm(vmId);
+        if (cdnSites != null) {
+            for (VmCdnSite site : cdnSites) {
+                Vps4ModifyCdnSite.Request req = new Vps4ModifyCdnSite.Request();
+                req.encryptedCustomerJwt = null;
+                req.vmId = vmId;
+                req.bypassWAF = CdnBypassWAF.ENABLED;
+                req.cacheLevel = CdnCacheLevel.CACHING_DISABLED;
+                req.shopperId = credit.getShopperId();
+                req.siteId = site.siteId;
+                context.execute("ModifyCdnSite-" + site.siteId, Vps4ModifyCdnSite.class, req);
+            }
+        }
     }
 
     public static class Request implements ActionRequest {

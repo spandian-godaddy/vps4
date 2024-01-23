@@ -4,6 +4,8 @@ import com.godaddy.vps4.cdn.CdnDataService;
 import com.godaddy.vps4.cdn.CdnService;
 import com.godaddy.vps4.cdn.model.CdnBypassWAF;
 import com.godaddy.vps4.cdn.model.CdnCacheLevel;
+import com.godaddy.vps4.cdn.model.CdnDetail;
+import com.godaddy.vps4.cdn.model.CdnStatus;
 import com.godaddy.vps4.cdn.model.VmCdnSite;
 import com.godaddy.vps4.orchestration.ActionCommand;
 import com.godaddy.vps4.orchestration.vm.VmActionRequest;
@@ -27,17 +29,15 @@ import java.util.UUID;
 public class Vps4ModifyCdnSite extends ActionCommand<Vps4ModifyCdnSite.Request, Void> {
     public static final Logger logger = LoggerFactory.getLogger(Vps4ModifyCdnSite.class);
 
-    private final CdnDataService cdnDataService;
     private final CdnService cdnService;
     private final Cryptography cryptography;
 
     private Request request;
 
     @Inject
-    public Vps4ModifyCdnSite(ActionService actionService, CdnDataService cdnDataService, CdnService cdnService,
+    public Vps4ModifyCdnSite(ActionService actionService, CdnService cdnService,
                              Cryptography cryptography) {
         super(actionService);
-        this.cdnDataService = cdnDataService;
         this.cdnService = cdnService;
         this.cryptography = cryptography;
     }
@@ -45,8 +45,11 @@ public class Vps4ModifyCdnSite extends ActionCommand<Vps4ModifyCdnSite.Request, 
     @Override
     public Void executeWithAction(CommandContext context, Request request) {
         this.request = request;
-        verifyCdnBelongsToVmId();
-        issueCdnSiteModify();
+        CdnDetail cdnDetail = getAndVerifyCdnBelongsToVmId();
+        if (cdnDetail.status == CdnStatus.SUCCESS) {
+            // only able to toggle cdn/waf settings on validated sites, ignore requests otherwise
+            issueCdnSiteModify();
+        }
         return null;
     }
 
@@ -56,12 +59,10 @@ public class Vps4ModifyCdnSite extends ActionCommand<Vps4ModifyCdnSite.Request, 
                 cryptography.decrypt(request.encryptedCustomerJwt), request.siteId, request.cacheLevel, request.bypassWAF);
     }
 
-    public void verifyCdnBelongsToVmId() {
-        VmCdnSite vmCdnSite = cdnDataService.getCdnSiteFromId(request.vmId, request.siteId);
-        if (vmCdnSite == null) {
-            throw new RuntimeException("Could not find cdn siteId " + request.siteId
-                    + " belonging to vmId " + request.vmId + " in the database");
-        }
+
+    public CdnDetail getAndVerifyCdnBelongsToVmId() {
+        return cdnService.getCdnSiteDetail(request.shopperId,
+                cryptography.decrypt(request.encryptedCustomerJwt), request.siteId, request.vmId, false);
     }
 
     public static class Request extends VmActionRequest {

@@ -4,6 +4,8 @@ import com.godaddy.vps4.cdn.CdnDataService;
 import com.godaddy.vps4.cdn.CdnService;
 import com.godaddy.vps4.cdn.model.CdnBypassWAF;
 import com.godaddy.vps4.cdn.model.CdnCacheLevel;
+import com.godaddy.vps4.cdn.model.CdnDetail;
+import com.godaddy.vps4.cdn.model.CdnStatus;
 import com.godaddy.vps4.cdn.model.VmCdnSite;
 import com.godaddy.vps4.util.Cryptography;
 import com.godaddy.vps4.vm.ActionService;
@@ -11,8 +13,10 @@ import gdg.hfs.orchestration.CommandContext;
 import org.junit.Before;
 import org.junit.Test;
 
+import javax.ws.rs.NotFoundException;
 import java.util.UUID;
 
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -23,9 +27,8 @@ import static org.mockito.internal.verification.VerificationModeFactory.times;
 public class Vps4ModifyCdnSiteTest {
     ActionService actionService = mock(ActionService.class);
     CdnService cdnService = mock(CdnService.class);
-    CdnDataService cdnDataService = mock(CdnDataService.class);
     Cryptography cryptography = mock(Cryptography.class);
-    Vps4ModifyCdnSite command = new Vps4ModifyCdnSite(actionService, cdnDataService, cdnService, cryptography);
+    Vps4ModifyCdnSite command = new Vps4ModifyCdnSite(actionService, cdnService, cryptography);
     CommandContext context = mock(CommandContext.class);
 
     UUID vmId = UUID.randomUUID();
@@ -38,7 +41,7 @@ public class Vps4ModifyCdnSiteTest {
 
     byte[] encryptedJwt = encryptedJwtString.getBytes();
     Vps4ModifyCdnSite.Request request;
-    VmCdnSite vmCdnSite;
+    CdnDetail cdnDetail;
 
     @Before
     public void setUp() {
@@ -50,20 +53,20 @@ public class Vps4ModifyCdnSiteTest {
         request.shopperId = shopperId;
         request.cacheLevel = CdnCacheLevel.CACHING_DISABLED;
         request.bypassWAF = CdnBypassWAF.DISABLED;
-        vmCdnSite = new VmCdnSite();
-        vmCdnSite.siteId = siteId;
-        vmCdnSite.vmId = vmId;
+        cdnDetail = new CdnDetail();
+        cdnDetail.siteId = siteId;
+        cdnDetail.status = CdnStatus.SUCCESS;
 
-        when(cdnDataService.getCdnSiteFromId(vmId, siteId)).thenReturn(vmCdnSite);
         when(cryptography.decrypt(any())).thenReturn(decryptedJwtString);
+        when(cdnService.getCdnSiteDetail(shopperId, decryptedJwtString, siteId, vmId, false)).thenReturn(cdnDetail);
     }
     
     @Test
     public void testExecuteSuccess() {
         command.execute(context, request);
 
-        verify(cdnDataService, times(1)).getCdnSiteFromId(vmId, siteId);
-        verify(cryptography, times(1)).decrypt(encryptedJwt);
+        verify(cdnService, times(1)).getCdnSiteDetail(shopperId, decryptedJwtString, siteId, vmId, false);
+        verify(cryptography, times(2)).decrypt(encryptedJwt);
         verify(cdnService, times(1))
                 .updateCdnSite(shopperId, decryptedJwtString, siteId,
                         CdnCacheLevel.CACHING_DISABLED,
@@ -76,8 +79,8 @@ public class Vps4ModifyCdnSiteTest {
 
         command.execute(context, request);
 
-        verify(cdnDataService, times(1)).getCdnSiteFromId(vmId, siteId);
-        verify(cryptography, times(1)).decrypt(encryptedJwt);
+        verify(cdnService, times(1)).getCdnSiteDetail(shopperId, decryptedJwtString, siteId, vmId, false);
+        verify(cryptography, times(2)).decrypt(encryptedJwt);
         verify(cdnService, times(1))
                 .updateCdnSite(shopperId, decryptedJwtString, siteId,
                         null,
@@ -90,17 +93,47 @@ public class Vps4ModifyCdnSiteTest {
 
         command.execute(context, request);
 
-        verify(cdnDataService, times(1)).getCdnSiteFromId(vmId, siteId);
-        verify(cryptography, times(1)).decrypt(encryptedJwt);
+        verify(cdnService, times(1)).getCdnSiteDetail(shopperId, decryptedJwtString, siteId, vmId, false);
+        verify(cryptography, times(2)).decrypt(encryptedJwt);
         verify(cdnService, times(1))
                 .updateCdnSite(shopperId, decryptedJwtString, siteId,
                         CdnCacheLevel.CACHING_DISABLED,
                         null);
     }
 
+    @Test
+    public void testDoesNotCallCdnOnPendingStatus() {
+        cdnDetail.status = CdnStatus.PENDING;
+        when(cdnService.getCdnSiteDetail(shopperId, decryptedJwtString, siteId, vmId, false)).thenReturn(cdnDetail);
+
+        command.execute(context, request);
+
+        verify(cdnService, times(1)).getCdnSiteDetail(shopperId, decryptedJwtString, siteId, vmId, false);
+        verify(cryptography, times(1)).decrypt(encryptedJwt);
+        verify(cdnService, times(0))
+                .updateCdnSite(anyString(), anyString(), anyString(),
+                        any(),
+                        any());
+    }
+
+    @Test
+    public void testDoesNotCallCdnOnFailedStatus() {
+        cdnDetail.status = CdnStatus.FAILED;
+        when(cdnService.getCdnSiteDetail(shopperId, decryptedJwtString, siteId, vmId, false)).thenReturn(cdnDetail);
+
+        command.execute(context, request);
+
+        verify(cdnService, times(1)).getCdnSiteDetail(shopperId, decryptedJwtString, siteId, vmId, false);
+        verify(cryptography, times(1)).decrypt(encryptedJwt);
+        verify(cdnService, times(0))
+                .updateCdnSite(anyString(), anyString(), anyString(),
+                        any(),
+                        any());
+    }
+
     @Test(expected = RuntimeException.class)
-    public void testExecuteCdnNotFound() {
-        when(cdnDataService.getCdnSiteFromId(vmId, siteId)).thenReturn(null);
+    public void testExecuteCdnNotFoundThrowsException() {
+        when(cdnService.getCdnSiteDetail(shopperId, decryptedJwtString, siteId, vmId, false)).thenThrow(new NotFoundException());
         command.execute(context, request);
     }
 }

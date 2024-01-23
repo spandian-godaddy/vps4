@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -17,6 +18,11 @@ import java.util.function.Function;
 
 import javax.sql.DataSource;
 
+import com.godaddy.vps4.cdn.CdnDataService;
+import com.godaddy.vps4.cdn.model.CdnBypassWAF;
+import com.godaddy.vps4.cdn.model.CdnCacheLevel;
+import com.godaddy.vps4.cdn.model.VmCdnSite;
+import com.godaddy.vps4.orchestration.cdn.Vps4ModifyCdnSite;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -64,30 +70,26 @@ public class Vps4ProcessAccountCancellationTest {
     private UUID orionGuid;
     private VirtualMachine vm;
     private VirtualMachine dedicatedServer;
-    private long hfsVmId = 4567;
     private long stopActionId = 1234;
     private VirtualMachineCredit virtualMachineCredit;
     private Vps4ProcessAccountCancellation.Request request;
+    private VmCdnSite vmCdnSite = mock(VmCdnSite.class);
     private static VmService vmService = mock(VmService.class);
+    private static CdnDataService cdnDataService = mock(CdnDataService.class);
     private static Config config  = mock(Config.class);
     private VmAction rescueDedicatedVmAction;
 
     @Inject Vps4UserService vps4UserService;
     @Inject ProjectService projectService;
     @Inject VirtualMachineService vps4VmService;
-    @Inject ActionService actionService;
-    @Inject HfsVmTrackingRecordService hfsVmTrackingRecordService;
     @Inject Vps4ProcessAccountCancellation command;
 
     @Captor private ArgumentCaptor<Function<CommandContext, Long>> calculateValidUntilLambdaCaptor;
-    @Captor private ArgumentCaptor<Function<CommandContext, Long>> createStopVmActionLambdaCaptor;
-    @Captor private ArgumentCaptor<Function<CommandContext, Long>> createCancelAccountActionLambdaCaptor;
     @Captor private ArgumentCaptor<Function<CommandContext, VirtualMachine>> getVirtualMachineLambdaCaptor;
-    @Captor private ArgumentCaptor<VmActionRequest> actionRequestArgumentCaptor;
     @Captor private ArgumentCaptor<Function<CommandContext, Void>> markZombieLambdaCaptor;
     @Captor private ArgumentCaptor<ScheduleZombieVmCleanup.Request> zombieCleanupArgumentCaptor;
     @Captor private ArgumentCaptor<Vps4RecordScheduledJobForVm.Request> recordJobArgumentCaptor;
-    @Captor private ArgumentCaptor<Function<CommandContext, VmAction>> stopDedicatedLambdaCaptor;
+    @Captor private ArgumentCaptor<Vps4ModifyCdnSite.Request> modifyCdnSiteLambdaCaptor;
 
     @BeforeClass
     public static void newInjector() {
@@ -101,6 +103,7 @@ public class Vps4ProcessAccountCancellationTest {
                         bind(VirtualMachineService.class).to(JdbcVirtualMachineService.class);
                         bind(VmService.class).toInstance(vmService);
                         bind(HfsVmTrackingRecordService.class).to(JdbcHfsVmTrackingRecordService.class);
+                        bind(CdnDataService.class).toInstance(cdnDataService);
                     }
                 }
         );
@@ -111,6 +114,8 @@ public class Vps4ProcessAccountCancellationTest {
         injector.injectMembers(this);
         MockitoAnnotations.initMocks(this);
         addTestSqlData();
+        vmCdnSite.vmId = vps4VmId;
+        vmCdnSite.siteId = "fakeSiteId";
         context = setupMockContext();
         virtualMachineCredit = getVirtualMachineCredit(vps4VmId);
         request = new Vps4ProcessAccountCancellation.Request();
@@ -118,6 +123,7 @@ public class Vps4ProcessAccountCancellationTest {
         request.setActionId(1);
         buildRescueDedicatedVmAction();
         when(vmService.rescueVm(dedicatedServer.hfsVmId)).thenReturn(rescueDedicatedVmAction);
+        when(cdnDataService.getActiveCdnSitesOfVm(vm.vmId)).thenReturn(Collections.singletonList(vmCdnSite));
     }
 
     @After
@@ -140,6 +146,7 @@ public class Vps4ProcessAccountCancellationTest {
         VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
                 .withAccountGuid(orionGuid.toString())
                 .withProductMeta(productMeta)
+                .withShopperID("fakeShopperId")
                 .build();
         return credit;
     }
@@ -151,7 +158,6 @@ public class Vps4ProcessAccountCancellationTest {
         dedicatedServer = SqlTestData.insertDedicatedVm(vps4VmService, vps4UserService);
         vps4VmId = vm.vmId;
         orionGuid = vm.orionGuid;
-        hfsVmId = vm.hfsVmId;
     }
 
     @SuppressWarnings("unchecked")
@@ -194,6 +200,40 @@ public class Vps4ProcessAccountCancellationTest {
         Function<CommandContext, VirtualMachine> lambda = getVirtualMachineLambdaCaptor.getValue();
         VirtualMachine getVirtualMachine = lambda.apply(context);
         Assert.assertEquals(vm.vmId, getVirtualMachine.vmId);
+    }
+
+    @Test
+    public void getsAndPausesCdnWhenAccountCancellationIsProcessed() {
+        command.execute(context, request);
+        verify(cdnDataService, times(1)).getActiveCdnSitesOfVm(vm.vmId);
+        verify(context, times(1))
+                .execute(eq("ModifyCdnSite-" + vmCdnSite.siteId), eq(Vps4ModifyCdnSite.class), modifyCdnSiteLambdaCaptor.capture());
+
+        Vps4ModifyCdnSite.Request req = modifyCdnSiteLambdaCaptor.getValue();
+        Assert.assertEquals(vm.vmId, req.vmId);
+        Assert.assertEquals(CdnBypassWAF.ENABLED, req.bypassWAF);
+        Assert.assertEquals(CdnCacheLevel.CACHING_DISABLED, req.cacheLevel);
+        Assert.assertEquals(null, req.encryptedCustomerJwt);
+        Assert.assertEquals(virtualMachineCredit.getShopperId(), req.shopperId);
+        Assert.assertEquals(vmCdnSite.siteId, req.siteId);
+    }
+
+    @Test
+    public void doesNotPauseCdnIfEmptyCdnListReturned() {
+        when(cdnDataService.getActiveCdnSitesOfVm(vm.vmId)).thenReturn(Collections.emptyList());
+
+        command.execute(context, request);
+        verify(cdnDataService, times(1)).getActiveCdnSitesOfVm(vm.vmId);
+        verify(context, times(0)).execute(eq(Vps4ModifyCdnSite.class), any());
+    }
+
+    @Test
+    public void doesNotPauseCdnIfNullCdnReturned() {
+        when(cdnDataService.getActiveCdnSitesOfVm(vm.vmId)).thenReturn(null);
+
+        command.execute(context, request);
+        verify(cdnDataService, times(1)).getActiveCdnSitesOfVm(vm.vmId);
+        verify(context, times(0)).execute(eq(Vps4ModifyCdnSite.class), any());
     }
 
     @Test
