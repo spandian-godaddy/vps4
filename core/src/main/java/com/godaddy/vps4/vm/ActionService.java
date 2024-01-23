@@ -8,7 +8,7 @@ import com.godaddy.vps4.util.ActionListFilters;
 
 public interface ActionService {
 
-    List<ActionWithOrionGuid> getActionsForFailedPercentMonitor(long windowSize);
+    List<ActionWithOrionGuid> getActionsForFailedPercentMonitor(int windowSize, int daysBack);
 
     long createAction(UUID resourceId, ActionType actionType, String request, String initiatedBy);
 

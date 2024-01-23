@@ -274,7 +274,8 @@ public class VmActionsMonitorResource {
     @GET
     @Path("/failedActionsPercent")
     public List<ActionTypeErrorData> getFailedActionsForAllTypes(
-            @ApiParam(value = "Number of actions to use in percentage calculation.") @DefaultValue("20") @QueryParam("windowSize") long windowSize,
+            @ApiParam(value = "Number of actions to use in percentage calculation.") @DefaultValue("20") @QueryParam("windowSize") int windowSize,
+            @ApiParam(value = "How many days worth of actions to use in percentage calculation.") @DefaultValue("14") @QueryParam("daysBack") int daysBack,
             @ApiParam(value = "A list of actions to filter the actions.") @DefaultValue("CREATE_VM")  @QueryParam("criticalActionType") List<String> criticalActionTypeList) {
         List<ActionTypeErrorData> result = new ArrayList<>();
 
@@ -283,7 +284,7 @@ public class VmActionsMonitorResource {
                                                 .collect(Collectors.toList());
 
         Map<Integer, ActionCheckpoint> checkpointMap = getCheckpointsMap();
-        List<ActionWithOrionGuid> actions = vmActionService.getActionsForFailedPercentMonitor(windowSize);
+        List<ActionWithOrionGuid> actions = vmActionService.getActionsForFailedPercentMonitor(windowSize, daysBack);
 
         for(ActionType type : ActionType.values()) {
             Instant beginDate = getBeginDateOfWindow(checkpointMap, type);

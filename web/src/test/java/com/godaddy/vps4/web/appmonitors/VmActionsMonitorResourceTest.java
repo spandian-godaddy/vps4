@@ -6,7 +6,6 @@ import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.argThat;
-import static org.mockito.Matchers.matches;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -227,9 +226,9 @@ public class VmActionsMonitorResourceTest {
         getTestList(5, ActionType.START_VM, ActionStatus.ERROR, actionList);
         List<ActionWithOrionGuid> actionWithOrionGuidList = actionList.stream().map(a->new ActionWithOrionGuid(a, orionGuid)).collect(Collectors.toList());
         List<ActionWithOrionGuid> emptyResultSet = new ArrayList<>();
-        when(vmActionService.getActionsForFailedPercentMonitor(10)).thenReturn(actionWithOrionGuidList).thenReturn(emptyResultSet);
+        when(vmActionService.getActionsForFailedPercentMonitor(10, 14)).thenReturn(actionWithOrionGuidList).thenReturn(emptyResultSet);
 
-        List<ActionTypeErrorData> errorData = vmActionsMonitorResource.getFailedActionsForAllTypes(10, Collections.<String> emptyList());
+        List<ActionTypeErrorData> errorData = vmActionsMonitorResource.getFailedActionsForAllTypes(10, 14, Collections.<String> emptyList());
 
         Assert.assertEquals(1, errorData.size());
         ActionTypeErrorData actionTypeErrorData = errorData.get(0);
@@ -248,9 +247,9 @@ public class VmActionsMonitorResourceTest {
         List<ActionWithOrionGuid> emptyResultSet = new ArrayList<>();
         List<String> criticalActionList = Arrays.asList("START_VM");
 
-        when(vmActionService.getActionsForFailedPercentMonitor(10)).thenReturn(actionWithOrionGuidList).thenReturn(emptyResultSet);
+        when(vmActionService.getActionsForFailedPercentMonitor(10, 14)).thenReturn(actionWithOrionGuidList).thenReturn(emptyResultSet);
 
-        List<ActionTypeErrorData> errorData = vmActionsMonitorResource.getFailedActionsForAllTypes(10, criticalActionList);
+        List<ActionTypeErrorData> errorData = vmActionsMonitorResource.getFailedActionsForAllTypes(10, 14, criticalActionList);
         Assert.assertEquals(1, errorData.size());
         ActionTypeErrorData actionTypeErrorData = errorData.get(0);
         Assert.assertEquals(5, actionTypeErrorData.failedActions.size());
@@ -270,9 +269,9 @@ public class VmActionsMonitorResourceTest {
 
         when(monitorService.getActionCheckpoint(ActionType.START_VM)).thenReturn(checkpoint);
 
-        when(vmActionService.getActionsForFailedPercentMonitor(10)).thenReturn(actionWithOrionGuidList).thenReturn(emptyList);
+        when(vmActionService.getActionsForFailedPercentMonitor(10, 14)).thenReturn(actionWithOrionGuidList).thenReturn(emptyList);
 
-        List<ActionTypeErrorData> errorData = vmActionsMonitorResource.getFailedActionsForAllTypes(10, Collections.<String> emptyList());
+        List<ActionTypeErrorData> errorData = vmActionsMonitorResource.getFailedActionsForAllTypes(10, 14, Collections.<String> emptyList());
         Assert.assertEquals(1, errorData.size());
         ActionTypeErrorData actionTypeErrorData = errorData.get(0);
         Assert.assertEquals(5, actionTypeErrorData.failedActions.size());
@@ -289,9 +288,9 @@ public class VmActionsMonitorResourceTest {
         actionWithOrionGuidList.stream().filter(a->a.action.status==ActionStatus.ERROR).findFirst().get().orionGuid = UUID.randomUUID();
         List<ActionWithOrionGuid> emptyList = new ArrayList<>();
 
-        when(vmActionService.getActionsForFailedPercentMonitor(10)).thenReturn(actionWithOrionGuidList).thenReturn(emptyList);
+        when(vmActionService.getActionsForFailedPercentMonitor(10, 14)).thenReturn(actionWithOrionGuidList).thenReturn(emptyList);
 
-        List<ActionTypeErrorData> errorData = vmActionsMonitorResource.getFailedActionsForAllTypes(10, Collections.<String> emptyList());
+        List<ActionTypeErrorData> errorData = vmActionsMonitorResource.getFailedActionsForAllTypes(10, 14, Collections.<String> emptyList());
         Assert.assertEquals(1, errorData.size());
         ActionTypeErrorData actionTypeErrorData = errorData.get(0);
         Assert.assertEquals(3, actionTypeErrorData.failedActions.size());
@@ -304,7 +303,7 @@ public class VmActionsMonitorResourceTest {
     public void testCheckForFailingActionsEmpty() {
         when(vmActionService.getActionList(any(ActionListFilters.class))).thenReturn(null);
 
-        List<ActionTypeErrorData> errorData = vmActionsMonitorResource.getFailedActionsForAllTypes(10, Collections.<String> emptyList());
+        List<ActionTypeErrorData> errorData = vmActionsMonitorResource.getFailedActionsForAllTypes(10, 14, Collections.<String> emptyList());
         Assert.assertEquals(0, errorData.size());
     }
 

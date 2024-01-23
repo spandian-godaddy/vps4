@@ -5,12 +5,6 @@ import java.util.List;
 
 import javax.inject.Singleton;
 
-import com.godaddy.vps4.cdn.CdnModule;
-import com.godaddy.vps4.entitlement.EntitlementsModule;
-import com.godaddy.vps4.jsd.JsdModule;
-import com.godaddy.vps4.move.VmMoveModule;
-import com.godaddy.vps4.cdn.CdnDataModule;
-import com.godaddy.vps4.productPackage.PackageModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,6 +19,8 @@ import com.godaddy.hfs.web.ServerModule;
 import com.godaddy.hfs.zookeeper.ZooKeeperModule;
 import com.godaddy.vps4.cache.CacheModule;
 import com.godaddy.vps4.cache.HazelcastCacheModule;
+import com.godaddy.vps4.cdn.CdnDataModule;
+import com.godaddy.vps4.cdn.CdnModule;
 import com.godaddy.vps4.cpanel.CpanelModule;
 import com.godaddy.vps4.credit.CreditModule;
 import com.godaddy.vps4.entitlement.EntitlementsModule;

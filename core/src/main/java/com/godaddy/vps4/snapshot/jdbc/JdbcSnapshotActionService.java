@@ -155,7 +155,7 @@ public class JdbcSnapshotActionService implements ActionService {
     }
 
     @Override
-    public List<ActionWithOrionGuid> getActionsForFailedPercentMonitor(long windowSize) {
+    public List<ActionWithOrionGuid> getActionsForFailedPercentMonitor(int windowSize, int daysBack) {
         throw new UnsupportedOperationException("Not yet implemented for snapshots");
     }
 
