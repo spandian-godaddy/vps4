@@ -44,7 +44,7 @@ public class WaitForCdnClearCacheJob implements Command<WaitForCdnClearCacheJob.
     @Override
     public Void execute(CommandContext context, WaitForCdnClearCacheJob.Request request) {
         CdnClientInvalidateStatusResponse statusResponse;
-        String customerJwt = cryptography.decrypt(request.encryptedCustomerJwt);
+        String customerJwt = cryptography.decryptIgnoreNull(request.encryptedCustomerJwt);
         do {
             statusResponse = Utils.runWithRetriesForServerAndProcessingErrorException(context,
                                                               logger,

@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.ws.rs.NotFoundException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -56,13 +57,15 @@ public class DefaultCdnService implements CdnService {
 
     @Override
     public List<CdnSite> getCdnSites(String shopperId, String customerJwt, UUID vmId) {
+        List<CdnSite> returnedSites = new ArrayList<>();
         List<VmCdnSite> vmCdnSiteList = cdnDataService.getActiveCdnSitesOfVm(vmId);
         List<CdnSite> cdnSites =  cdnClientService.getCdnSites(getAuthToken(shopperId, customerJwt));
-
         List<String> vmCdnSiteIds = vmCdnSiteList.stream().map(site -> site.siteId.toLowerCase()).collect(Collectors.toList());
-        cdnSites = cdnSites.stream().filter(cdnSite ->
-                vmCdnSiteIds.contains(cdnSite.siteId.toLowerCase())).collect(Collectors.toList());
-        return cdnSites;
+        if (cdnSites != null ) {
+            returnedSites = cdnSites.stream().filter(cdnSite ->
+                    vmCdnSiteIds.contains(cdnSite.siteId.toLowerCase())).collect(Collectors.toList());
+        }
+        return returnedSites;
     }
 
     @Override

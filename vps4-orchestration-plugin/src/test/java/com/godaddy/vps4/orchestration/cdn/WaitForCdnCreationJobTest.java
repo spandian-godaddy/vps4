@@ -54,7 +54,7 @@ public class WaitForCdnCreationJobTest {
         cdnDetail.productData = productData;
 
         when(cdnService.getCdnSiteDetail(anyString(), anyString(), anyString(), any(), anyBoolean())).thenReturn(cdnDetail);
-        when(cryptography.decrypt(any())).thenReturn(decryptedJwtString);
+        when(cryptography.decryptIgnoreNull(any())).thenReturn(decryptedJwtString);
 
         command = new WaitForCdnCreationJob(cdnService, cryptography);
     }

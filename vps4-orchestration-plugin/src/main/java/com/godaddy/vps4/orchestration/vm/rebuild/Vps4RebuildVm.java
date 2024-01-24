@@ -6,7 +6,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import com.godaddy.vps4.vm.PleskLicenseType;
+import com.godaddy.vps4.cdn.CdnDataService;
+import com.godaddy.vps4.cdn.model.VmCdnSite;
+import com.godaddy.vps4.orchestration.cdn.Vps4RemoveCdnSite;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,6 +69,7 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Void> {
     protected final HfsVmTrackingRecordService hfsVmTrackingRecordService;
     protected final NetworkService networkService;
     protected final ShopperNotesService shopperNotesService;
+    protected final CdnDataService cdnDataService;
 
     protected CommandContext context;
     protected UUID vps4VmId;
@@ -78,7 +81,7 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Void> {
     public Vps4RebuildVm(ActionService actionService, VirtualMachineService virtualMachineService,
                          NetworkService vps4NetworkService, VmUserService vmUserService, CreditService creditService,
                          PanoptaDataService panoptaDataService, HfsVmTrackingRecordService hfsVmTrackingRecordService,
-                         NetworkService networkService, ShopperNotesService shopperNotesService) {
+                         NetworkService networkService, ShopperNotesService shopperNotesService, CdnDataService cdnDataService) {
         super(actionService);
         this.virtualMachineService = virtualMachineService;
         this.vps4NetworkService = vps4NetworkService;
@@ -88,6 +91,7 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Void> {
         this.hfsVmTrackingRecordService = hfsVmTrackingRecordService;
         this.networkService = networkService;
         this.shopperNotesService = shopperNotesService;
+        this.cdnDataService = cdnDataService;
     }
 
     @Override
@@ -108,6 +112,8 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Void> {
         {
             getAndRemoveAdditionalIps(oldHfsVmId);
         }
+
+        getAndRemoveActiveCdnSites(request.rebuildVmInfo.shopperId, request.rebuildVmInfo.encryptedCustomerJwt);
 
         long newHfsVmId = rebuildServer(oldHfsVmId);
 
@@ -144,6 +150,20 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Void> {
                     networkService.destroyIpAddress(ip.addressId);
                     return null;
                 }, Void.class);
+            }
+        }
+    }
+
+    private void getAndRemoveActiveCdnSites(String shopperId, byte[] encryptedCustomerJwt) {
+        List<VmCdnSite> activeCdnSites = cdnDataService.getActiveCdnSitesOfVm(vps4VmId);
+        if (activeCdnSites != null) {
+            for (VmCdnSite site : activeCdnSites) {
+                Vps4RemoveCdnSite.Request req = new Vps4RemoveCdnSite.Request();
+                req.vmId = vps4VmId;
+                req.siteId = site.siteId;
+                req.shopperId = shopperId;
+                req.encryptedCustomerJwt = encryptedCustomerJwt;
+                context.execute("RemoveCdnSite-" + site.siteId, Vps4RemoveCdnSite.class, req);
             }
         }
     }

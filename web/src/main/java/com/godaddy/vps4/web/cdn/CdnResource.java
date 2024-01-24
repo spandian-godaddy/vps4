@@ -82,7 +82,7 @@ public class CdnResource {
     }
 
     private String getCustomerJwt() {
-        if (user.isShopper()) {
+        if (user.isShopper() && !user.isShopperInjected()) {
             return user.getToken().getJwt().getParsedString();
         }
         return null;
@@ -108,7 +108,6 @@ public class CdnResource {
     public List<CdnSite> getActiveCdnSites(@PathParam("vmId") UUID vmId) {
         VirtualMachine vm = vmResource.getVm(vmId);  // auth validation
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(vm.orionGuid);
-
         return cdnService.getCdnSites(credit.getShopperId(), getCustomerJwt(), vmId);
     }
 
@@ -135,7 +134,7 @@ public class CdnResource {
         submitCdnCreationReq.ipAddress = request.ipAddress;
         submitCdnCreationReq.vmId = vmId;
         submitCdnCreationReq.shopperId = credit.getShopperId();
-        submitCdnCreationReq.encryptedCustomerJwt = cryptography.encrypt(getCustomerJwt());
+        submitCdnCreationReq.encryptedCustomerJwt = cryptography.encryptIgnoreNull(getCustomerJwt());
         submitCdnCreationReq.bypassWAF = request.bypassWAF;
         submitCdnCreationReq.cacheLevel = validateAndReturnEnumValue(CdnCacheLevel.class, request.cacheLevel);
 
@@ -155,7 +154,7 @@ public class CdnResource {
         validateCdnReq.siteId = siteId;
         validateCdnReq.vmId = vmId;
         validateCdnReq.shopperId = credit.getShopperId();
-        validateCdnReq.encryptedCustomerJwt = cryptography.encrypt(getCustomerJwt());
+        validateCdnReq.encryptedCustomerJwt = cryptography.encryptIgnoreNull(getCustomerJwt());
 
         return createActionAndExecute(actionService, commandService, vmId,
                 ActionType.VALIDATE_CDN, validateCdnReq, "Vps4ValidateCdn", user);
@@ -173,7 +172,7 @@ public class CdnResource {
         request.siteId = siteId;
         request.vmId = vmId;
         request.shopperId = credit.getShopperId();
-        request.encryptedCustomerJwt = cryptography.encrypt(getCustomerJwt());
+        request.encryptedCustomerJwt = cryptography.encryptIgnoreNull(getCustomerJwt());
 
         return createActionAndExecute(actionService, commandService, vmId,
                 ActionType.CLEAR_CDN_CACHE, request, "Vps4ClearCdnCache", user);
@@ -191,7 +190,7 @@ public class CdnResource {
         request.siteId = siteId;
         request.vmId = vmId;
         request.shopperId = credit.getShopperId();
-        request.encryptedCustomerJwt = cryptography.encrypt(getCustomerJwt());
+        request.encryptedCustomerJwt = cryptography.encryptIgnoreNull(getCustomerJwt());
 
         return createActionAndExecute(actionService, commandService, vmId,
                 ActionType.DELETE_CDN,  request, "Vps4RemoveCdnSite", user);
@@ -210,7 +209,7 @@ public class CdnResource {
         request.siteId = siteId;
         request.vmId = vmId;
         request.shopperId = credit.getShopperId();
-        request.encryptedCustomerJwt = cryptography.encrypt(getCustomerJwt());
+        request.encryptedCustomerJwt = cryptography.encryptIgnoreNull(getCustomerJwt());
         request.bypassWAF = vmUpdateCdnRequest.bypassWAF;
         request.cacheLevel = validateAndReturnEnumValue(CdnCacheLevel.class, vmUpdateCdnRequest.cacheLevel);
 

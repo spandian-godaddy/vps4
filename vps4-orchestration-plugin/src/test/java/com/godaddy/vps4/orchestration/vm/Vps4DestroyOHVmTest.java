@@ -26,7 +26,7 @@ public class Vps4DestroyOHVmTest extends Vps4DestroyVmTest {
         super.setUp();
         // Run the same tests in Vps4DestroyVmTest but with Optimized Hosting VM destroy command
         command = new Vps4DestroyOHVm(actionService, networkService, shopperNotesService,
-                                      snapshotService, virtualMachineService);
+                                      snapshotService, virtualMachineService, cdnDataService);
     }
 
     @Override

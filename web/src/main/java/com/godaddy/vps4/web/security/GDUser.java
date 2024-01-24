@@ -17,6 +17,7 @@ public class GDUser {
     boolean isEmployee;
     boolean isAdmin;
     String username;
+    boolean isShopperInjected = false;
     List<Role> roles = Collections.singletonList(Role.CUSTOMER); // default
 
     public String getShopperId() {
@@ -53,6 +54,10 @@ public class GDUser {
 
     public boolean isEmployeeToShopper() {
         return isEmployee() && isShopper();
+    }
+
+    public boolean isShopperInjected() {
+        return this.isShopperInjected;
     }
 
     public boolean is3LetterAccount() {

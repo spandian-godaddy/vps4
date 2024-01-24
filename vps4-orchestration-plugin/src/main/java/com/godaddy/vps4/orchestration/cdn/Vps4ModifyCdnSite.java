@@ -56,13 +56,13 @@ public class Vps4ModifyCdnSite extends ActionCommand<Vps4ModifyCdnSite.Request, 
     public void issueCdnSiteModify() {
         logger.info("Attempting to modify cdn siteId {} of vmId {}", request.siteId, request.vmId);
         cdnService.updateCdnSite(request.shopperId,
-                cryptography.decrypt(request.encryptedCustomerJwt), request.siteId, request.cacheLevel, request.bypassWAF);
+                cryptography.decryptIgnoreNull(request.encryptedCustomerJwt), request.siteId, request.cacheLevel, request.bypassWAF);
     }
 
 
     public CdnDetail getAndVerifyCdnBelongsToVmId() {
         return cdnService.getCdnSiteDetail(request.shopperId,
-                cryptography.decrypt(request.encryptedCustomerJwt), request.siteId, request.vmId, false);
+                cryptography.decryptIgnoreNull(request.encryptedCustomerJwt), request.siteId, request.vmId, false);
     }
 
     public static class Request extends VmActionRequest {

@@ -41,7 +41,7 @@ public class WaitForCdnClearCacheJobTest {
         response.message = "success";
 
         when(cdnService.getCdnInvalidateCacheStatus(any(), any(), any(), any())).thenReturn(response);
-        when(cryptography.decrypt(any())).thenReturn(decryptedJwtString);
+        when(cryptography.decryptIgnoreNull(any())).thenReturn(decryptedJwtString);
 
         command = new WaitForCdnClearCacheJob(cdnService, cryptography);
     }

@@ -119,6 +119,17 @@ public class DefaultCdnServiceTest {
     }
 
     @Test
+    public void testGetCdnSitesNull() {
+        when(cdnClientService.getCdnSites(anyString())).thenReturn(null);
+
+        List<CdnSite> response = service.getCdnSites(shopperId, "customerJwt", vmId);
+        verify(vps4SsoService, times(0)).getDelegationToken("idp", shopperId);
+        verify(cdnClientService, times(1)).getCdnSites("sso-jwt customerJwt");
+
+        assertEquals(0, response.size());
+    }
+
+    @Test
     public void testGetCdnSitesFromListNoMatch() {
         VmCdnSite wrongCdnSite = new VmCdnSite();
         wrongCdnSite.siteId = "wrongSiteId";

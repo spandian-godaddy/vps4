@@ -33,6 +33,7 @@ public class XCertSubjectHeaderAuthenticatorTest {
         Assert.assertNotNull(user);
         Assert.assertEquals(Arrays.asList(Role.ADMIN), user.roles());
         Assert.assertNull(user.getShopperId());
+        Assert.assertEquals(false, user.isShopperInjected());
     }
 
     @Test
@@ -48,6 +49,7 @@ public class XCertSubjectHeaderAuthenticatorTest {
         Assert.assertNotNull(user);
         Assert.assertEquals(Arrays.asList(Role.ADMIN), user.roles());
         Assert.assertNull(user.getShopperId());
+        Assert.assertEquals(false, user.isShopperInjected());
     }
 
     @Test
@@ -63,6 +65,7 @@ public class XCertSubjectHeaderAuthenticatorTest {
         Assert.assertNotNull(user);
         Assert.assertEquals(Arrays.asList(Role.ADMIN), user.roles());
         Assert.assertNull(user.getShopperId());
+        Assert.assertEquals(false, user.isShopperInjected());
     }
 
     @Test
@@ -81,6 +84,7 @@ public class XCertSubjectHeaderAuthenticatorTest {
         Assert.assertNotNull(user);
         Assert.assertEquals(Arrays.asList(Role.ADMIN), user.roles());
         Assert.assertEquals("12345", user.getShopperId());
+        Assert.assertEquals(true, user.isShopperInjected());
     }
 
     @Test

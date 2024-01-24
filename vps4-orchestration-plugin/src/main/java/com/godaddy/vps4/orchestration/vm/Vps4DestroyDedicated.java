@@ -2,6 +2,7 @@ package com.godaddy.vps4.orchestration.vm;
 
 import javax.inject.Inject;
 
+import com.godaddy.vps4.cdn.CdnDataService;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.shopperNotes.ShopperNotesService;
@@ -25,8 +26,9 @@ public class Vps4DestroyDedicated extends Vps4DestroyVm {
                                 NetworkService networkService,
                                 ShopperNotesService shopperNotesService,
                                 SnapshotService snapshotService,
-                                VirtualMachineService virtualMachineService) {
-        super(actionService, networkService, shopperNotesService, snapshotService, virtualMachineService);
+                                VirtualMachineService virtualMachineService,
+                                CdnDataService cdnDataService) {
+        super(actionService, networkService, shopperNotesService, snapshotService, virtualMachineService, cdnDataService);
     }
 
     @Override

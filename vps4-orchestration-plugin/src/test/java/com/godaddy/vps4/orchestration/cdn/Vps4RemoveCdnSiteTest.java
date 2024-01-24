@@ -51,7 +51,7 @@ public class Vps4RemoveCdnSiteTest {
         vmCdnSite.vmId = vmId;
 
         when(cdnDataService.getCdnSiteFromId(vmId, siteId)).thenReturn(vmCdnSite);
-        when(cryptography.decrypt(any())).thenReturn(decryptedJwtString);
+        when(cryptography.decryptIgnoreNull(any())).thenReturn(decryptedJwtString);
     }
     
     @Test
@@ -59,7 +59,7 @@ public class Vps4RemoveCdnSiteTest {
         command.execute(context, request);
 
         verify(cdnDataService, times(1)).getCdnSiteFromId(vmId, siteId);
-        verify(cryptography, times(1)).decrypt(encryptedJwt);
+        verify(cryptography, times(1)).decryptIgnoreNull(encryptedJwt);
         verify(cdnService, times(1)).deleteCdnSite(shopperId, decryptedJwtString, siteId);
         verify(cdnDataService, times(1)).destroyCdnSite(vmId, siteId);
     }

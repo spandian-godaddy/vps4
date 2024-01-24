@@ -80,7 +80,7 @@ public class Vps4SubmitCdnCreation extends ActionCommand<Vps4SubmitCdnCreation.R
             try {
                 logger.info("Attempting to issue deletion of cdn siteId {} of vmId {}", siteId, request.vmId);
                 cdnService.deleteCdnSite(request.shopperId,
-                        cryptography.decrypt(request.encryptedCustomerJwt), siteId);
+                        cryptography.decryptIgnoreNull(request.encryptedCustomerJwt), siteId);
             } catch (Exception ignored) {}
             throw e;
         }
@@ -94,7 +94,7 @@ public class Vps4SubmitCdnCreation extends ActionCommand<Vps4SubmitCdnCreation.R
 
         CdnClientCreateResponse response = context.execute("SubmitCreateCdn",
                                     ctx -> cdnService.createCdn(request.shopperId,
-                                            cryptography.decrypt(request.encryptedCustomerJwt),
+                                            cryptography.decryptIgnoreNull(request.encryptedCustomerJwt),
                                             request.domain, address, request.cacheLevel.toString(), request.bypassWAF.toString()),
                 CdnClientCreateResponse.class);
 

@@ -83,6 +83,7 @@ public class SsoRequestAuthenticatorTest {
         Assert.assertEquals(true, user.isShopper());
         Assert.assertEquals(false, user.isAdmin());
         Assert.assertEquals(false, user.isEmployee());
+        Assert.assertEquals(false, user.isShopperInjected());
         Assert.assertEquals(Arrays.asList(Role.CUSTOMER), user.roles());
     }
 
@@ -97,6 +98,7 @@ public class SsoRequestAuthenticatorTest {
         Assert.assertEquals(true, user.isShopper());
         Assert.assertEquals(false, user.isAdmin());
         Assert.assertEquals(false, user.isEmployee());
+        Assert.assertEquals(false, user.isShopperInjected());
     }
 
     @Test
@@ -109,6 +111,7 @@ public class SsoRequestAuthenticatorTest {
         Assert.assertEquals(false, user.isShopper());
         Assert.assertEquals(true, user.isAdmin());
         Assert.assertEquals(true, user.isEmployee());
+        Assert.assertEquals(false, user.isShopperInjected());
         Assert.assertEquals(Arrays.asList(Role.ADMIN), user.roles());
     }
 
@@ -327,6 +330,7 @@ public class SsoRequestAuthenticatorTest {
         Assert.assertEquals(true, user.isShopper());
         Assert.assertEquals(true, user.isAdmin());
         Assert.assertEquals(true, user.isEmployee());
+        Assert.assertEquals(true, user.isShopperInjected());
         Assert.assertEquals(Arrays.asList(Role.ADMIN, Role.CUSTOMER), user.roles());
     }
 

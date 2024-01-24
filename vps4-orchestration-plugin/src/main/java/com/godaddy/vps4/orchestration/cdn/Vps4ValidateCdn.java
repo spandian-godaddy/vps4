@@ -53,7 +53,7 @@ public class Vps4ValidateCdn extends ActionCommand<Vps4ValidateCdn.Request, Void
         verifyCdnBelongsToVmId();
 
         CdnDetail cdnDetail = cdnService.getCdnSiteDetail(request.shopperId,
-                cryptography.decrypt(request.encryptedCustomerJwt), request.siteId, request.vmId, true);
+                cryptography.decryptIgnoreNull(request.encryptedCustomerJwt), request.siteId, request.vmId, true);
 
         CdnStatus status = getCdnStatus(cdnDetail);
 
@@ -89,7 +89,7 @@ public class Vps4ValidateCdn extends ActionCommand<Vps4ValidateCdn.Request, Void
     public void submitValidationRequestAndPoll(CommandContext context, CdnDetail cdnDetail) {
         context.execute("SubmitRequestCdnValidation", ctx -> {
             cdnService.validateCdn(request.shopperId,
-                    cryptography.decrypt(request.encryptedCustomerJwt),
+                    cryptography.decryptIgnoreNull(request.encryptedCustomerJwt),
                     request.siteId);
             return null;
         }, Void.class);
@@ -114,7 +114,7 @@ public class Vps4ValidateCdn extends ActionCommand<Vps4ValidateCdn.Request, Void
         try {
             logger.info("Attempting to issue deletion of cdn siteId {} of vmId {}", request.siteId, request.vmId);
             cdnService.deleteCdnSite(request.shopperId,
-                    cryptography.decrypt(request.encryptedCustomerJwt), request.siteId);
+                    cryptography.decryptIgnoreNull(request.encryptedCustomerJwt), request.siteId);
             cdnDataService.destroyCdnSite(request.vmId, request.siteId);
         } catch (Exception ignored) {}
         throw new RuntimeException("CDN status is FAILED for siteId " + request.siteId);

@@ -101,6 +101,7 @@ public class SsoRequestAuthenticator implements RequestAuthenticator<GDUser> {
             gdUser.username = ((JomaxSsoToken) token).getUsername();
             gdUser.shopperId = shopperOverride;
             gdUser.isEmployee = true;
+            gdUser.isShopperInjected = shopperOverride != null;
             setPrivilegeByGroups(gdUser, ((JomaxSsoToken) token).getGroups());
         }
         else if (token instanceof IdpSsoToken) {

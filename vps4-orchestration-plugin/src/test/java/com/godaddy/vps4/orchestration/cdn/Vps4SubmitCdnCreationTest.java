@@ -90,7 +90,7 @@ public class Vps4SubmitCdnCreationTest {
                 Matchers.<Function<CommandContext, CdnClientCreateResponse>>any(),
                 eq(CdnClientCreateResponse.class)))
                 .thenReturn(response);
-        when(cryptography.decrypt(any())).thenReturn(decryptedJwtString);
+        when(cryptography.decryptIgnoreNull(any())).thenReturn(decryptedJwtString);
         when(networkService.getActiveIpAddressOfVm(vmId, ipAddress.ipAddress)).thenReturn(ipAddress);
 
         command = new Vps4SubmitCdnCreation(actionService, cdnDataService, cdnService, networkService, cryptography);
@@ -139,7 +139,7 @@ public class Vps4SubmitCdnCreationTest {
         }
         catch(RuntimeException e) {
             verify(cdnService).deleteCdnSite(request.shopperId,
-                    cryptography.decrypt(request.encryptedCustomerJwt), siteId);
+                    cryptography.decryptIgnoreNull(request.encryptedCustomerJwt), siteId);
         }
     }
 }

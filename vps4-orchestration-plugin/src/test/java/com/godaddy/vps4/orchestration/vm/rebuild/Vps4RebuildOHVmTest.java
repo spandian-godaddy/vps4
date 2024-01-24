@@ -38,7 +38,7 @@ public class Vps4RebuildOHVmTest extends Vps4RebuildVmTest {
         doReturn(action).when(context).execute(eq("RebuildOHVm"), eq(RebuildVm.class), any());
         command = new Vps4RebuildOHVm(actionService, virtualMachineService, vps4NetworkService, vmUserService,
                                       creditService, panoptaDataService, hfsVmTrackingRecordService, networkService,
-                                      shopperNotesService);
+                                      shopperNotesService, cdnDataService);
     }
 
     @Override

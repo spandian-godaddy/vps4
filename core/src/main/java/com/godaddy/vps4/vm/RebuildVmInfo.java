@@ -16,6 +16,7 @@ public class RebuildVmInfo {
     public Image image;
     public String username;
     public byte[] encryptedPassword;
+    public byte[] encryptedCustomerJwt;
     public String zone;
     public String serverName;
     public String privateLabelId;

@@ -23,6 +23,9 @@ import java.util.List;
 import java.util.UUID;
 import java.util.function.Function;
 
+import com.godaddy.vps4.cdn.CdnDataService;
+import com.godaddy.vps4.cdn.model.VmCdnSite;
+import com.godaddy.vps4.orchestration.cdn.Vps4RemoveCdnSite;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -59,14 +62,16 @@ public class Vps4DestroyVmTest {
     ShopperNotesService shopperNotesService = mock(ShopperNotesService.class);
     SnapshotService snapshotService = mock(SnapshotService.class);
     VirtualMachineService virtualMachineService = mock(VirtualMachineService.class);
+    CdnDataService cdnDataService = mock(CdnDataService.class);
     CommandContext context = mock(CommandContext.class);
     Vps4DestroyVm.Request request = mock(Vps4DestroyVm.Request.class);
     VirtualMachine vm = mock(VirtualMachine.class);
     UUID vmId = UUID.randomUUID();
     IpAddress primaryIp = mock(IpAddress.class);
+    VmCdnSite vmCdnSite = mock(VmCdnSite.class);
 
     Vps4DestroyVm command = new Vps4DestroyVm(actionService, networkService, shopperNotesService,
-                                              snapshotService, virtualMachineService);
+                                              snapshotService, virtualMachineService, cdnDataService);
 
     @Before
     public void setUp() {
@@ -78,10 +83,18 @@ public class Vps4DestroyVmTest {
         request.virtualMachine = vm;
         request.actionId = 13L;
         request.gdUserName = "fake-employee";
+        request.shopperId = "fakeShopperId";
+        String encryptedJwtString = "fakeCustomerJwt";
+        request.encryptedCustomerJwt = encryptedJwtString.getBytes();
 
         primaryIp.hfsAddressId = 23L;
         primaryIp.validUntil = Instant.MAX;
+
+        vmCdnSite.siteId = "fakeSiteId";
+        vmCdnSite.vmId = vmId;
+
         when(networkService.getVmPrimaryAddress(vm.vmId)).thenReturn(primaryIp);
+        when(cdnDataService.getActiveCdnSitesOfVm(vmId)).thenReturn(Collections.singletonList(vmCdnSite));
     }
 
     @Test
@@ -139,6 +152,42 @@ public class Vps4DestroyVmTest {
         verify(context).execute(eq("MarkIpDeleted-" + primaryIp.addressId), lambda.capture(), eq(Void.class));
         lambda.getValue().apply(context);
         verify(networkService).destroyIpAddress(primaryIp.addressId);
+    }
+
+    @Test
+    public void executesRemoveCdnSite() {
+        ArgumentCaptor<Vps4RemoveCdnSite.Request> cdnRequest = ArgumentCaptor.forClass(Vps4RemoveCdnSite.Request.class);
+
+        command.execute(context, request);
+
+        verify(cdnDataService).getActiveCdnSitesOfVm(vmId);
+        verify(context).execute(eq("RemoveCdnSite-" + vmCdnSite.siteId), eq(Vps4RemoveCdnSite.class), cdnRequest.capture());
+
+        Vps4RemoveCdnSite.Request req = cdnRequest.getValue();
+        assertEquals(vm.vmId, req.vmId);
+        assertEquals(vmCdnSite.siteId, req.siteId);
+        assertEquals(request.shopperId, req.shopperId);
+        assertEquals(request.encryptedCustomerJwt, req.encryptedCustomerJwt);
+    }
+
+    @Test
+    public void doesNotExecuteRemoveCdnSiteIfNull() {
+        when(cdnDataService.getActiveCdnSitesOfVm(vmId)).thenReturn(null);
+
+        command.execute(context, request);
+
+        verify(cdnDataService).getActiveCdnSitesOfVm(vmId);
+        verify(context, times(0)).execute(startsWith("RemoveCdnSite-"), eq(Vps4RemoveIp.class), any());
+    }
+
+    @Test
+    public void doesNotExecuteRemoveCdnSiteIfEmpty() {
+        when(cdnDataService.getActiveCdnSitesOfVm(vmId)).thenReturn(Collections.emptyList());
+
+        command.execute(context, request);
+
+        verify(cdnDataService).getActiveCdnSitesOfVm(vmId);
+        verify(context, times(0)).execute(startsWith("RemoveCdnSite-"), eq(Vps4RemoveIp.class), any());
     }
 
     @Test

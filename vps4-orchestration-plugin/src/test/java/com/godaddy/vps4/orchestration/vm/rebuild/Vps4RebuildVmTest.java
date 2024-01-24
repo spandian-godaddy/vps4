@@ -18,11 +18,15 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
 
+import com.godaddy.vps4.cdn.CdnDataService;
+import com.godaddy.vps4.cdn.model.VmCdnSite;
+import com.godaddy.vps4.orchestration.cdn.Vps4RemoveCdnSite;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -81,6 +85,7 @@ public class Vps4RebuildVmTest {
     HfsVmTrackingRecordService hfsVmTrackingRecordService = mock(HfsVmTrackingRecordService.class);
     NetworkService networkService = mock(NetworkService.class);
     ShopperNotesService shopperNotesService = mock(ShopperNotesService.class);
+    CdnDataService cdnDataService = mock(CdnDataService.class);
 
     @Captor private ArgumentCaptor<SetupCompletedEmailRequest> setupEmailCaptor;
 
@@ -106,7 +111,9 @@ public class Vps4RebuildVmTest {
     ConfigureMailRelay setMailRelay = mock(ConfigureMailRelay.class);
     SetupPanopta setupPanopta = mock(SetupPanopta.class);
     SendSetupCompletedEmail sendSetupCompletedEmail = mock(SendSetupCompletedEmail.class);
+    Vps4RemoveCdnSite vps4RemoveCdnSite = mock(Vps4RemoveCdnSite.class);
 
+    VmCdnSite vmCdnSite = mock(VmCdnSite.class);
     Vps4RebuildVm command;
     Vps4RebuildVm.Request request;
 
@@ -123,6 +130,7 @@ public class Vps4RebuildVmTest {
         binder.bind(ConfigureMailRelay.class).toInstance(setMailRelay);
         binder.bind(SetupPanopta.class).toInstance(setupPanopta);
         binder.bind(SendSetupCompletedEmail.class).toInstance(sendSetupCompletedEmail);
+        binder.bind(Vps4RemoveCdnSite.class).toInstance(vps4RemoveCdnSite);
     });
     CommandContext context = spy(new TestCommandContext(new GuiceCommandProvider(injector)));
 
@@ -158,6 +166,7 @@ public class Vps4RebuildVmTest {
         request.rebuildVmInfo.serverName = vm.name;
         request.rebuildVmInfo.hostname = "host.name";
         request.rebuildVmInfo.encryptedPassword = "encrypted".getBytes();
+        request.rebuildVmInfo.encryptedCustomerJwt = "encryptedCustJwt".getBytes();
         request.rebuildVmInfo.shopperId = shopperId;
         request.rebuildVmInfo.keepAdditionalIps = true;
         request.rebuildVmInfo.gdUserName = "fake-employee";
@@ -171,13 +180,17 @@ public class Vps4RebuildVmTest {
         VmUser supportUser = new VmUser("support-123", vps4VmId, true, VmUserType.SUPPORT);
         when(vmUserService.listUsers(vps4VmId)).thenReturn(Arrays.asList(customerUser, supportUser));
 
+        vmCdnSite.siteId = "fakeSiteId";
+        vmCdnSite.vmId = vps4VmId;
+        when(cdnDataService.getActiveCdnSitesOfVm(vps4VmId)).thenReturn(Collections.singletonList(vmCdnSite));
+
         action = new VmAction();
         action.vmId = newHfsVmId;
         doReturn(action).when(context).execute(eq("CreateVm"), eq(CreateVm.class), any());
 
         command = new Vps4RebuildVm(actionService, virtualMachineService, vps4NetworkService, vmUserService,
                                     creditService, panoptaDataService, hfsVmTrackingRecordService, networkService,
-                                    shopperNotesService);
+                                    shopperNotesService, cdnDataService);
     }
 
     @Test
@@ -207,6 +220,39 @@ public class Vps4RebuildVmTest {
         UnbindIp.Request request = argument.getValue();
         assertEquals(hfsAddressId, request.hfsAddressId);
         assertEquals(true, request.forceIfVmInaccessible);
+    }
+
+    @Test
+    public void getsAndRemovesCdnSites() {
+        command.execute(context, request);
+        ArgumentCaptor<Vps4RemoveCdnSite.Request> argument = ArgumentCaptor.forClass(Vps4RemoveCdnSite.Request.class);
+
+        verify(cdnDataService, times(1)).getActiveCdnSitesOfVm(vps4VmId);
+        verify(context).execute(eq("RemoveCdnSite-" + vmCdnSite.siteId), eq(Vps4RemoveCdnSite.class), argument.capture());
+
+        Vps4RemoveCdnSite.Request req = argument.getValue();
+        assertEquals(vmCdnSite.siteId, req.siteId);
+        assertEquals(vps4VmId, req.vmId);
+        assertEquals(request.rebuildVmInfo.encryptedCustomerJwt, req.encryptedCustomerJwt);
+        assertEquals(request.rebuildVmInfo.shopperId, req.shopperId);
+    }
+
+    @Test
+    public void doesNotRemoveCdnSiteIfNullList() {
+        when(cdnDataService.getActiveCdnSitesOfVm(vps4VmId)).thenReturn(null);
+        command.execute(context, request);
+
+        verify(cdnDataService, times(1)).getActiveCdnSitesOfVm(vps4VmId);
+        verify(context, times(0)).execute(startsWith("RemoveCdnSite-"), eq(Vps4RemoveCdnSite.class), any());
+    }
+
+    @Test
+    public void doesNotRemoveCdnSiteIfEmptyList() {
+        when(cdnDataService.getActiveCdnSitesOfVm(vps4VmId)).thenReturn(Collections.emptyList());
+        command.execute(context, request);
+
+        verify(cdnDataService, times(1)).getActiveCdnSitesOfVm(vps4VmId);
+        verify(context, times(0)).execute(startsWith("RemoveCdnSite-"), eq(Vps4RemoveCdnSite.class), any());
     }
 
     @Test

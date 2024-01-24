@@ -1,5 +1,6 @@
 package com.godaddy.vps4.orchestration.vm.rebuild;
 
+import com.godaddy.vps4.cdn.CdnDataService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,9 +34,9 @@ public class Vps4RebuildDedicated extends Vps4RebuildVm {
                                 NetworkService vps4NetworkService, VmUserService vmUserService,
                                 CreditService creditService, PanoptaDataService panoptaDataService,
                                 HfsVmTrackingRecordService hfsVmTrackingRecordService, NetworkService networkService,
-                                ShopperNotesService shopperNotesService) {
+                                ShopperNotesService shopperNotesService, CdnDataService cdnDataService) {
         super(actionService, virtualMachineService, vps4NetworkService, vmUserService, creditService,
-              panoptaDataService, hfsVmTrackingRecordService, networkService, shopperNotesService);
+              panoptaDataService, hfsVmTrackingRecordService, networkService, shopperNotesService, cdnDataService);
     }
 
     @Override

@@ -113,6 +113,13 @@ public class VmRebuildResource {
         public boolean keepAdditionalIps = true;
     }
 
+    private String getCustomerJwt() {
+        if (user.isShopper() && !user.isShopperInjected()) {
+            return user.getToken().getJwt().getParsedString();
+        }
+        return null;
+    }
+
     @POST
     @Path("{vmId}/rebuild")
     public VmAction rebuild(@PathParam("vmId") UUID vmId, RebuildVmRequest rebuildVmRequest) {
@@ -157,6 +164,7 @@ public class VmRebuildResource {
         rebuildVmInfo.hostname = StringUtils.isBlank(request.hostname) ? vm.hostname : request.hostname;
         rebuildVmInfo.serverName = StringUtils.isBlank(request.serverName) ? vm.name : request.serverName;
         rebuildVmInfo.encryptedPassword = cryptography.encrypt(request.password);
+        rebuildVmInfo.encryptedCustomerJwt = cryptography.encryptIgnoreNull(getCustomerJwt());
         rebuildVmInfo.rawFlavor = vm.spec.specName;
         rebuildVmInfo.sgid = projectService.getProject(vm.projectId).getVhfsSgid();
         rebuildVmInfo.username = StringUtils.isBlank(request.username) ? vmUserService.getPrimaryCustomer(vm.vmId).username : request.username;

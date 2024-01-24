@@ -25,6 +25,7 @@ import java.util.function.Function;
 
 import javax.sql.DataSource;
 
+import com.godaddy.vps4.cdn.CdnDataService;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -106,6 +107,7 @@ public class Vps4RebuildDedicatedTest {
     @Inject private Cryptography cryptography;
     private final PanoptaDataService panoptaDataService = mock(PanoptaDataService.class);
     private final NetworkService networkService = mock(NetworkService.class);
+    private final CdnDataService cdnDataService = mock(CdnDataService.class);
     private final ShopperNotesService shopperNotesService = mock(ShopperNotesService.class);
     HfsVmTrackingRecordService hfsVmTrackingRecordService = mock(HfsVmTrackingRecordService.class);
 
@@ -152,7 +154,7 @@ public class Vps4RebuildDedicatedTest {
 
         command = new Vps4RebuildDedicated(actionService, spyVps4VmService, networkService, spyVmUserService,
                                            creditService, panoptaDataService, hfsVmTrackingRecordService,
-                                           networkService, shopperNotesService);
+                                           networkService, shopperNotesService, cdnDataService);
         addTestSqlData();
 
         vps4NewVm = mock(VirtualMachine.class);

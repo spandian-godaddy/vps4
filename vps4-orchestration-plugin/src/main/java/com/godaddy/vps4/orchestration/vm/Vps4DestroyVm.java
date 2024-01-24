@@ -6,6 +6,10 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import com.godaddy.vps4.cdn.CdnDataService;
+import com.godaddy.vps4.cdn.CdnService;
+import com.godaddy.vps4.cdn.model.VmCdnSite;
+import com.godaddy.vps4.orchestration.cdn.Vps4RemoveCdnSite;
 import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,12 +46,15 @@ public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4Dest
 
     private static final Logger logger = LoggerFactory.getLogger(Vps4DestroyVm.class);
     private final NetworkService networkService;
+    private final CdnDataService cdnDataService;
     private final ShopperNotesService shopperNotesService;
     private final SnapshotService snapshotService;
     private final VirtualMachineService virtualMachineService;
     private CommandContext context;
     private VirtualMachine vm;
     private String gdUserName;
+    private String shopperId;
+    private byte[] encryptedCustomerJwt;
     private long actionId;
 
     @Inject
@@ -55,12 +62,14 @@ public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4Dest
                          NetworkService networkService,
                          ShopperNotesService shopperNotesService,
                          SnapshotService snapshotService,
-                         VirtualMachineService virtualMachineService) {
+                         VirtualMachineService virtualMachineService,
+                         CdnDataService cdnDataService) {
         super(actionService);
         this.networkService = networkService;
         this.shopperNotesService = shopperNotesService;
         this.snapshotService = snapshotService;
         this.virtualMachineService = virtualMachineService;
+        this.cdnDataService = cdnDataService;
     }
 
     @Override
@@ -68,6 +77,8 @@ public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4Dest
         this.context = context;
         this.vm = request.virtualMachine;
         this.gdUserName = request.gdUserName;
+        this.shopperId = request.shopperId;
+        this.encryptedCustomerJwt = request.encryptedCustomerJwt;
         this.actionId = request.actionId;
 
         logger.info("Destroying server {}", vm.vmId);
@@ -80,6 +91,7 @@ public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4Dest
             unlicenseControlPanel();
             removeMonitoring();
             removeIp();
+            getAndRemoveActiveCdnSites();
             deleteAutomaticBackupSchedule();
             deleteAllScheduledJobsForVm();
             deleteSupportUsersInDatabase();
@@ -163,6 +175,20 @@ public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4Dest
         context.execute("RemoveIp-" + address.addressId, Vps4RemoveIp.class, address);
     }
 
+    private void getAndRemoveActiveCdnSites() {
+        List<VmCdnSite> activeCdnSites = cdnDataService.getActiveCdnSitesOfVm(vm.vmId);
+        if (activeCdnSites != null) {
+            for (VmCdnSite site : activeCdnSites) {
+                Vps4RemoveCdnSite.Request req = new Vps4RemoveCdnSite.Request();
+                req.vmId = vm.vmId;
+                req.siteId = site.siteId;
+                req.shopperId = this.shopperId;
+                req.encryptedCustomerJwt = this.encryptedCustomerJwt;
+                context.execute("RemoveCdnSite-" + site.siteId, Vps4RemoveCdnSite.class, req);
+            }
+        }
+    }
+
     private void deleteAutomaticBackupSchedule() {
         if (hasAutomaticBackupJobScheduled(vm)) {
             try {
@@ -242,6 +268,8 @@ public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4Dest
 
     public static class Request extends VmActionRequest {
         public String gdUserName;
+        public String shopperId;
+        public byte[] encryptedCustomerJwt;
     }
 
     public static class Response {

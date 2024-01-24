@@ -39,7 +39,7 @@ public class Vps4RebuildDedicatedTest extends Vps4RebuildVmTest {
         doReturn(action).when(context).execute(eq("RebuildDedicated"), eq(RebuildVm.class), any());
         command = new Vps4RebuildDedicated(actionService, virtualMachineService, vps4NetworkService, vmUserService,
                                            creditService, panoptaDataService, hfsVmTrackingRecordService,
-                                           networkService, shopperNotesService);
+                                           networkService, shopperNotesService, cdnDataService);
     }
 
     @Override

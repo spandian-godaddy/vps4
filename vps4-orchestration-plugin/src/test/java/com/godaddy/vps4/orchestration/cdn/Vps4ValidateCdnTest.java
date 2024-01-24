@@ -78,7 +78,7 @@ public class Vps4ValidateCdnTest {
         cdnDetail.productData = productData;
 
         when(cdnDataService.getCdnSiteFromId(vmId, siteId)).thenReturn(vmCdnSite);
-        when(cryptography.decrypt(any())).thenReturn(decryptedJwtString);
+        when(cryptography.decryptIgnoreNull(any())).thenReturn(decryptedJwtString);
         when(cdnService.getCdnSiteDetail(anyString(), anyString(), anyString(), any(), anyBoolean())).thenReturn(cdnDetail);
 
         command = new Vps4ValidateCdn(actionService, cdnDataService, cdnService, cryptography);

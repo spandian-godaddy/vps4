@@ -56,7 +56,7 @@ public class Vps4RemoveCdnSite extends ActionCommand<Vps4RemoveCdnSite.Request, 
     public void issueCdnSiteDeletion() {
         logger.info("Attempting to issue deletion of cdn siteId {} of vmId {}", request.siteId, request.vmId);
         cdnService.deleteCdnSite(request.shopperId,
-                cryptography.decrypt(request.encryptedCustomerJwt), request.siteId);
+                cryptography.decryptIgnoreNull(request.encryptedCustomerJwt), request.siteId);
     }
 
     public void verifyCdnBelongsToVmId() {

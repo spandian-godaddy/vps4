@@ -64,7 +64,7 @@ public class Vps4ClearCdnCache extends ActionCommand<Vps4ClearCdnCache.Request, 
 
         CdnClientInvalidateCacheResponse response = context.execute("ClearCdnCache",
                                     ctx -> cdnService.invalidateCdnCache(request.shopperId,
-                                            cryptography.decrypt(request.encryptedCustomerJwt), request.siteId),
+                                            cryptography.decryptIgnoreNull(request.encryptedCustomerJwt), request.siteId),
                 CdnClientInvalidateCacheResponse.class);
 
         WaitForCdnClearCacheJob.Request waitRequest = new WaitForCdnClearCacheJob.Request();

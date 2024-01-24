@@ -62,7 +62,7 @@ public class WaitForCdnValidationStatusJob implements Command<WaitForCdnValidati
     @Override
     public Void execute(CommandContext context, WaitForCdnValidationStatusJob.Request request) {
         CdnDetail cdnDetail;
-        String customerJwt = cryptography.decrypt(request.encryptedCustomerJwt);
+        String customerJwt = cryptography.decryptIgnoreNull(request.encryptedCustomerJwt);
         do {
             cdnDetail = Utils.runWithRetriesForServerAndProcessingErrorException(context,
                                                               logger,

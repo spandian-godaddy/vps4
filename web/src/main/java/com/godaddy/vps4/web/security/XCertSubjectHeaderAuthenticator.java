@@ -84,6 +84,7 @@ public class XCertSubjectHeaderAuthenticator implements RequestAuthenticator<GDU
         gdUser.isEmployee = true;
         gdUser.isAdmin = true;
         gdUser.username = username;
+        gdUser.isShopperInjected = shopperId != null;
         gdUser.roles = Arrays.asList(Role.ADMIN); // If client cert authentication was used then the role assigned is that of admin
         return gdUser;
     }

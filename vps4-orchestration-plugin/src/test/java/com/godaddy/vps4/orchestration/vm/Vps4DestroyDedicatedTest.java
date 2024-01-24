@@ -26,7 +26,7 @@ public class Vps4DestroyDedicatedTest extends Vps4DestroyVmTest {
         super.setUp();
         // Run the same tests in Vps4DestroyVmTest but with Ded4 destroy command
         command = new Vps4DestroyDedicated(actionService, networkService, shopperNotesService,
-                                           snapshotService, virtualMachineService);
+                                           snapshotService, virtualMachineService, cdnDataService);
     }
 
     @Override

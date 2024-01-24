@@ -50,7 +50,7 @@ public class WaitForCdnCreationJob implements Command<WaitForCdnCreationJob.Requ
     @Override
     public Void execute(CommandContext context, WaitForCdnCreationJob.Request request) {
         CdnDetail cdnDetail;
-        String customerJwt = cryptography.decrypt(request.encryptedCustomerJwt);
+        String customerJwt = cryptography.decryptIgnoreNull(request.encryptedCustomerJwt);
         do {
             cdnDetail = Utils.runWithRetriesForServerAndProcessingErrorException(context,
                                                               logger,

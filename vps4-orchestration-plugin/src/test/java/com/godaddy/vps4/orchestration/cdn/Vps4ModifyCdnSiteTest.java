@@ -57,7 +57,7 @@ public class Vps4ModifyCdnSiteTest {
         cdnDetail.siteId = siteId;
         cdnDetail.status = CdnStatus.SUCCESS;
 
-        when(cryptography.decrypt(any())).thenReturn(decryptedJwtString);
+        when(cryptography.decryptIgnoreNull(any())).thenReturn(decryptedJwtString);
         when(cdnService.getCdnSiteDetail(shopperId, decryptedJwtString, siteId, vmId, false)).thenReturn(cdnDetail);
     }
     
@@ -66,7 +66,7 @@ public class Vps4ModifyCdnSiteTest {
         command.execute(context, request);
 
         verify(cdnService, times(1)).getCdnSiteDetail(shopperId, decryptedJwtString, siteId, vmId, false);
-        verify(cryptography, times(2)).decrypt(encryptedJwt);
+        verify(cryptography, times(2)).decryptIgnoreNull(encryptedJwt);
         verify(cdnService, times(1))
                 .updateCdnSite(shopperId, decryptedJwtString, siteId,
                         CdnCacheLevel.CACHING_DISABLED,
@@ -80,7 +80,7 @@ public class Vps4ModifyCdnSiteTest {
         command.execute(context, request);
 
         verify(cdnService, times(1)).getCdnSiteDetail(shopperId, decryptedJwtString, siteId, vmId, false);
-        verify(cryptography, times(2)).decrypt(encryptedJwt);
+        verify(cryptography, times(2)).decryptIgnoreNull(encryptedJwt);
         verify(cdnService, times(1))
                 .updateCdnSite(shopperId, decryptedJwtString, siteId,
                         null,
@@ -94,7 +94,7 @@ public class Vps4ModifyCdnSiteTest {
         command.execute(context, request);
 
         verify(cdnService, times(1)).getCdnSiteDetail(shopperId, decryptedJwtString, siteId, vmId, false);
-        verify(cryptography, times(2)).decrypt(encryptedJwt);
+        verify(cryptography, times(2)).decryptIgnoreNull(encryptedJwt);
         verify(cdnService, times(1))
                 .updateCdnSite(shopperId, decryptedJwtString, siteId,
                         CdnCacheLevel.CACHING_DISABLED,
@@ -109,7 +109,7 @@ public class Vps4ModifyCdnSiteTest {
         command.execute(context, request);
 
         verify(cdnService, times(1)).getCdnSiteDetail(shopperId, decryptedJwtString, siteId, vmId, false);
-        verify(cryptography, times(1)).decrypt(encryptedJwt);
+        verify(cryptography, times(1)).decryptIgnoreNull(encryptedJwt);
         verify(cdnService, times(0))
                 .updateCdnSite(anyString(), anyString(), anyString(),
                         any(),
@@ -124,7 +124,7 @@ public class Vps4ModifyCdnSiteTest {
         command.execute(context, request);
 
         verify(cdnService, times(1)).getCdnSiteDetail(shopperId, decryptedJwtString, siteId, vmId, false);
-        verify(cryptography, times(1)).decrypt(encryptedJwt);
+        verify(cryptography, times(1)).decryptIgnoreNull(encryptedJwt);
         verify(cdnService, times(0))
                 .updateCdnSite(anyString(), anyString(), anyString(),
                         any(),

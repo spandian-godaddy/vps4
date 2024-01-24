@@ -138,6 +138,13 @@ public class VmResource {
         this.dataCenterService = dataCenterService;
     }
 
+    private String getCustomerJwt() {
+        if (user.isShopper() && !user.isShopperInjected()) {
+            return user.getToken().getJwt().getParsedString();
+        }
+        return null;
+    }
+
     @GET
     @RequiresRole(roles = {GDUser.Role.ADMIN, GDUser.Role.CUSTOMER, GDUser.Role.SUSPEND_AUTH, GDUser.Role.HS_AGENT,
             GDUser.Role.HS_LEAD, GDUser.Role.VPS4_API_READONLY, GDUser.Role.C3_OTHER, GDUser.Role.EMPLOYEE_OTHER})
@@ -375,6 +382,8 @@ public class VmResource {
         Vps4DestroyVm.Request destroyRequest = new Vps4DestroyVm.Request();
         destroyRequest.virtualMachine = vm;
         destroyRequest.gdUserName = user.getUsername();
+        destroyRequest.encryptedCustomerJwt = cryptography.encryptIgnoreNull(getCustomerJwt());
+        destroyRequest.shopperId = user.isShopper() ? user.getShopperId(): creditService.getVirtualMachineCredit(vm.orionGuid).getShopperId();
 
         return createActionAndExecute(actionService, commandService, vm.vmId,
                                       ActionType.DESTROY_VM, destroyRequest, destroyMethod, user);

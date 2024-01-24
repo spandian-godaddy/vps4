@@ -74,7 +74,7 @@ public class Vps4ClearCdnCacheTest {
                 Matchers.<Function<CommandContext, CdnClientInvalidateCacheResponse>>any(),
                 eq(CdnClientInvalidateCacheResponse.class)))
                 .thenReturn(response);
-        when(cryptography.decrypt(any())).thenReturn(decryptedJwtString);
+        when(cryptography.decryptIgnoreNull(any())).thenReturn(decryptedJwtString);
         when(cdnService.invalidateCdnCache(shopperId, decryptedJwtString, siteId)).thenReturn(response);
 
         command = new Vps4ClearCdnCache(actionService, cdnDataService, cdnService, cryptography);

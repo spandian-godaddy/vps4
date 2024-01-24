@@ -15,7 +15,21 @@ public class Cryptography {
     public Cryptography(Config config) {
         key = getVps4EncryptionKey(config);
     }
-    
+
+    public byte[] encryptIgnoreNull(String source) {
+        if (source == null) {
+            return null;
+        }
+        return encrypt(source);
+    }
+
+    public String decryptIgnoreNull(byte[] encryptedData) {
+        if (encryptedData == null) {
+            return null;
+        }
+        return decrypt(encryptedData);
+    }
+
     public byte[] encrypt(String source) {
         try {
         return EncryptionUtil.encryptAes(source.getBytes(), key);
