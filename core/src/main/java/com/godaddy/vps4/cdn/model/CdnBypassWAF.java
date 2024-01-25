@@ -3,8 +3,8 @@ package com.godaddy.vps4.cdn.model;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public enum CdnBypassWAF {
-    @JsonProperty("enabled") ENABLED,
-    @JsonProperty("disabled") DISABLED;
+    ENABLED,
+    DISABLED;
 
     @Override
     public String toString() {
