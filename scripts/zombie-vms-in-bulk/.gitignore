@@ -1,0 +1,5 @@
+**/*.crt
+**/*.key
+**/*.p12
+**/*.pem
+node_modules
