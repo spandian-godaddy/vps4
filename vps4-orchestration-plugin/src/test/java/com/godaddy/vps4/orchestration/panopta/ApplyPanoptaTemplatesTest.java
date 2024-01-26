@@ -49,16 +49,16 @@ public class ApplyPanoptaTemplatesTest {
 
     private void setUpCredit() {
         when(credit.getOperatingSystem()).thenReturn("linux");
-        when(credit.getOrionGuid()).thenReturn(UUID.randomUUID());
+        when(credit.getEntitlementId()).thenReturn(UUID.randomUUID());
         when(credit.hasMonitoring()).thenReturn(false);
         when(credit.isManaged()).thenReturn(false);
-        when(creditService.getVirtualMachineCredit(credit.getOrionGuid())).thenReturn(credit);
+        when(creditService.getVirtualMachineCredit(credit.getEntitlementId())).thenReturn(credit);
     }
 
     private void setUpRequest() {
         request = new ApplyPanoptaTemplates.Request();
         request.vmId = UUID.randomUUID();
-        request.orionGuid = credit.getOrionGuid();
+        request.orionGuid = credit.getEntitlementId();
         request.partnerCustomerKey = "test-customer";
         request.serverId = 567856785678L;
     }

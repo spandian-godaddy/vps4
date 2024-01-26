@@ -70,7 +70,7 @@ public class Vps4PlanChange implements Command<Vps4PlanChange.Request, Void> {
         if (req.vm.managedLevel != req.credit.getManagedLevel() && req.credit.getManagedLevel() == 2) {
             UpdateManagedPanoptaTemplate.Request request = new UpdateManagedPanoptaTemplate.Request();
             request.vmId = req.vm.vmId;
-            request.orionGuid = req.credit.getOrionGuid();
+            request.orionGuid = req.credit.getEntitlementId();
             request.partnerCustomerKey = panoptaService.getPartnerCustomerKey(req.credit.getShopperId());
 
             context.execute(UpdateManagedPanoptaTemplate.class, request);

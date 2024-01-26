@@ -64,7 +64,7 @@ public class Vps4PlanChangeTest {
         IpAddress primaryIpAddress = new IpAddress(1, 0, credit.getProductId(), "1.2.3.4", IpAddressType.PRIMARY, null, null, 4);
         VirtualMachine vm = new VirtualMachine(credit.getProductId(),
                                                1234,
-                                               credit.getOrionGuid(),
+                                               credit.getEntitlementId(),
                                                1,
                                                null,
                                                "testVm",

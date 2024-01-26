@@ -68,14 +68,14 @@ public class CreditResourceTest {
     @Test
     public void testShopperGetCredit() {
         VirtualMachineCredit credit = getCreditResource().getCredit(orionGuid);
-        Assert.assertEquals(orionGuid, credit.getOrionGuid());
+        Assert.assertEquals(orionGuid, credit.getEntitlementId());
     }
 
     @Test
     public void testEmployeeGetCredit() {
         user = GDUserMock.createEmployee();
         VirtualMachineCredit credit = getCreditResource().getCredit(orionGuid);
-        Assert.assertEquals(orionGuid, credit.getOrionGuid());
+        Assert.assertEquals(orionGuid, credit.getEntitlementId());
 
     }
 
@@ -83,7 +83,7 @@ public class CreditResourceTest {
     public void testAdminGetCredit() {
         user = GDUserMock.createAdmin();
         VirtualMachineCredit credit = getCreditResource().getCredit(orionGuid);
-        Assert.assertEquals(orionGuid, credit.getOrionGuid());
+        Assert.assertEquals(orionGuid, credit.getEntitlementId());
     }
 
     @Test(expected=NotFoundException.class)

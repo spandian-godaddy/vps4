@@ -97,7 +97,7 @@ public class Vps4AccountMessageHandler implements MessageHandler {
         }
         VirtualMachine vm = getVirtualMachine(credit);
         if (vm == null) {
-            logger.info("Could not find an active virtual machine with orion guid {}", credit.getOrionGuid());
+            logger.info("Could not find an active virtual machine with entitlement id {}", credit.getEntitlementId());
         }
 
         handleMessageByNotificationType(vps4Message, credit, vm);
@@ -126,7 +126,7 @@ public class Vps4AccountMessageHandler implements MessageHandler {
                 vm = virtualMachineService.getVirtualMachine(credit.getProductId());
             }
         } catch (Exception ex) {
-            handleExceptionDuringVmLookup(credit.getOrionGuid(), ex);
+            handleExceptionDuringVmLookup(credit.getEntitlementId(), ex);
         }
         return vm;
     }
@@ -151,7 +151,6 @@ public class Vps4AccountMessageHandler implements MessageHandler {
                     processPlanChange(credit, vm);
                     break;
                 case RENEWED:
-                    ifVmSuspendedReinstateAccount(credit, vm);
                 case UPDATED:
                     processPlanChange(credit, vm);
                     break;
@@ -170,11 +169,6 @@ public class Vps4AccountMessageHandler implements MessageHandler {
         } catch (Exception ex) {
             handleMessageProcessingException(vps4Message, ex);
         }
-    }
-
-    private void ifVmSuspendedReinstateAccount(VirtualMachineCredit credit, VirtualMachine vm) {
-        if (credit.isVmSuspended() && !credit.isAccountSuspended())
-            reinstateServer(vm);
     }
 
     private void suspendServer(VirtualMachine vm) {
@@ -206,11 +200,11 @@ public class Vps4AccountMessageHandler implements MessageHandler {
             String resellerId = credit.getResellerId();
             if (resellerBlacklist.contains(resellerId)) {
                 logger.error("Credit's Reseller Id {} is suppressed for email template VPSWelcomeCpanel/VPSWelcomePlesk." +
-                        "No longer attempting to send FullyManagedWelcomeEmail to credit {}", resellerId, credit.getOrionGuid());
+                        "No longer attempting to send FullyManagedWelcomeEmail to credit {}", resellerId, credit.getEntitlementId());
             } else {
                 messagingService.sendFullyManagedEmail(credit.getShopperId(), credit.getControlPanel());
             }
-            creditService.updateProductMeta(credit.getOrionGuid(), ProductMetaField.FULLY_MANAGED_EMAIL_SENT, "true");
+            creditService.updateProductMeta(credit.getEntitlementId(), ProductMetaField.FULLY_MANAGED_EMAIL_SENT, "true");
         }
     }
 
@@ -225,7 +219,7 @@ public class Vps4AccountMessageHandler implements MessageHandler {
     }
 
     private void setPlanChangePendingInProductMeta(VirtualMachineCredit credit) {
-        creditService.updateProductMeta(credit.getOrionGuid(), ProductMetaField.PLAN_CHANGE_PENDING,
+        creditService.updateProductMeta(credit.getEntitlementId(), ProductMetaField.PLAN_CHANGE_PENDING,
                 String.valueOf(true));
     }
 
@@ -238,7 +232,7 @@ public class Vps4AccountMessageHandler implements MessageHandler {
 
     private void handleAccountCancellation(VirtualMachine vm, VirtualMachineCredit credit) {
         if (vm != null) {
-            logger.info("Vps4 account canceled: {}", credit.getOrionGuid());
+            logger.info("Vps4 account canceled: {}", credit.getEntitlementId());
             if (shouldTemporarilyRetainResources(credit)) {
                 logger.info("Zombie'ing associated server {}", vm.vmId);
                 this.vmZombieService.zombieVm(vm.vmId);
@@ -254,7 +248,7 @@ public class Vps4AccountMessageHandler implements MessageHandler {
             return true;
         }
 
-        long minAccountAgeInDays = Long.valueOf(config.get("vps4.zombie.minimum.account.age"));
+        long minAccountAgeInDays = Long.parseLong(config.get("vps4.zombie.minimum.account.age"));
         Duration ageOfAccount = Duration.between(credit.getPurchasedAt(), Instant.now());
         return ageOfAccount.toDays() >= minAccountAgeInDays;
     }

@@ -252,7 +252,7 @@ public class RequestValidation {
         if (!vmCredit.isOwnedByShopper(ssoShopperId)) {
             throw new ForbiddenException(
                     String.format("Shopper %s does not have privilege for vm request with orion guid %s",
-                            ssoShopperId, vmCredit.getOrionGuid()));
+                            ssoShopperId, vmCredit.getEntitlementId()));
         }
     }
 
@@ -279,7 +279,7 @@ public class RequestValidation {
     public static void validateCreditIsNotInUse(VirtualMachineCredit credit) {
         if (!credit.isUsable())
             throw new Vps4Exception("CREDIT_ALREADY_IN_USE",
-                    String.format("The virtual machine credit for orion guid %s is already provisioned'", credit.getOrionGuid()));
+                    String.format("The virtual machine credit for entitlement id %s is already provisioned'", credit.getEntitlementId()));
     }
 
     public static void validateDedResellerSelectedDc(DataCenterService dcService, String resellerId, int requestedDcId) {

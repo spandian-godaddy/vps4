@@ -68,7 +68,7 @@ public class VmUpgradeResourceTest {
         testVm.canceled = Instant.MAX;
         testVm.validUntil = Instant.MAX;
         testVm.vmId = UUID.randomUUID();
-        testVm.orionGuid = testCredit.getOrionGuid();
+        testVm.orionGuid = testCredit.getEntitlementId();
         testVm.dataCenter = new DataCenter(1, "phx3");
 
         virtualMachineService = mock(VirtualMachineService.class);
@@ -110,7 +110,7 @@ public class VmUpgradeResourceTest {
     @Test(expected = Vps4Exception.class)
     public void testUpgradeVmNoPlanChangePending() {
         testCredit = setupCredit(Boolean.FALSE);
-        when(creditService.getVirtualMachineCredit(testCredit.getOrionGuid())).thenReturn(testCredit);
+        when(creditService.getVirtualMachineCredit(testCredit.getEntitlementId())).thenReturn(testCredit);
         UpgradeVmRequest upgradeVmRequest= new UpgradeVmRequest();
         resource.upgradeVm(testVm.vmId, upgradeVmRequest);
     }
@@ -122,7 +122,7 @@ public class VmUpgradeResourceTest {
         testVm.spec.serverType.platform = ServerType.Platform.OPENSTACK;
         testVm.image = new Image();
         testVm.image.controlPanel = Image.ControlPanel.MYH;
-        when(creditService.getVirtualMachineCredit(testCredit.getOrionGuid())).thenReturn(testCredit);
+        when(creditService.getVirtualMachineCredit(testCredit.getEntitlementId())).thenReturn(testCredit);
         String password = "T0ta!1yRand0m";
         UpgradeVmRequest upgradeVmRequest= new UpgradeVmRequest();
         upgradeVmRequest.password = password;
@@ -137,7 +137,7 @@ public class VmUpgradeResourceTest {
         testVm.spec.serverType.platform = ServerType.Platform.OPENSTACK;
         testVm.image = new Image();
         testVm.image.controlPanel = Image.ControlPanel.MYH;
-        when(creditService.getVirtualMachineCredit(testCredit.getOrionGuid())).thenReturn(testCredit);
+        when(creditService.getVirtualMachineCredit(testCredit.getEntitlementId())).thenReturn(testCredit);
         String password = "";
         UpgradeVmRequest upgradeVmRequest= new UpgradeVmRequest();
         upgradeVmRequest.password = password;
@@ -149,7 +149,7 @@ public class VmUpgradeResourceTest {
         testVm.spec = new ServerSpec();
         testVm.spec.serverType = new ServerType();
         testVm.spec.serverType.platform = ServerType.Platform.OPTIMIZED_HOSTING;
-        when(creditService.getVirtualMachineCredit(testCredit.getOrionGuid())).thenReturn(testCredit);
+        when(creditService.getVirtualMachineCredit(testCredit.getEntitlementId())).thenReturn(testCredit);
         UpgradeVmRequest upgradeVmRequest= new UpgradeVmRequest();
         resource.upgradeVm(testVm.vmId, upgradeVmRequest);
         assertNull(upgradeVmRequest.password);
@@ -161,7 +161,7 @@ public class VmUpgradeResourceTest {
         testVm.spec = new ServerSpec();
         testVm.spec.serverType = new ServerType();
         testVm.spec.serverType.platform = ServerType.Platform.OVH;
-        when(creditService.getVirtualMachineCredit(testCredit.getOrionGuid())).thenReturn(testCredit);
+        when(creditService.getVirtualMachineCredit(testCredit.getEntitlementId())).thenReturn(testCredit);
         UpgradeVmRequest upgradeVmRequest= new UpgradeVmRequest();
         resource.upgradeVm(testVm.vmId, upgradeVmRequest);
     }

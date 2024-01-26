@@ -139,7 +139,7 @@ public class SetupPanopta implements Command<SetupPanopta.Request, Void> {
     private void applyTemplates(UUID vmId, PanoptaServerDetails serverDetails) {
         ApplyPanoptaTemplates.Request request = new ApplyPanoptaTemplates.Request();
         request.vmId = vmId;
-        request.orionGuid = credit.getOrionGuid();
+        request.orionGuid = credit.getEntitlementId();
         request.partnerCustomerKey = serverDetails.getPartnerCustomerKey();
         request.serverId = serverDetails.getServerId();
         context.execute(ApplyPanoptaTemplates.class, request);

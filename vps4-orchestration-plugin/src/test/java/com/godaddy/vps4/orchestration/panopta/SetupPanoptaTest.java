@@ -93,7 +93,7 @@ public class SetupPanoptaTest {
         when(credit.isManaged()).thenReturn(false);
         when(credit.hasMonitoring()).thenReturn(false);
         when(credit.getOperatingSystem()).thenReturn("LINUX");
-        when(credit.getOrionGuid()).thenReturn(orionGuid);
+        when(credit.getEntitlementId()).thenReturn(orionGuid);
         when(credit.getResellerId()).thenReturn("1");
         when(creditService.getVirtualMachineCredit(orionGuid)).thenReturn(credit);
     };

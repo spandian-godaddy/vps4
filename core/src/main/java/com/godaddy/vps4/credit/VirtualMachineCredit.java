@@ -20,39 +20,26 @@ public class VirtualMachineCredit {
 
     private final int MONITORING_ENABLED = 1;
 
-    private UUID orionGuid;
-    private int tier;
-    private int managedLevel;
-    private String operatingSystem;
-    private String controlPanel;
-    private Instant provisionDate;
-    private String shopperId;
-    private int monitoring;
-    private AccountStatus accountStatus;
-    private DataCenter dataCenter;
-    private UUID productId;
-    private boolean fullyManagedEmailSent;
-    private String resellerId;
-    private boolean planChangePending;
-    private int pfid;
-    private Instant purchasedAt;
-    private boolean suspended;
-    private UUID customerId;
-    private Instant expireDate;
-    private boolean autoRenew;
-    private String mssql;
+    public String resellerId;
+    public String shopperId;
+    public String mssql;
 
-    private VirtualMachineCredit() {
+    public ProdMeta prodMeta;
+    public EntitlementData entitlementData;
+
+    public VirtualMachineCredit() {
+        prodMeta = new ProdMeta();
+        entitlementData = new EntitlementData();
     }
 
     @JsonIgnore
     public boolean isAccountSuspended() {
-        return accountStatus == AccountStatus.SUSPENDED || accountStatus == AccountStatus.ABUSE_SUSPENDED;
+        return entitlementData.accountStatus == AccountStatus.SUSPENDED || entitlementData.accountStatus == AccountStatus.ABUSE_SUSPENDED;
     }
 
     @JsonIgnore
     public boolean isAccountRemoved() {
-        return accountStatus == AccountStatus.REMOVED;
+        return entitlementData.accountStatus == AccountStatus.REMOVED;
     }
 
     @JsonIgnore
@@ -62,24 +49,24 @@ public class VirtualMachineCredit {
 
     @JsonIgnore
     public boolean isUsable() {
-        return provisionDate == null;
+        return prodMeta.provisionDate == null;
     }
 
     @JsonProperty("hasMonitoring")
     public boolean hasMonitoring() {
-        if (this.isDed4() && this.managedLevel == 1)
+        if (this.isDed4() && this.entitlementData.managedLevel == 1)
         {
             return false;
         }
-        return monitoring == MONITORING_ENABLED;
+        return entitlementData.monitoring == MONITORING_ENABLED;
     }
 
     public Instant getPurchasedAt() {
-        return purchasedAt;
+        return prodMeta.purchasedAt;
     }
 
     public boolean isManaged() {
-        switch (managedLevel) {
+        switch (entitlementData.managedLevel) {
             case 2:
                 return true;
             case 1:
@@ -90,12 +77,12 @@ public class VirtualMachineCredit {
     }
 
     public boolean isDed4() {
-        return tier >= 60;
+        return entitlementData.tier >= 60;
     }
 
     @JsonIgnore
     public boolean isAccountActive() {
-        return accountStatus == AccountStatus.ACTIVE;
+        return entitlementData.accountStatus == AccountStatus.ACTIVE;
     }
 
     @Override
@@ -103,28 +90,28 @@ public class VirtualMachineCredit {
         return ReflectionToStringBuilder.toString(this, ToStringStyle.SHORT_PREFIX_STYLE);
     }
 
-    public UUID getOrionGuid() {
-        return orionGuid;
+    public UUID getEntitlementId() {
+        return entitlementData.entitlementId;
     }
 
     public int getTier() {
-        return tier;
+        return entitlementData.tier;
     }
 
     public int getManagedLevel() {
-        return managedLevel;
+        return entitlementData.managedLevel;
     }
 
     public String getOperatingSystem() {
-        return operatingSystem;
+        return entitlementData.operatingSystem;
     }
 
     public String getControlPanel() {
-        return controlPanel;
+        return entitlementData.controlPanel;
     }
 
     public Instant getProvisionDate() {
-        return provisionDate;
+        return prodMeta.provisionDate;
     }
 
     public String getShopperId() {
@@ -132,23 +119,23 @@ public class VirtualMachineCredit {
     }
 
     public int getMonitoring() {
-        return monitoring;
+        return entitlementData.monitoring;
     }
 
     public AccountStatus getAccountStatus() {
-        return accountStatus;
+        return entitlementData.accountStatus;
     }
 
     public DataCenter getDataCenter() {
-        return dataCenter;
+        return prodMeta.dataCenter;
     }
 
     public UUID getProductId() {
-        return productId;
+        return prodMeta.productId;
     }
 
     public boolean isFullyManagedEmailSent() {
-        return fullyManagedEmailSent;
+        return prodMeta.fullyManagedEmailSent;
     }
 
     public String getResellerId() {
@@ -156,22 +143,16 @@ public class VirtualMachineCredit {
     }
 
     public boolean isPlanChangePending() {
-        return planChangePending;
+        return prodMeta.planChangePending;
     }
 
     public int getPfid() {
-        return pfid;
+        return entitlementData.pfid;
     }
 
-    public boolean isVmSuspended() {
-        return suspended;
-    }
+    public Instant getExpireDate() { return entitlementData.expireDate; }
 
-    public Instant getExpireDate() { return expireDate; }
-
-    public boolean isAutoRenew() { return autoRenew; }
-
-    public UUID getCustomerId() { return customerId; }
+    public UUID getCustomerId() { return entitlementData.customerId; }
 
     public String getMssql() {
         return mssql;
@@ -195,38 +176,36 @@ public class VirtualMachineCredit {
 
         public VirtualMachineCredit build() {
             VirtualMachineCredit credit = new VirtualMachineCredit();
-            credit.orionGuid = this.accountGuid;
+            credit.entitlementData.entitlementId = this.accountGuid;
             if (planFeatures != null) {
-                credit.tier = Integer.parseInt(planFeatures.getOrDefault(PlanFeatures.TIER.toString(), "10"));
-                credit.managedLevel =
+                credit.entitlementData.tier = Integer.parseInt(planFeatures.getOrDefault(PlanFeatures.TIER.toString(), "10"));
+                credit.entitlementData.managedLevel =
                         Integer.parseInt(planFeatures.getOrDefault(PlanFeatures.MANAGED_LEVEL.toString(), "0"));
-                credit.monitoring = parseMonitoring(planFeatures.getOrDefault(PlanFeatures.MONITORING.toString(), "0"));
-                credit.operatingSystem = planFeatures.get(PlanFeatures.OPERATINGSYSTEM.toString());
-                if (credit.operatingSystem == null) {
+                credit.entitlementData.monitoring = parseMonitoring(planFeatures.getOrDefault(PlanFeatures.MONITORING.toString(), "0"));
+                credit.entitlementData.operatingSystem = planFeatures.get(PlanFeatures.OPERATINGSYSTEM.toString());
+                if (credit.entitlementData.operatingSystem == null) {
                     // Alternative field name from entitlement gateway
-                    credit.operatingSystem = planFeatures.get("operating_system");
+                    credit.entitlementData.operatingSystem = planFeatures.get("operating_system");
                 }
-                credit.controlPanel = planFeatures.get(PlanFeatures.CONTROL_PANEL_TYPE.toString());
-                credit.pfid = Integer.parseInt(planFeatures.getOrDefault(PlanFeatures.PF_ID.toString(), "0"));
+                credit.entitlementData.controlPanel = planFeatures.get(PlanFeatures.CONTROL_PANEL_TYPE.toString());
+                credit.entitlementData.pfid = Integer.parseInt(planFeatures.getOrDefault(PlanFeatures.PF_ID.toString(), "0"));
                 credit.mssql = planFeatures.get(PlanFeatures.MSSQL.toString());
             }
 
             if (productMeta != null) {
-                credit.provisionDate = getDateFromProductMeta(ProductMetaField.PROVISION_DATE.toString());
-                credit.purchasedAt = getDateFromProductMeta(ProductMetaField.PURCHASED_AT.toString());
-                credit.fullyManagedEmailSent = getFlagFromProductMeta(ProductMetaField.FULLY_MANAGED_EMAIL_SENT.toString());
-                credit.planChangePending = getFlagFromProductMeta(ProductMetaField.PLAN_CHANGE_PENDING.toString());
-                credit.dataCenter = getDataCenter();
-                credit.productId = getProductId();
-                credit.suspended = getFlagFromProductMeta(ProductMetaField.SUSPENDED.toString());
+                credit.prodMeta.provisionDate = getDateFromProductMeta(ProductMetaField.PROVISION_DATE.toString());
+                credit.prodMeta.purchasedAt = getDateFromProductMeta(ProductMetaField.PURCHASED_AT.toString());
+                credit.prodMeta.fullyManagedEmailSent = getFlagFromProductMeta(ProductMetaField.FULLY_MANAGED_EMAIL_SENT.toString());
+                credit.prodMeta.planChangePending = getFlagFromProductMeta(ProductMetaField.PLAN_CHANGE_PENDING.toString());
+                credit.prodMeta.dataCenter = getDataCenter();
+                credit.prodMeta.productId = getProductId();
             }
 
             credit.shopperId = this.shopperId;
-            credit.accountStatus = this.accountStatus;
+            credit.entitlementData.accountStatus = this.accountStatus;
             credit.resellerId = this.resellerId;
-            credit.customerId = this.customerId;
-            credit.expireDate = this.expireDate;
-            credit.autoRenew = this.autoRenew;
+            credit.entitlementData.customerId = this.customerId;
+            credit.entitlementData.expireDate = this.expireDate;
 
             return credit;
         }
@@ -268,11 +247,6 @@ public class VirtualMachineCredit {
 
         public Builder withExpireDate(Date expireDate) {
             this.expireDate = expireDate != null ? expireDate.toInstant() : null;
-            return this;
-        }
-
-        public Builder withAutoRenew(String autoRenew) {
-            this.autoRenew = Boolean.parseBoolean(autoRenew);
             return this;
         }
 

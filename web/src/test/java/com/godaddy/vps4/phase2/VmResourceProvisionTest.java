@@ -140,7 +140,7 @@ public class VmResourceProvisionTest {
 
     private void testProvisionVm() {
         VirtualMachineCredit credit = createVmCredit();
-        when(creditService.getVirtualMachineCredit(credit.getOrionGuid())).thenReturn(credit);
+        when(creditService.getVirtualMachineCredit(credit.getEntitlementId())).thenReturn(credit);
 
         VmAction vmAction = getVmResource().provisionVm(request);
         Assert.assertNotNull(vmAction.commandId);

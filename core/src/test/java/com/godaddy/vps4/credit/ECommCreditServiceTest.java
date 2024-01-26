@@ -102,7 +102,7 @@ public class ECommCreditServiceTest {
         when(ecommService.getAccount(orionGuid.toString())).thenReturn(account);
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(orionGuid);
 
-        assertEquals(orionGuid, credit.getOrionGuid());
+        assertEquals(orionGuid, credit.getEntitlementId());
     }
 
     @Test
@@ -123,13 +123,6 @@ public class ECommCreditServiceTest {
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(orionGuid);
 
         assertEquals(expireDate.toInstant(), credit.getExpireDate());
-    }
-
-    @Test
-    public void testGetCreditIncludesAutoRenew() {
-        when(ecommService.getAccount(orionGuid.toString())).thenReturn(account);
-        VirtualMachineCredit credit = creditService.getVirtualMachineCredit(orionGuid);
-        assertTrue(credit.isAutoRenew());
     }
 
     @Test
@@ -174,7 +167,7 @@ public class ECommCreditServiceTest {
         when(ecommService.getAccount(orionGuid.toString())).thenReturn(account);
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(orionGuid);
 
-        assertEquals(orionGuid, credit.getOrionGuid());
+        assertEquals(orionGuid, credit.getEntitlementId());
         assertEquals(Integer.parseInt(account.plan_features.get("tier")), credit.getTier());
         assertEquals(Integer.parseInt(account.plan_features.get("managed_level")), credit.getManagedLevel());
         assertEquals(account.plan_features.get("operatingsystem"), credit.getOperatingSystem());

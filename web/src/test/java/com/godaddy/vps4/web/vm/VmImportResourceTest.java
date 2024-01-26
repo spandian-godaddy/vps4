@@ -73,12 +73,12 @@ public class VmImportResourceTest {
     public void setupTest() {
         user = GDUserMock.createShopper();
         credit = createVmCredit(UUID.randomUUID(), AccountStatus.ACTIVE, "myh", 0, 0, 10, "Linux", null);
-        when(creditService.getVirtualMachineCredit(credit.getOrionGuid())).thenReturn(credit);
+        when(creditService.getVirtualMachineCredit(credit.getEntitlementId())).thenReturn(credit);
         when(config.get("vps4.datacenter.defaultId")).thenReturn("1");
         when(config.get("imported.datacenter.defaultId")).thenReturn("1");
 
         importVmRequest = new ImportVmRequest();
-        importVmRequest.entitlementId = credit.getOrionGuid();
+        importVmRequest.entitlementId = credit.getEntitlementId();
         importVmRequest.shopperId = user.getShopperId();
         importVmRequest.username = "testUser";
         importVmRequest.ip = "192.168.0.1";
@@ -114,7 +114,7 @@ public class VmImportResourceTest {
         when(vps4UserService.getOrCreateUserForShopper(user.getShopperId(), credit.getResellerId(), credit.getCustomerId())).thenReturn(vps4User);
 
         project = new Project(1, "testProject", "testSgid", Instant.now(), Instant.MAX, 321);
-        when(projectService.createProject(credit.getOrionGuid().toString(), vps4User.getId(), importVmRequest.sgid)).thenReturn(project);
+        when(projectService.createProject(credit.getEntitlementId().toString(), vps4User.getId(), importVmRequest.sgid)).thenReturn(project);
 
         virtualMachine = new VirtualMachine();
         virtualMachine.vmId = UUID.randomUUID();
@@ -260,8 +260,8 @@ public class VmImportResourceTest {
     @Test
     public void ImportVmDuplicateTest(){
         credit = createVmCredit(UUID.randomUUID(), AccountStatus.ACTIVE, "myh", 0, 0, 10, "Linux", Instant.now());
-        when(creditService.getVirtualMachineCredit(credit.getOrionGuid())).thenReturn(credit);
-        importVmRequest.entitlementId = credit.getOrionGuid();
+        when(creditService.getVirtualMachineCredit(credit.getEntitlementId())).thenReturn(credit);
+        importVmRequest.entitlementId = credit.getEntitlementId();
         try {
             vmImportResource.importVm(importVmRequest);
             Assert.fail("Exception not thrown");

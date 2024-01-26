@@ -126,7 +126,7 @@ public class VmZombieResource {
         Vps4ReviveZombieVm.Request request = new Vps4ReviveZombieVm.Request();
         request.vmId = vmId;
         request.newCreditId = newCreditId;
-        request.oldCreditId = oldCredit.getOrionGuid();
+        request.oldCreditId = oldCredit.getEntitlementId();
 
         return VmHelper.createActionAndExecute(actionService, commandService, vm.vmId,
                 ActionType.RESTORE_ACCOUNT, request, "Vps4ReviveZombieVm", user);
@@ -273,7 +273,7 @@ public class VmZombieResource {
         if (!credit.isAccountRemoved()) {
             throw new Vps4Exception("ACCOUNT_STATUS_NOT_REMOVED",
                     String.format("Cannot revive or zombie %s, account %s status is not removed.", vmId,
-                            credit.getOrionGuid()));
+                            credit.getEntitlementId()));
         }
     }
 }

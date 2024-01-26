@@ -65,13 +65,13 @@ public class BuilderTest {
         UUID orionGuid = UUID.randomUUID();
         VirtualMachineCredit credit = new Builder(dataCenterService)
             .withAccountGuid(orionGuid.toString()).build();
-        assertEquals(orionGuid, credit.getOrionGuid());
+        assertEquals(orionGuid, credit.getEntitlementId());
     }
 
     @Test
     public void withoutAccountGuid() {
         VirtualMachineCredit credit = new Builder(dataCenterService).build();
-        assertNull(credit.getOrionGuid());
+        assertNull(credit.getEntitlementId());
     }
 
     @Test
@@ -136,7 +136,6 @@ public class BuilderTest {
         assertEquals(fullyManagedEmailSent, credit.isFullyManagedEmailSent());
         assertEquals(planChangePending, credit.isPlanChangePending());
         assertEquals(productId, credit.getProductId());
-        assertFalse(credit.isVmSuspended());
     }
 
 

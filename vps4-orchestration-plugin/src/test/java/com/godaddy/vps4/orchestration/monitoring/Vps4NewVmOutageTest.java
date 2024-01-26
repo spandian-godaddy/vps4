@@ -69,7 +69,7 @@ public class Vps4NewVmOutageTest {
         when(request.virtualMachine.isActive()).thenReturn(true);
 
         credit = mock(VirtualMachineCredit.class);
-        when(credit.getOrionGuid()).thenReturn(request.virtualMachine.orionGuid);
+        when(credit.getEntitlementId()).thenReturn(request.virtualMachine.orionGuid);
         when(credit.getShopperId()).thenReturn("testShopperId");
         when(creditService.getVirtualMachineCredit(any())).thenReturn(credit);
         when(credit.isAccountActive()).thenReturn(true);
@@ -106,7 +106,7 @@ public class Vps4NewVmOutageTest {
         VmOutageEmailRequest arg2 = vmOutageEmailRequestArgumentCaptor.getValue();
         Assert.assertEquals(request.virtualMachine.name, arg2.accountName);
         Assert.assertEquals(request.virtualMachine.primaryIpAddress.ipAddress, arg2.ipAddress);
-        Assert.assertEquals(credit.getOrionGuid(), arg2.orionGuid);
+        Assert.assertEquals(credit.getEntitlementId(), arg2.orionGuid);
         Assert.assertEquals(credit.getShopperId(), arg2.shopperId);
         Assert.assertEquals(request.virtualMachine.vmId, arg2.vmId);
         Assert.assertEquals(outage.panoptaOutageId, arg2.vmOutage.panoptaOutageId);
