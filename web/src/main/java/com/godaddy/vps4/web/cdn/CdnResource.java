@@ -51,7 +51,6 @@ import static com.godaddy.vps4.web.util.VmHelper.createActionAndExecute;
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class CdnResource {
-    private static final int CDN_SIZE_LIMIT = 5;
     private static final Logger logger = LoggerFactory.getLogger(CdnResource.class);
     private final VmResource vmResource;
     private final CreditService creditService;
@@ -93,9 +92,9 @@ public class CdnResource {
         ActionType.CREATE_CDN, ActionType.VALIDATE_CDN);
     }
 
-    private void validateCdnSizeLimit(UUID vmId){
+    private void validateCdnSizeLimit(UUID vmId, int cdnSizeLimit){
         List<VmCdnSite> sites = cdnDataService.getActiveCdnSitesOfVm(vmId);
-        if(sites != null && sites.size() >= CDN_SIZE_LIMIT) {
+        if(sites != null && sites.size() >= cdnSizeLimit) {
             throw new Vps4Exception("SIZE_LIMIT_REACHED", "Vm has reached the maximum quota of allowed CDN sites");
         }
     }
@@ -126,7 +125,7 @@ public class CdnResource {
         VirtualMachine vm = vmResource.getVm(vmId);  // auth validation
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(vm.orionGuid);
 
-        validateCdnSizeLimit(vmId);
+        validateCdnSizeLimit(vmId, credit.entitlementData.cdnWaf);
         validateCdnConflictingActions(vmId);
 
         Vps4SubmitCdnCreation.Request submitCdnCreationReq = new Vps4SubmitCdnCreation.Request();

@@ -56,7 +56,8 @@ public class ECommCreditService implements CreditService {
         OPERATINGSYSTEM,
         CONTROL_PANEL_TYPE,
         PF_ID,
-        MSSQL;
+        MSSQL,
+        CDNWAF;
 
         @Override
         public String toString() {

@@ -168,7 +168,6 @@ public class VirtualMachineCredit {
         private final DataCenterService dataCenterService;
         private UUID customerId;
         private Instant expireDate;
-        private boolean autoRenew;
 
         public Builder(DataCenterService dataCenterService) {
             this.dataCenterService = dataCenterService;
@@ -190,6 +189,7 @@ public class VirtualMachineCredit {
                 credit.entitlementData.controlPanel = planFeatures.get(PlanFeatures.CONTROL_PANEL_TYPE.toString());
                 credit.entitlementData.pfid = Integer.parseInt(planFeatures.getOrDefault(PlanFeatures.PF_ID.toString(), "0"));
                 credit.mssql = planFeatures.get(PlanFeatures.MSSQL.toString());
+                credit.entitlementData.cdnWaf = Integer.parseInt(planFeatures.getOrDefault(PlanFeatures.CDNWAF.toString(), "0"));
             }
 
             if (productMeta != null) {

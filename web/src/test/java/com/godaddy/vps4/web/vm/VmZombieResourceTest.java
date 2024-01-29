@@ -120,13 +120,14 @@ public class VmZombieResourceTest {
     }
 
     private VirtualMachineCredit createVmCredit(UUID orionGuid, AccountStatus accountStatus, String controlPanel,
-            int monitoring, int managedLevel, int tier, String os, Instant provisionDate) {
+                                                int monitoring, int managedLevel, int tier, String os, Instant provisionDate, int cdnWaf) {
         Map<String, String> planFeatures = new HashMap<>();
         planFeatures.put("tier", String.valueOf(tier));
         planFeatures.put("managed_level", String.valueOf(managedLevel));
         planFeatures.put("control_panel_type", String.valueOf(controlPanel));
         planFeatures.put("monitoring", String.valueOf(monitoring));
         planFeatures.put("operatingsystem", os);
+        planFeatures.put("cdnwaf", String.valueOf(cdnWaf));
 
         Map<String, String> productMeta = new HashMap<>();
         if (provisionDate != null) {
@@ -146,12 +147,12 @@ public class VmZombieResourceTest {
     private VirtualMachineCredit createNewCredit(VirtualMachineCredit oldCredit, UUID newOrionGuid) {
         return createVmCredit(
                 newOrionGuid, AccountStatus.ACTIVE, oldCredit.getControlPanel(), oldCredit.getMonitoring(),
-                oldCredit.getManagedLevel(), oldCredit.getTier(), oldCredit.getOperatingSystem(), null);
+                oldCredit.getManagedLevel(), oldCredit.getTier(), oldCredit.getOperatingSystem(), null, 0);
     }
 
     private VirtualMachineCredit createOldCredit(VirtualMachine testVm, AccountStatus accountStatus) {
         return createVmCredit(
-                testVm.orionGuid, accountStatus, "cpanel", 0, 0, 10, "linux", null);
+                testVm.orionGuid, accountStatus, "cpanel", 0, 0, 10, "linux", null, 0);
     }
 
     @Test
@@ -178,7 +179,7 @@ public class VmZombieResourceTest {
     public void testNewCreditInUse() {
         newCredit = createVmCredit(
                 newCredit.getEntitlementId(), AccountStatus.ACTIVE, oldCredit.getControlPanel(), oldCredit.getMonitoring(),
-                oldCredit.getManagedLevel(), oldCredit.getTier(), oldCredit.getOperatingSystem(), Instant.now());
+                oldCredit.getManagedLevel(), oldCredit.getTier(), oldCredit.getOperatingSystem(), Instant.now(), 0);
         when(creditService.getVirtualMachineCredit(newCredit.getEntitlementId())).thenReturn(newCredit);
         try {
             vmZombieResource.reviveZombieVm(testVm.vmId, newCredit.getEntitlementId());
@@ -192,7 +193,7 @@ public class VmZombieResourceTest {
     public void testControlPanelsDontMatch() {
         newCredit = createVmCredit(
                 newCredit.getEntitlementId(), AccountStatus.ACTIVE, "myh", oldCredit.getMonitoring(),
-                oldCredit.getManagedLevel(), oldCredit.getTier(), oldCredit.getOperatingSystem(), null);
+                oldCredit.getManagedLevel(), oldCredit.getTier(), oldCredit.getOperatingSystem(), null, 0);
         when(creditService.getVirtualMachineCredit(newCredit.getEntitlementId())).thenReturn(newCredit);
         try {
             vmZombieResource.reviveZombieVm(testVm.vmId, newCredit.getEntitlementId());
@@ -206,7 +207,7 @@ public class VmZombieResourceTest {
     public void testManagedLevelsDontMatch() {
         newCredit = createVmCredit(
                 newCredit.getEntitlementId(), AccountStatus.ACTIVE, oldCredit.getControlPanel(), oldCredit.getMonitoring(),
-                2, oldCredit.getTier(), oldCredit.getOperatingSystem(), null);
+                2, oldCredit.getTier(), oldCredit.getOperatingSystem(), null, 0);
         when(creditService.getVirtualMachineCredit(newCredit.getEntitlementId())).thenReturn(newCredit);
         try {
             vmZombieResource.reviveZombieVm(testVm.vmId, newCredit.getEntitlementId());
@@ -220,10 +221,10 @@ public class VmZombieResourceTest {
     public void testAllowManagedLevelMismatchForLegacyManaged() {
         oldCredit = createVmCredit(
             oldCredit.getEntitlementId(), oldCredit.getAccountStatus(), oldCredit.getControlPanel(), oldCredit.getMonitoring(),
-            1, oldCredit.getTier(), oldCredit.getOperatingSystem(), null);
+            1, oldCredit.getTier(), oldCredit.getOperatingSystem(), null, 0);
         newCredit = createVmCredit(
                 newCredit.getEntitlementId(), AccountStatus.ACTIVE, oldCredit.getControlPanel(),  oldCredit.getMonitoring(),
-                0, oldCredit.getTier(), oldCredit.getOperatingSystem(), null);
+                0, oldCredit.getTier(), oldCredit.getOperatingSystem(), null, 0);
         when(creditService.getVirtualMachineCredit(newCredit.getEntitlementId())).thenReturn(newCredit);
         vmZombieResource.reviveZombieVm(testVm.vmId, newCredit.getEntitlementId());
         verify(commandService, times(1)).executeCommand(anyObject());
@@ -233,7 +234,7 @@ public class VmZombieResourceTest {
     public void testMonitoringsDontMatch() {
         newCredit = createVmCredit(
                 newCredit.getEntitlementId(), AccountStatus.ACTIVE, oldCredit.getControlPanel(), 1,
-                oldCredit.getManagedLevel(), oldCredit.getTier(), oldCredit.getOperatingSystem(), null);
+                oldCredit.getManagedLevel(), oldCredit.getTier(), oldCredit.getOperatingSystem(), null, 0);
         when(creditService.getVirtualMachineCredit(newCredit.getEntitlementId())).thenReturn(newCredit);
         try {
             vmZombieResource.reviveZombieVm(testVm.vmId, newCredit.getEntitlementId());
@@ -247,10 +248,10 @@ public class VmZombieResourceTest {
     public void testAllowMonitoringMismatchForLegacyManaged() {
         oldCredit = createVmCredit(
             oldCredit.getEntitlementId(), oldCredit.getAccountStatus(), oldCredit.getControlPanel(), 1,
-            oldCredit.getManagedLevel(), oldCredit.getTier(), oldCredit.getOperatingSystem(), null);
+            oldCredit.getManagedLevel(), oldCredit.getTier(), oldCredit.getOperatingSystem(), null, 0);
         newCredit = createVmCredit(
                 newCredit.getEntitlementId(), AccountStatus.ACTIVE, oldCredit.getControlPanel(), 0,
-                oldCredit.getManagedLevel(), oldCredit.getTier(), oldCredit.getOperatingSystem(), null);
+                oldCredit.getManagedLevel(), oldCredit.getTier(), oldCredit.getOperatingSystem(), null, 0);
         when(creditService.getVirtualMachineCredit(newCredit.getEntitlementId())).thenReturn(newCredit);
         vmZombieResource.reviveZombieVm(testVm.vmId, newCredit.getEntitlementId());
         verify(commandService, times(1)).executeCommand(anyObject());
@@ -260,7 +261,7 @@ public class VmZombieResourceTest {
     public void testOperatingSystemsDontMatch() {
         newCredit = createVmCredit(
                 newCredit.getEntitlementId(), AccountStatus.ACTIVE, oldCredit.getControlPanel(), oldCredit.getMonitoring(),
-                oldCredit.getManagedLevel(), oldCredit.getTier(), "windows", null);
+                oldCredit.getManagedLevel(), oldCredit.getTier(), "windows", null, 0);
         when(creditService.getVirtualMachineCredit(newCredit.getEntitlementId())).thenReturn(newCredit);
         try {
             vmZombieResource.reviveZombieVm(testVm.vmId, newCredit.getEntitlementId());
@@ -274,13 +275,27 @@ public class VmZombieResourceTest {
     public void testTiersDontMatch() {
         newCredit = createVmCredit(
                 newCredit.getEntitlementId(), AccountStatus.ACTIVE, oldCredit.getControlPanel(), oldCredit.getMonitoring(),
-                oldCredit.getManagedLevel(), 20, oldCredit.getOperatingSystem(), null);
+                oldCredit.getManagedLevel(), 20, oldCredit.getOperatingSystem(), null, 0);
         when(creditService.getVirtualMachineCredit(newCredit.getEntitlementId())).thenReturn(newCredit);
         try {
             vmZombieResource.reviveZombieVm(testVm.vmId, newCredit.getEntitlementId());
             Assert.fail();
         } catch (Vps4Exception e) {
             Assert.assertEquals("TIER_MISMATCH", e.getId());
+        }
+    }
+
+    @Test
+    public void testCdnAddOnDontMatch() {
+        newCredit = createVmCredit(
+                newCredit.getEntitlementId(), AccountStatus.ACTIVE, oldCredit.getControlPanel(), oldCredit.getMonitoring(),
+                oldCredit.getManagedLevel(), oldCredit.getTier(), oldCredit.getOperatingSystem(), null, 2);
+        when(creditService.getVirtualMachineCredit(newCredit.getEntitlementId())).thenReturn(newCredit);
+        try {
+            vmZombieResource.reviveZombieVm(testVm.vmId, newCredit.getEntitlementId());
+            Assert.fail();
+        } catch (Vps4Exception e) {
+            Assert.assertEquals("CDN_MISMATCH", e.getId());
         }
     }
 

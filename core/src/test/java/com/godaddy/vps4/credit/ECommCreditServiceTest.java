@@ -139,7 +139,22 @@ public class ECommCreditServiceTest {
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(orionGuid);
         assertEquals("web", credit.getMssql());
     }
-    
+
+    @Test
+    public void testGetCreditIncludesCdnWafNull() {
+        when(ecommService.getAccount(orionGuid.toString())).thenReturn(account);
+        VirtualMachineCredit credit = creditService.getVirtualMachineCredit(orionGuid);
+        assertEquals(0, credit.entitlementData.cdnWaf);
+    }
+
+    @Test
+    public void testGetCreditIncludesCdnWafNotNull() {
+        account.plan_features.put("cdnwaf", "3");
+        when(ecommService.getAccount(orionGuid.toString())).thenReturn(account);
+        VirtualMachineCredit credit = creditService.getVirtualMachineCredit(orionGuid);
+        assertEquals(3, credit.entitlementData.cdnWaf);
+    }
+
     @Test
     public void testGetCreditNoAccountFoundReturnsNull() {
         when(ecommService.getAccount(orionGuid.toString())).thenThrow(new WebApplicationException());

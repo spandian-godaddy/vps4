@@ -16,6 +16,7 @@ public class EntitlementData {
     public int pfid;
     public UUID customerId;
     public Instant expireDate;
+    public int cdnWaf;
 
     public EntitlementData() {}
 }

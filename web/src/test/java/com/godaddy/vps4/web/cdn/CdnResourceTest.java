@@ -36,7 +36,9 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
@@ -103,9 +105,13 @@ public class CdnResourceTest {
                 UUID.randomUUID(),
                 dataCenter);
 
+        Map<String, String> planFeatures = new HashMap<>();
+        planFeatures.put("cdnwaf", String.valueOf(5));
+
         credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
                 .withAccountStatus(AccountStatus.ACTIVE)
                 .withShopperID(userShopper.getShopperId())
+                .withPlanFeatures(planFeatures)
                 .build();
 
         cdnSite = new CdnSite();

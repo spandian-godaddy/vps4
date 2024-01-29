@@ -267,6 +267,9 @@ public class VmZombieResource {
         if (oldCredit.getTier() != newCredit.getTier()) {
             throw new Vps4Exception("TIER_MISMATCH", "Tier of the old and new credits do not match");
         }
+        if (oldCredit.entitlementData.cdnWaf != newCredit.entitlementData.cdnWaf) {
+            throw new Vps4Exception("CDN_MISMATCH", "Cdn addon size of the old and new credits do not match");
+        }
     }
 
     private void validateAccountIsRemoved(UUID vmId, VirtualMachineCredit credit) {
