@@ -14,9 +14,7 @@ public interface CreditService {
 
     VirtualMachineCredit getVirtualMachineCredit(UUID orionGuid);
 
-    List<VirtualMachineCredit> getUnclaimedVirtualMachineCredits(String shopperId);
-
-    List<VirtualMachineCredit> getVirtualMachineCredits(String shopperId);
+    List<VirtualMachineCredit> getVirtualMachineCredits(String shopperId, boolean showClaimed);
 
     void claimVirtualMachineCredit(UUID orionGuid, int dataCenterId, UUID productId);
 

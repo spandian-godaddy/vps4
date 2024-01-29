@@ -142,16 +142,7 @@ public class ECommCreditService implements CreditService {
     }
 
     @Override
-    public List<VirtualMachineCredit> getUnclaimedVirtualMachineCredits(String shopperId) {
-        return getVirtualMachineCredits(shopperId, false);
-    }
-
-    @Override
-    public List<VirtualMachineCredit> getVirtualMachineCredits(String shopperId) {
-        return getVirtualMachineCredits(shopperId, true);
-    }
-
-    private List<VirtualMachineCredit> getVirtualMachineCredits(String shopperId, boolean showClaimed) {
+    public List<VirtualMachineCredit> getVirtualMachineCredits(String shopperId, boolean showClaimed) {
         List<Account> accounts = ecommService.getAccounts(shopperId);
         Stream<Account> stream = accounts.stream()
                 .filter(a -> a.product.equals(PRODUCT_NAME))

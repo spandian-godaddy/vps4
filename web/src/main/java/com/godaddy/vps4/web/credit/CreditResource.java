@@ -57,40 +57,37 @@ public class CreditResource {
     @RequiresRole(roles = {GDUser.Role.ADMIN, GDUser.Role.CUSTOMER, GDUser.Role.VPS4_API_READONLY,
             GDUser.Role.SUSPEND_AUTH})
     @Path("/{orionGuid}")
-    public VirtualMachineCredit getCredit(@PathParam("orionGuid") UUID orionGuid) {
+    public Vps4Credit getCredit(@PathParam("orionGuid") UUID orionGuid) {
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(orionGuid);
-        if (user.isShopper())
-            if (credit == null || !credit.getShopperId().equals(user.getShopperId())) {
-                throw new NotFoundException("Unknown Credit ID: " + orionGuid);
+        if (user.isShopper() && (credit == null || !credit.getShopperId().equals(user.getShopperId()))) {
+            throw new NotFoundException("Unknown Credit ID: " + orionGuid);
         }
-        return credit;
+        return new Vps4Credit(credit);
     }
 
     @GET
     @Path("/")
-    public List<VirtualMachineCredit> getCredits(@DefaultValue("false") @QueryParam("showClaimed") boolean showClaimed) {
+    public List<Vps4Credit> getCredits(@DefaultValue("false") @QueryParam("showClaimed") boolean showClaimed) {
         if (!user.isShopper())
             throw new Vps4NoShopperException();
         logger.debug("Getting credits for shopper {}", user.getShopperId());
-        if(showClaimed){
-            return creditService.getVirtualMachineCredits(user.getShopperId());
-        }
-        return creditService.getUnclaimedVirtualMachineCredits(user.getShopperId());
+
+        return creditService.getVirtualMachineCredits(user.getShopperId(), showClaimed).stream()
+                .map(Vps4Credit::new).collect(java.util.stream.Collectors.toList());
     }
 
     @RequiresRole(roles = {GDUser.Role.ADMIN})
     @POST
     @Path("/")
-    public VirtualMachineCredit createCredit(CreateCreditRequest request){
+    public Vps4Credit createCredit(CreateCreditRequest request){
         UUID orionGuid = UUID.randomUUID();
 
         creditService.createVirtualMachineCredit(orionGuid, request.shopperId, request.operatingSystem, request.controlPanel,
                 request.tier, request.managedLevel, request.monitoring, request.resellerId);
 
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(orionGuid);
-        return credit;
+        return new Vps4Credit(credit);
     }
-
     public static class CreateCreditRequest {
         public String shopperId;
         public String operatingSystem;

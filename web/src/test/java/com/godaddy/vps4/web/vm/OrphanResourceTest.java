@@ -14,6 +14,8 @@ import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.action.Orphans;
 import com.godaddy.vps4.web.credit.CreditResource;
+import com.godaddy.vps4.web.credit.Vps4Credit;
+
 import gdg.hfs.vhfs.network.NetworkServiceV2;
 import org.junit.Before;
 import org.junit.Test;
@@ -84,7 +86,7 @@ public class OrphanResourceTest {
             .withProductMeta(productMeta)
             .build();
 
-        when(creditResource.getCredit(vm.orionGuid)).thenReturn(virtualMachineCredit);
+        when(creditResource.getCredit(vm.orionGuid)).thenReturn(new Vps4Credit(virtualMachineCredit));
         resource.getOrphanedResources(vm.vmId);
     }
 

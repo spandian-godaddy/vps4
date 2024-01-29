@@ -221,7 +221,7 @@ public class ECommCreditServiceTest {
 
     @Test
     public void testGetUnclaimedCreditsCallsGetAccounts() throws Exception {
-        assertTrue(creditService.getUnclaimedVirtualMachineCredits(account.shopper_id).isEmpty());
+        assertTrue(creditService.getVirtualMachineCredits(account.shopper_id, false).isEmpty());
         verify(ecommService).getAccounts(eq(account.shopper_id));
     }
 
@@ -229,11 +229,11 @@ public class ECommCreditServiceTest {
     public void testGetUnclaimedCreditsFiltersActive() throws Exception {
         when(ecommService.getAccounts(account.shopper_id)).thenReturn(Arrays.asList(account));
 
-        List<VirtualMachineCredit> credits = creditService.getUnclaimedVirtualMachineCredits(account.shopper_id);
+        List<VirtualMachineCredit> credits = creditService.getVirtualMachineCredits(account.shopper_id, false);
         assertEquals(1, credits.size());
 
         account.status = Account.Status.removed;
-        credits = creditService.getUnclaimedVirtualMachineCredits(account.shopper_id);
+        credits = creditService.getVirtualMachineCredits(account.shopper_id, false);
         assertEquals(0, credits.size());
     }
 
@@ -241,17 +241,17 @@ public class ECommCreditServiceTest {
     public void testGetUnclaimedCreditsFiltersUnclaimed() throws Exception {
         when(ecommService.getAccounts(account.shopper_id)).thenReturn(Arrays.asList(account));
 
-        List<VirtualMachineCredit> credits = creditService.getUnclaimedVirtualMachineCredits(account.shopper_id);
+        List<VirtualMachineCredit> credits = creditService.getVirtualMachineCredits(account.shopper_id, false);
         assertEquals(1, credits.size());
 
         account.product_meta.put("data_center", "1");
-        credits = creditService.getUnclaimedVirtualMachineCredits(account.shopper_id);
+        credits = creditService.getVirtualMachineCredits(account.shopper_id, false);
         assertEquals(0, credits.size());
     }
 
     @Test
     public void testGetCreditsCallsGetAccounts() throws Exception {
-        assertTrue(creditService.getVirtualMachineCredits(account.shopper_id).isEmpty());
+        assertTrue(creditService.getVirtualMachineCredits(account.shopper_id, true).isEmpty());
         verify(ecommService).getAccounts(eq(account.shopper_id));
     }
 
@@ -259,11 +259,11 @@ public class ECommCreditServiceTest {
     public void testGetCreditsFiltersRemoved() throws Exception {
         when(ecommService.getAccounts(account.shopper_id)).thenReturn(Arrays.asList(account));
 
-        List<VirtualMachineCredit> credits = creditService.getVirtualMachineCredits(account.shopper_id);
+        List<VirtualMachineCredit> credits = creditService.getVirtualMachineCredits(account.shopper_id, true);
         assertEquals(1, credits.size());
 
         account.status = Account.Status.removed;
-        credits = creditService.getVirtualMachineCredits(account.shopper_id);
+        credits = creditService.getVirtualMachineCredits(account.shopper_id, true);
         assertEquals(0, credits.size());
     }
 
@@ -271,11 +271,11 @@ public class ECommCreditServiceTest {
     public void testGetCreditsDoesntFilterUnclaimed() throws Exception {
         when(ecommService.getAccounts(account.shopper_id)).thenReturn(Arrays.asList(account));
 
-        List<VirtualMachineCredit> credits = creditService.getVirtualMachineCredits(account.shopper_id);
+        List<VirtualMachineCredit> credits = creditService.getVirtualMachineCredits(account.shopper_id, true);
         assertEquals(1, credits.size());
 
         account.product_meta.put("data_center", "1");
-        credits = creditService.getVirtualMachineCredits(account.shopper_id);
+        credits = creditService.getVirtualMachineCredits(account.shopper_id, true);
         assertEquals(1, credits.size());
     }
 
@@ -287,10 +287,10 @@ public class ECommCreditServiceTest {
         account.plan_features.put("max_sites", "5");
         when(ecommService.getAccounts(account.shopper_id)).thenReturn(Arrays.asList(account));
 
-        List<VirtualMachineCredit> credits = creditService.getVirtualMachineCredits(account.shopper_id);
+        List<VirtualMachineCredit> credits = creditService.getVirtualMachineCredits(account.shopper_id, true);
         assertEquals(0, credits.size());
 
-        credits = creditService.getUnclaimedVirtualMachineCredits(account.shopper_id);
+        credits = creditService.getVirtualMachineCredits(account.shopper_id, false);
         assertEquals(0, credits.size());
     }
 

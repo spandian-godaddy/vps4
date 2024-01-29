@@ -15,7 +15,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.godaddy.hfs.vm.Vm;
-import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.ProjectService;
@@ -25,6 +24,7 @@ import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.action.Orphans;
 import com.godaddy.vps4.web.credit.CreditResource;
+import com.godaddy.vps4.web.credit.Vps4Credit;
 import com.godaddy.vps4.web.security.GDUser;
 import com.godaddy.vps4.web.security.RequiresRole;
 import com.google.inject.Inject;
@@ -85,7 +85,7 @@ public class OrphanResource {
     }
 
     private void validateVm(UUID vmId, VirtualMachine vm) {
-        VirtualMachineCredit vmCredit = this.creditResource.getCredit(vm.orionGuid);
+        Vps4Credit vmCredit = this.creditResource.getCredit(vm.orionGuid);
         if(vmCredit != null && isVmStillAssignedToCredit(vm, vmCredit)) {
             // this vm is still accounted for in the credit
             logger.warn("The vm " + vmId + " is still accounted for in the " + vm.orionGuid + " credit");
@@ -93,8 +93,8 @@ public class OrphanResource {
         }
     }
 
-    private boolean isVmStillAssignedToCredit(VirtualMachine vm, VirtualMachineCredit vmCredit) {
-        return vmCredit.getProductId() != null && vmCredit.getProductId().equals(vm.vmId);
+    private boolean isVmStillAssignedToCredit(VirtualMachine vm, Vps4Credit vmCredit) {
+        return vmCredit.productId != null && vmCredit.productId.equals(vm.vmId);
     }
 
     private void updateOrphanedVm(VirtualMachine vm, Orphans orphans) {
