@@ -90,6 +90,7 @@ public class CreateJsdOutageTicketTest {
     }
 
     private CreateJsdOutageTicket.Request setupRequest() {
+        String outageSummary = "Monitoring Event - [CPU] - oopsie whoopsie (321123)-  [CPU2] - oopsie whoopsie 2 (321123)";
         CreateJsdOutageTicket.Request request = new CreateJsdOutageTicket.Request();
         request.vmId = vmId;
         request.shopperId = shopperId;
@@ -99,7 +100,9 @@ public class CreateJsdOutageTicketTest {
         request.metricTypes = "[CPU]";
         request.metricReasons = "oopsie whoopsie";
         request.severity = "standard";
-        request.summary = "Monitoring Event - [CPU] - oopsie whoopsie (321123)";
+        request.summary = "Monitoring Event - [CPU] - oopsie whoopsie (321123) -" +
+                " [CPU2] - oopsie whoopsie 2 (321123) Monitoring Event - [CPU] - oopsie whoopsie (321123) -" +
+                " [CPU2] - oopsie whoopsie 2 (321123) Monitoring Event - [CPU] - oopsie whoopsie (321123) - [CPU2] - oopsie whoop";
         request.hypervisorHostname = "phx3plohvmn0350";
         return request;
     }
@@ -132,6 +135,17 @@ public class CreateJsdOutageTicketTest {
         assertEquals(request.metricTypes, createJsdTicketRequest.metricTypes);
         assertEquals("a2", createJsdTicketRequest.dataCenter);
         assertEquals("phx3plohvmn0350", createJsdTicketRequest.hypervisorHostname);
+    }
+
+    @Test
+    public void passesCorrectTruncatedSummaryParamsFromRequest() {
+        request.summary = request.summary + "extra";
+        createJsdOutageTicket.execute(context, request);
+
+        verify(jsdService).createTicket(argument.capture());
+        CreateJsdTicketRequest createJsdTicketRequest = argument.getValue();
+
+        assertEquals(request.summary.substring(0,256), createJsdTicketRequest.summary);
     }
 
     @Test

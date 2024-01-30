@@ -7,6 +7,7 @@ import com.godaddy.vps4.jsd.model.CreateJsdTicketRequest;
 import com.godaddy.vps4.jsd.model.JsdCreatedIssue;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
+import com.godaddy.vps4.vm.VmOutage;
 import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
@@ -46,7 +47,7 @@ public class CreateJsdOutageTicket implements Command<CreateJsdOutageTicket.Requ
         CreateJsdTicketRequest req = new CreateJsdTicketRequest();
         req.orionGuid = vm.orionGuid.toString();
         req.shopperId = request.shopperId;
-        req.summary = request.summary;
+        req.summary = trimSummary(request.summary);
         req.partnerCustomerKey = request.partnerCustomerKey;
         req.plid = credit.getResellerId();
         req.fqdn = vm.primaryIpAddress.ipAddress;
@@ -62,6 +63,13 @@ public class CreateJsdOutageTicket implements Command<CreateJsdOutageTicket.Requ
         req.hypervisorHostname = request.hypervisorHostname;
 
         return jsdService.createTicket(req);
+    }
+
+    private String trimSummary(String summary) {
+        if (summary.length() > 255) {
+            return summary.substring(0, 256); //JSD Summary can not exceed 255 characters
+        }
+        return summary;
     }
 
     public String managedLevelMapper(boolean managed) {

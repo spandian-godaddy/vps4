@@ -87,6 +87,7 @@ public class VmJsdTicketingResourceTest {
         request.metricTypes = "internal.agent.heartbeat";
         request.metricInfo = "Agent Heartbeat";
         request.metricReasons = "Agent Heartbeat (10.0.0.1)";
+        request.hypervisorHostname = "fakeHostname.com";
 
         when(vmResource.getVm(vmId)).thenReturn(vm);
         when(commandService.executeCommand(anyObject())).thenReturn(new CommandState());

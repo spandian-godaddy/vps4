@@ -85,6 +85,7 @@ public class VmJsdTicketingResource {
         req.metricTypes = createTicketRequest.metricTypes;
         req.metricInfo = createTicketRequest.metricInfo;
         req.metricReasons = createTicketRequest.metricReasons;
+        req.hypervisorHostname = createTicketRequest.hypervisorHostname;
         return req;
     }
 
@@ -143,6 +144,7 @@ public class VmJsdTicketingResource {
         public String metricTypes;
         public String metricInfo;
         public String metricReasons;
+        public String hypervisorHostname;
     }
 
 
