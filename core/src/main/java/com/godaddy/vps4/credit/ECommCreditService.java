@@ -22,6 +22,7 @@ import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -83,22 +84,22 @@ public class ECommCreditService implements CreditService {
     }
 
     @Override
-    public VirtualMachineCredit getVirtualMachineCredit(UUID orionGuid) {
-        Account account = getHfsEcommAccount(orionGuid);
+    public VirtualMachineCredit getVirtualMachineCredit(UUID entitlementId) {
+        Account account = getHfsEcommAccount(entitlementId);
         if (account == null) {
             return null;
         }
-
+        
         return mapVirtualMachineCredit(account);
     }
 
-    private Account getHfsEcommAccount(UUID orionGuid) {
+    private Account getHfsEcommAccount(UUID entitlementId) {
         try {
-            Account account = ecommService.getAccount(orionGuid.toString());
+            Account account = ecommService.getAccount(entitlementId.toString());
             logger.info("Account: {}", account);
             return account;
         } catch (Exception ex) {
-            logger.error("Error retrieving VPS4 credit for account guid {} : Exception :", orionGuid.toString(), ex);
+            logger.error("Error retrieving VPS4 credit for account guid {} : Exception :", entitlementId, ex);
         }
         return null; // return null since we can't find the credit. Keeps the semantics of this method consistent
     }
@@ -115,7 +116,7 @@ public class ECommCreditService implements CreditService {
                     .withCustomerID(account.customer_id)
                     .withExpireDate(account.expire_date)
                     .build();
-            logger.info("Credit: {}", credit.toString());
+            logger.info("Credit: {}", credit);
             return credit;
         } catch (Exception ex) {
             logger.error("Error mapping VPS4 credit for account guid {} : Exception :", account.account_guid, ex);
@@ -129,16 +130,6 @@ public class ECommCreditService implements CreditService {
     }
 
     private String getShopperId(Account account) {
-        // Brand resellers will use sub_account_shopper_id, otherwise use shopper_id
-        // return (account.sub_account_shopper_id != null) ? account.sub_account_shopper_id : account.shopper_id;
-
-        /* Code above commented due to HFS bug that may not be fixed
-         * as it would break other products like Plesk.
-         * If the shopper is a brand reseller customer,
-         * HFS is actually putting the parent shopper id into the sub_account_shopper_id field
-         * and the brand reseller's customer's shopper id is in the shopper_id field.
-         * So basically HFS provided shopper_id is always correct, regardless if is brand reseller.
-         */
         return account.shopper_id;
     }
 
@@ -153,12 +144,11 @@ public class ECommCreditService implements CreditService {
             stream = stream.filter(a -> !a.product_meta.containsKey(ProductMetaField.DATA_CENTER.toString()));
         }
 
-        return stream.map(this::mapVirtualMachineCredit)
-                .collect(Collectors.toList());
+        return stream.filter(Objects::nonNull).map(this::mapVirtualMachineCredit).collect(Collectors.toList());
     }
 
     @Override
-    public void createVirtualMachineCredit(UUID orionGuid, String shopperId, String operatingSystem,
+    public void createVirtualMachineCredit(UUID entitlementId, String shopperId, String operatingSystem,
                                            String controlPanel,
                                            int tier, int managedLevel, int monitoring, int resellerId) {
         Map<PlanFeatures, String> planFeatures = new EnumMap<>(PlanFeatures.class);
@@ -170,7 +160,7 @@ public class ECommCreditService implements CreditService {
 
         Account account = new Account();
         account.shopper_id = shopperId;
-        account.account_guid = orionGuid.toString();
+        account.account_guid = entitlementId.toString();
         account.product = PRODUCT_NAME;
         account.status = Account.Status.active;
         account.plan_features = fromEnumMap(planFeatures);
@@ -180,7 +170,7 @@ public class ECommCreditService implements CreditService {
     }
 
     @Override
-    public void claimVirtualMachineCredit(UUID orionGuid, int dataCenterId, UUID productId) {
+    public void claimVirtualMachineCredit(UUID entitlementId, int dataCenterId, UUID productId) {
         Map<ProductMetaField, String> to = new EnumMap<>(ProductMetaField.class);
 
         to.put(ProductMetaField.DATA_CENTER, String.valueOf(dataCenterId));
@@ -189,11 +179,11 @@ public class ECommCreditService implements CreditService {
         to.put(ProductMetaField.RELAY_COUNT, null);
         to.put(ProductMetaField.RELEASED_AT, null);
 
-        updateProductMeta(orionGuid, to);
+        updateProductMeta(entitlementId, to);
     }
 
     @Override
-    public void unclaimVirtualMachineCredit(UUID orionGuid, UUID productId, int currentMailRelays) {
+    public void unclaimVirtualMachineCredit(UUID entitlementId, UUID productId, int currentMailRelays) {
         EnumMap<ProductMetaField, String> expectedFrom = new EnumMap<>(ProductMetaField.class);
         expectedFrom.put(ProductMetaField.PRODUCT_ID, productId.toString());
 
@@ -207,19 +197,19 @@ public class ECommCreditService implements CreditService {
         }
 
         try {
-            updateProductMeta(orionGuid, requestedTo, expectedFrom);
+            updateProductMeta(entitlementId, requestedTo, expectedFrom);
         } catch (WebApplicationException ex) {
             logger.warn("Failed to update product meta : ", ex);
         }
     }
 
     @Override
-    public Map<ProductMetaField, String> getProductMeta(UUID orionGuid) {
-        return toEnumMap(ProductMetaField.class, getCurrentProductMeta(orionGuid));
+    public Map<ProductMetaField, String> getProductMeta(UUID entitlementId) {
+        return toEnumMap(ProductMetaField.class, getCurrentProductMeta(entitlementId));
     }
 
-    private Map<String, String> getCurrentProductMeta(UUID orionGuid) {
-        Account account = ecommService.getAccount(orionGuid.toString());
+    private Map<String, String> getCurrentProductMeta(UUID entitlementId) {
+        Account account = ecommService.getAccount(entitlementId.toString());
         // Important to add unset enum keys with null value in map or update calls to ecomm vertical will fail
         Map<String, String> mapWithNullVals = new HashMap<>(account.product_meta);
         Stream.of(ProductMetaField.values())
@@ -229,28 +219,28 @@ public class ECommCreditService implements CreditService {
     }
 
     @Override
-    public void setCommonName(UUID orionGuid, String newName) {
+    public void setCommonName(UUID entitlementId, String newName) {
         ECommDataCache edc = new ECommDataCache();
         edc.common_name = newName;
-        ecommService.setCommonName(orionGuid.toString(), edc);
+        ecommService.setCommonName(entitlementId.toString(), edc);
     }
 
     @Override
-    public void updateProductMeta(UUID orionGuid, ProductMetaField field, String value) {
-        updateProductMeta(orionGuid, Collections.singletonMap(field, value));
+    public void updateProductMeta(UUID entitlementId, ProductMetaField field, String value) {
+        updateProductMeta(entitlementId, Collections.singletonMap(field, value));
     }
 
     @Override
-    public void updateProductMeta(UUID orionGuid, Map<ProductMetaField, String> updates) {
-        updateProductMeta(orionGuid, updates, Collections.emptyMap());
+    public void updateProductMeta(UUID entitlementId, Map<ProductMetaField, String> updates) {
+        updateProductMeta(entitlementId, updates, Collections.emptyMap());
     }
 
     @Override
-    public void updateProductMeta(UUID orionGuid, Map<ProductMetaField, String> requestedTo,
+    public void updateProductMeta(UUID entitlementId, Map<ProductMetaField, String> requestedTo,
                                   Map<ProductMetaField, String> expectedFrom) {
         // initialize both to and from JSON objects to the current prodMeta of the ecomm credit
         MetadataUpdate prodMeta = new MetadataUpdate();
-        prodMeta.to = getCurrentProductMeta(orionGuid);
+        prodMeta.to = getCurrentProductMeta(entitlementId);
         prodMeta.from = new HashMap<>(prodMeta.to);
 
         prodMeta.to.putAll(fromEnumMap(requestedTo));
@@ -258,7 +248,7 @@ public class ECommCreditService implements CreditService {
 
         prodMeta.to.replaceAll((k,v) -> cleanProdMeta(k,v));
 
-        ecommService.updateProductMetadata(orionGuid.toString(), prodMeta);
+        ecommService.updateProductMetadata(entitlementId.toString(), prodMeta);
     }
 
     private String cleanProdMeta(String key, String value) {
@@ -289,12 +279,12 @@ public class ECommCreditService implements CreditService {
     }
 
     @Override
-    public void setStatus(UUID orionGuid, AccountStatus accountStatus) {
-        Account account = ecommService.getAccount(orionGuid.toString());
+    public void setStatus(UUID entitlementId, AccountStatus accountStatus) {
+        Account account = ecommService.getAccount(entitlementId.toString());
 
         account.status = getEcommAccountStatus(accountStatus);
-        logger.info("Updating status for credit {} to {}", orionGuid, accountStatus.toString().toLowerCase());
-        ecommService.updateAccount(orionGuid.toString(), account);
+        logger.info("Updating status for credit {} to {}", entitlementId, accountStatus.toString().toLowerCase());
+        ecommService.updateAccount(entitlementId.toString(), account);
     }
 
     private Account.Status getEcommAccountStatus(AccountStatus accountStatus) {
@@ -313,19 +303,19 @@ public class ECommCreditService implements CreditService {
     }
 
     @Override
-    public void submitSuspend(UUID orionGuid, SuspensionReason reason) throws Exception {
+    public void submitSuspend(UUID entitlementId, SuspensionReason reason) throws Exception {
         Suspension suspension = new Suspension();
-        suspension.suspendReason = ConvertVps4ReasonToHfsReason(reason);
+        suspension.suspendReason = convertVps4ReasonToHfsReason(reason);
         try {
-            Response response = ecommService.suspend(orionGuid.toString(), null, suspension);
-            if(response.getStatus() != 204) throw new Exception(String.format("Failed to suspend %s with", orionGuid));
+            Response response = ecommService.suspend(entitlementId.toString(), null, suspension);
+            if(response.getStatus() != 204) throw new Exception(String.format("Failed to suspend %s with", entitlementId));
         } catch (Exception ex) {
-            logger.error("Error suspending VPS4 credit for account guid {} : Exception :", orionGuid.toString(), ex);
+            logger.error("Error suspending VPS4 credit for account guid {} : Exception :", entitlementId, ex);
             throw ex;
         }
     }
 
-    private SuspendReason ConvertVps4ReasonToHfsReason(SuspensionReason reason) {
+    private SuspendReason convertVps4ReasonToHfsReason(SuspensionReason reason) {
         switch (reason){
             case FRAUD : return SuspendReason.FRAUD;
             case LEGAL: return SuspendReason.LEGAL;
@@ -335,14 +325,14 @@ public class ECommCreditService implements CreditService {
     }
 
     @Override
-    public void submitReinstate(UUID orionGuid, SuspensionReason reason) throws Exception {
+    public void submitReinstate(UUID entitlementId, SuspensionReason reason) throws Exception {
         Reinstatement reinstatement = new Reinstatement();
-        reinstatement.suspendReason = ConvertVps4ReasonToHfsReason(reason);
+        reinstatement.suspendReason = convertVps4ReasonToHfsReason(reason);
         try {
-            Response response = ecommService.reinstate(orionGuid.toString(), null, reinstatement);
-            if(response.getStatus() != 204) throw new Exception(String.format("Failed to reinstate %s with", orionGuid));
+            Response response = ecommService.reinstate(entitlementId.toString(), null, reinstatement);
+            if(response.getStatus() != 204) throw new Exception(String.format("Failed to reinstate %s with", entitlementId));
         } catch (Exception ex) {
-            logger.error("Error reinstating VPS4 credit for account guid {} : Exception :", orionGuid.toString(), ex);
+            logger.error("Error reinstating VPS4 credit for account guid {} : Exception :", entitlementId, ex);
             throw ex;
         }
     }
