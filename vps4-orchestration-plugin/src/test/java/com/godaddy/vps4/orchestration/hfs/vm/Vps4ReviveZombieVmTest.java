@@ -1,5 +1,8 @@
 package com.godaddy.vps4.orchestration.hfs.vm;
 
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -7,11 +10,21 @@ import static org.mockito.Mockito.when;
 
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.godaddy.vps4.cdn.CdnDataService;
+import com.godaddy.vps4.cdn.CdnService;
+import com.godaddy.vps4.cdn.model.CdnBypassWAF;
+import com.godaddy.vps4.cdn.model.CdnCacheLevel;
+import com.godaddy.vps4.cdn.model.CdnDetail;
+import com.godaddy.vps4.cdn.model.CdnStatus;
+import com.godaddy.vps4.cdn.model.VmCdnSite;
+import com.godaddy.vps4.credit.VirtualMachineCredit;
+import com.godaddy.vps4.util.Cryptography;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -57,6 +70,12 @@ public class Vps4ReviveZombieVmTest{
     private VirtualMachine vm;
     private PanoptaDataService panoptaDataService;
     private PanoptaService panoptaService;
+    private CdnDataService cdnDataService;
+    private Cryptography cryptography;
+    private CdnService cdnService;
+    private VmCdnSite vmCdnSite;
+    private CdnDetail cdnDetail;
+    private VirtualMachineCredit vmCredit;
 
     @Before
     public void setup() throws PanoptaServiceException {
@@ -68,6 +87,9 @@ public class Vps4ReviveZombieVmTest{
         actionService = mock(ActionService.class);
         panoptaDataService = mock(PanoptaDataService.class);
         panoptaService = mock(PanoptaService.class);
+        cdnDataService = mock(CdnDataService.class);
+        cryptography = mock(Cryptography.class);
+        cdnService = mock(CdnService.class);
 
         job = new ScheduledJob();
         job.id = UUID.randomUUID();
@@ -93,6 +115,19 @@ public class Vps4ReviveZombieVmTest{
         when(vmService.startVm(vm.hfsVmId)).thenReturn(vma);
         when(vmService.getVmAction(vma.vmId, vma.vmActionId)).thenReturn(vma);
 
+        vmCdnSite = new VmCdnSite();
+        vmCdnSite.vmId = job.vmId;
+        vmCdnSite.siteId = "fakeSiteId";
+        when(cdnDataService.getActiveCdnSitesOfVm(job.vmId)).thenReturn(Collections.singletonList(vmCdnSite));
+
+        cdnDetail = new CdnDetail();
+        cdnDetail.status = CdnStatus.SUCCESS;
+        when(cdnService.getCdnSiteDetail(anyString(), anyString(), anyString(), any(), anyBoolean())).thenReturn(cdnDetail);
+
+        vmCredit = mock(VirtualMachineCredit.class);
+        when(vmCredit.getShopperId()).thenReturn("fakeShopperId");
+        when(creditService.getVirtualMachineCredit(any())).thenReturn(vmCredit);
+
         PanoptaDetail panoptaDetail = new PanoptaDetail(job.vmId, "partnerCustomerKey",
                                                         "customerKey", 3, "serverKey",
                                                         Instant.now(), Instant.MAX, null);
@@ -106,9 +141,12 @@ public class Vps4ReviveZombieVmTest{
             binder.bind(ActionService.class).toInstance(actionService);
             binder.bind(PanoptaDataService.class).toInstance(panoptaDataService);
             binder.bind(PanoptaService.class).toInstance(panoptaService);
+            binder.bind(CdnDataService.class).toInstance(cdnDataService);
+            binder.bind(Cryptography.class).toInstance(cryptography);
+            binder.bind(CdnService.class).toInstance(cdnService);
         });
 
-        command = new Vps4ReviveZombieVm(actionService, virtualMachineService, creditService);
+        command = new Vps4ReviveZombieVm(actionService, virtualMachineService, creditService, cdnDataService);
         context = new TestCommandContext(new GuiceCommandProvider(injector));
     }
 
@@ -134,6 +172,8 @@ public class Vps4ReviveZombieVmTest{
         verify(creditService, times(1)).updateProductMeta(request.newCreditId, productMeta);
         verify(vmService, times(0)).endRescueVm(vm.hfsVmId);
         verify(vmService, times(1)).startVm(vm.hfsVmId);
+        verify(cdnDataService, times(1)).getActiveCdnSitesOfVm(request.vmId);
+        verify(cdnService, times(1)).updateCdnSite("fakeShopperId", null, "fakeSiteId", CdnCacheLevel.CACHING_OPTIMIZED, CdnBypassWAF.DISABLED);
     }
 
     @Test
@@ -159,5 +199,7 @@ public class Vps4ReviveZombieVmTest{
         verify(creditService, times(1)).updateProductMeta(request.newCreditId, productMeta);
         verify(vmService, times(1)).endRescueVm(vm.hfsVmId);
         verify(vmService, times(0)).startVm(vm.hfsVmId);
+        verify(cdnDataService, times(1)).getActiveCdnSitesOfVm(request.vmId);
+        verify(cdnService, times(1)).updateCdnSite("fakeShopperId", null, "fakeSiteId", CdnCacheLevel.CACHING_OPTIMIZED, CdnBypassWAF.DISABLED);
     }
 }

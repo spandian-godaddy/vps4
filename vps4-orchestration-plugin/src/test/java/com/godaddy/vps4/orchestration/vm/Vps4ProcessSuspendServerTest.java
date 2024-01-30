@@ -30,6 +30,7 @@ import java.util.function.Function;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
+import static org.mockito.Matchers.startsWith;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -124,7 +125,8 @@ public class Vps4ProcessSuspendServerTest {
 
         command.executeWithAction(context, request);
         verify(cdnDataService, times(1)).getActiveCdnSitesOfVm(vm.vmId);
-        verify(context, times(0)).execute(eq(Vps4ModifyCdnSite.class), any());
+        verify(context, times(0))
+                .execute(startsWith("ModifyCdnSite-"), eq(Vps4ModifyCdnSite.class), any());
     }
 
     @Test
@@ -136,7 +138,7 @@ public class Vps4ProcessSuspendServerTest {
 
         command.executeWithAction(context, request);
         verify(cdnDataService, times(1)).getActiveCdnSitesOfVm(vm.vmId);
-        verify(context, times(0)).execute(eq(Vps4ModifyCdnSite.class), any());
+        verify(context, times(0))
+                .execute(startsWith("ModifyCdnSite-"), eq(Vps4ModifyCdnSite.class), any());
     }
-
 }

@@ -1,9 +1,14 @@
 package com.godaddy.vps4.orchestration.vm;
 
+import com.godaddy.vps4.cdn.CdnDataService;
+import com.godaddy.vps4.cdn.model.CdnBypassWAF;
+import com.godaddy.vps4.cdn.model.CdnCacheLevel;
+import com.godaddy.vps4.cdn.model.VmCdnSite;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.ECommCreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.orchestration.ActionCommand;
+import com.godaddy.vps4.orchestration.cdn.Vps4ModifyCdnSite;
 import com.godaddy.vps4.orchestration.hfs.vm.EndRescueVm;
 import com.godaddy.vps4.orchestration.hfs.vm.StartVm;
 import com.godaddy.vps4.orchestration.panopta.ResumePanoptaMonitoring;
@@ -15,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
+import java.util.List;
 
 @CommandMetadata(
         name = "Vps4ProcessReinstateServer",
@@ -26,13 +32,15 @@ public class Vps4ProcessReinstateServer extends ActionCommand<VmActionRequest, V
 
     final ActionService actionService;
     final CreditService creditService;
+    final CdnDataService cdnDataService;
     private final Logger logger = LoggerFactory.getLogger(Vps4ProcessReinstateServer.class);
 
     @Inject
-    public Vps4ProcessReinstateServer(ActionService actionService, CreditService creditService) {
+    public Vps4ProcessReinstateServer(ActionService actionService, CreditService creditService, CdnDataService cdnDataService) {
         super(actionService);
         this.actionService = actionService;
         this.creditService = creditService;
+        this.cdnDataService = cdnDataService;
     }
 
     @Override
@@ -47,6 +55,7 @@ public class Vps4ProcessReinstateServer extends ActionCommand<VmActionRequest, V
 
         creditService.updateProductMeta(request.virtualMachine.orionGuid, ECommCreditService.ProductMetaField.SUSPENDED, null);
         resumePanoptaMonitoring(context, request);
+        getAndUnpauseCdnSites(context, request, credit.getShopperId());
         if(request.virtualMachine.spec.isVirtualMachine())
             reinstateVm(context, request);
         else
@@ -56,6 +65,22 @@ public class Vps4ProcessReinstateServer extends ActionCommand<VmActionRequest, V
 
     public void resumePanoptaMonitoring(CommandContext context,  VmActionRequest request) {
         context.execute(ResumePanoptaMonitoring.class, request.virtualMachine);
+    }
+
+    public void getAndUnpauseCdnSites(CommandContext context, VmActionRequest request, String shopperId) {
+        List<VmCdnSite> cdnSites = cdnDataService.getActiveCdnSitesOfVm(request.virtualMachine.vmId);
+        if (cdnSites != null) {
+            for (VmCdnSite site : cdnSites) {
+                Vps4ModifyCdnSite.Request req = new Vps4ModifyCdnSite.Request();
+                req.encryptedCustomerJwt = null;
+                req.vmId = request.virtualMachine.vmId;
+                req.bypassWAF = CdnBypassWAF.DISABLED;
+                req.cacheLevel = CdnCacheLevel.CACHING_OPTIMIZED;
+                req.shopperId = shopperId;
+                req.siteId = site.siteId;
+                context.execute("ModifyCdnSite-" + site.siteId, Vps4ModifyCdnSite.class, req);
+            }
+        }
     }
 
     private void reinstateDed(CommandContext context, VmActionRequest request) {

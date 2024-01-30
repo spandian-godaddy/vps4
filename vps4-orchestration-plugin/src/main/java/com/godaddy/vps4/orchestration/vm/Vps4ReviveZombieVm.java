@@ -1,8 +1,15 @@
 package com.godaddy.vps4.orchestration.vm;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.godaddy.vps4.cdn.CdnDataService;
+import com.godaddy.vps4.cdn.model.CdnBypassWAF;
+import com.godaddy.vps4.cdn.model.CdnCacheLevel;
+import com.godaddy.vps4.cdn.model.VmCdnSite;
+import com.godaddy.vps4.credit.VirtualMachineCredit;
+import com.godaddy.vps4.orchestration.cdn.Vps4ModifyCdnSite;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,13 +35,15 @@ public class Vps4ReviveZombieVm extends ActionCommand<Vps4ReviveZombieVm.Request
     private static final Logger logger = LoggerFactory.getLogger(Vps4ReviveZombieVm.class);
     private final VirtualMachineService virtualMachineService;
     private final CreditService creditService;
+    private final CdnDataService cdnDataService;
 
     @Inject
     public Vps4ReviveZombieVm(ActionService actionService, VirtualMachineService virtualMachineService,
-                              CreditService creditService) {
+                              CreditService creditService, CdnDataService cdnDataService) {
         super(actionService);
         this.virtualMachineService = virtualMachineService;
         this.creditService = creditService;
+        this.cdnDataService = cdnDataService;
     }
 
 
@@ -54,6 +63,8 @@ public class Vps4ReviveZombieVm extends ActionCommand<Vps4ReviveZombieVm.Request
         startServer(context, request);
 
         resumePanoptaMonitoring(context, request);
+
+        getAndUnpauseCdnSites(context, request);
 
         return null;
     }
@@ -80,6 +91,25 @@ public class Vps4ReviveZombieVm extends ActionCommand<Vps4ReviveZombieVm.Request
     public void resumePanoptaMonitoring(CommandContext context, Request request) {
         VirtualMachine virtualMachine = virtualMachineService.getVirtualMachine(request.vmId);
         context.execute(ResumePanoptaMonitoring.class, virtualMachine);
+    }
+
+
+    public void getAndUnpauseCdnSites(CommandContext context, Request request) {
+        VirtualMachineCredit credit = creditService.getVirtualMachineCredit(request.newCreditId);
+        List<VmCdnSite> cdnSites = cdnDataService.getActiveCdnSitesOfVm(request.vmId);
+
+        if (cdnSites != null) {
+            for (VmCdnSite site : cdnSites) {
+                Vps4ModifyCdnSite.Request req = new Vps4ModifyCdnSite.Request();
+                req.encryptedCustomerJwt = null;
+                req.vmId = request.vmId;
+                req.bypassWAF = CdnBypassWAF.DISABLED;
+                req.cacheLevel = CdnCacheLevel.CACHING_OPTIMIZED;
+                req.shopperId = credit.getShopperId();
+                req.siteId = site.siteId;
+                context.execute("ModifyCdnSite-" + site.siteId, Vps4ModifyCdnSite.class, req);
+            }
+        }
     }
 
     private void transferProductMeta(Request request) {
