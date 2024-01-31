@@ -144,7 +144,10 @@ public class ECommCreditService implements CreditService {
             stream = stream.filter(a -> !a.product_meta.containsKey(ProductMetaField.DATA_CENTER.toString()));
         }
 
-        return stream.filter(Objects::nonNull).map(this::mapVirtualMachineCredit).collect(Collectors.toList());
+        List<VirtualMachineCredit> credits = stream.map(this::mapVirtualMachineCredit).collect(Collectors.toList());
+        credits.removeIf(Objects::isNull);
+
+        return credits;
     }
 
     @Override

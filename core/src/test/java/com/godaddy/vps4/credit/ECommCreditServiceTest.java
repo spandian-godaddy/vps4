@@ -63,6 +63,11 @@ public class ECommCreditServiceTest {
 
     @Before
     public void setUp() throws Exception {
+        account = createTestAccount();
+    }
+
+    private Account createTestAccount() {
+        Account account = new Account();
         orionGuid = UUID.randomUUID();
         account = new Account();
         account.account_guid = orionGuid.toString();
@@ -80,6 +85,7 @@ public class ECommCreditServiceTest {
         account.product_meta = new HashMap<>();
         account.expire_date = new Date();
         account.auto_renew = "true";
+        return account;
     }
 
     private void markCreditClaimed() {
@@ -92,7 +98,7 @@ public class ECommCreditServiceTest {
     public void testGetCreditCallsGetAccount() throws Exception {
         when(ecommService.getAccount(orionGuid.toString())).thenReturn(account);
         creditService.getVirtualMachineCredit(orionGuid);
-        verify(ecommService).getAccount(eq(orionGuid.toString()));
+        verify(ecommService).getAccount(orionGuid.toString());
     }
 
     @Test
@@ -237,7 +243,7 @@ public class ECommCreditServiceTest {
     @Test
     public void testGetUnclaimedCreditsCallsGetAccounts() throws Exception {
         assertTrue(creditService.getVirtualMachineCredits(account.shopper_id, false).isEmpty());
-        verify(ecommService).getAccounts(eq(account.shopper_id));
+        verify(ecommService).getAccounts(account.shopper_id);
     }
 
     @Test
@@ -280,6 +286,17 @@ public class ECommCreditServiceTest {
         account.status = Account.Status.removed;
         credits = creditService.getVirtualMachineCredits(account.shopper_id, true);
         assertEquals(0, credits.size());
+    }
+
+    @Test
+    public void testGetCreditsFiltersNull() throws Exception {
+        Account account2 = createTestAccount();
+        account2.account_guid = "not a guid";
+        List<Account> accounts = Arrays.asList(account, account2);
+        when(ecommService.getAccounts(account.shopper_id)).thenReturn(accounts);
+
+        List<VirtualMachineCredit> credits = creditService.getVirtualMachineCredits(account.shopper_id, true);
+        assertEquals(1, credits.size());
     }
 
     @Test
