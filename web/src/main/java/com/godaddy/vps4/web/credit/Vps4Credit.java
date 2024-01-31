@@ -37,6 +37,10 @@ public class Vps4Credit {
         expireDate = virtualMachineCredit.entitlementData.expireDate;
         autoRenew = false;
         mssql = virtualMachineCredit.mssql;
+        ded4 = virtualMachineCredit.isDed4();
+        hasMonitoring = virtualMachineCredit.hasMonitoring();
+        managed = virtualMachineCredit.isManaged();
+        vmSuspended = false;
     }
 
     public UUID orionGuid;
@@ -60,4 +64,8 @@ public class Vps4Credit {
     public Instant expireDate;
     public boolean autoRenew;
     public String mssql;
+    public boolean ded4;
+    public boolean hasMonitoring;
+    public boolean managed;
+    public boolean vmSuspended;
 }
