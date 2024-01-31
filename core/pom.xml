@@ -289,7 +289,7 @@
         <dependency>
             <groupId>hfs</groupId>
             <artifactId>vhfs-sysadmin-common-lib</artifactId>
-            <version>1.5.1.5</version>
+            <version>1.5.1.65</version>
             <exclusions>
                 <exclusion>
                     <groupId>*</groupId>
