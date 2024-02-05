@@ -59,7 +59,7 @@ public class CreditResource {
     @Path("/{orionGuid}")
     public Vps4Credit getCredit(@PathParam("orionGuid") UUID orionGuid) {
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(orionGuid);
-        if (user.isShopper() && (credit == null || !credit.getShopperId().equals(user.getShopperId()))) {
+        if (credit == null || (user.isShopper() && !credit.getShopperId().equals(user.getShopperId()))) {
             throw new NotFoundException("Unknown Credit ID: " + orionGuid);
         }
         return new Vps4Credit(credit);
