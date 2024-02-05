@@ -68,7 +68,7 @@ public class Vps4ProcessAccountCancellation extends ActionCommand<Vps4ProcessAcc
             if (hasAccountBeenClaimed(request.virtualMachineCredit)) {
                 UUID vmId = request.virtualMachineCredit.getProductId();
                 Instant validUntil = calculateValidUntil();
-                pausePanoptaMonitoring(vmId);
+                pausePanoptaMonitoring(vmId, request.virtualMachineCredit);
                 getAndPauseCdnSites(vmId, request.virtualMachineCredit);
                 markVmAsZombie(vmId);
                 UUID jobId = scheduleZombieVmCleanup(vmId, validUntil);
@@ -88,8 +88,11 @@ public class Vps4ProcessAccountCancellation extends ActionCommand<Vps4ProcessAcc
         context.execute(ScheduleCancelAccount.class, vmId);
     }
 
-    public void pausePanoptaMonitoring(UUID vmId) {
-        context.execute(PausePanoptaMonitoring.class, vmId);
+    public void pausePanoptaMonitoring(UUID vmId, VirtualMachineCredit credit) {
+        PausePanoptaMonitoring.Request pausePanoptaMonitoringRequest = new PausePanoptaMonitoring.Request();
+        pausePanoptaMonitoringRequest.vmId = vmId;
+        pausePanoptaMonitoringRequest.shopperId = credit.getShopperId();
+        context.execute(PausePanoptaMonitoring.class, pausePanoptaMonitoringRequest);
     }
 
     private boolean hasAccountBeenClaimed(VirtualMachineCredit virtualMachineCredit) {

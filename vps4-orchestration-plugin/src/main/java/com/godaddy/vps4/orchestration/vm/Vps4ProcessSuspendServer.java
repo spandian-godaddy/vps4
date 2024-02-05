@@ -64,7 +64,10 @@ public class Vps4ProcessSuspendServer extends ActionCommand<VmActionRequest, Voi
     }
 
     public void pausePanoptaMonitoring(CommandContext context, VmActionRequest request) {
-        context.execute(PausePanoptaMonitoring.class, request.virtualMachine.vmId);
+        PausePanoptaMonitoring.Request pausePanoptaMonitoringRequest = new PausePanoptaMonitoring.Request();
+        pausePanoptaMonitoringRequest.vmId = request.virtualMachine.vmId;
+        pausePanoptaMonitoringRequest.shopperId = creditService.getVirtualMachineCredit(request.virtualMachine.orionGuid).getShopperId();
+        context.execute(PausePanoptaMonitoring.class, pausePanoptaMonitoringRequest);
     }
 
     public void getAndPauseCdnSites(CommandContext context, VmActionRequest request, String shopperId) {

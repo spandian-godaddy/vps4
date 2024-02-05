@@ -6,6 +6,7 @@ import javax.inject.Inject;
 
 import com.godaddy.vps4.panopta.PanoptaService;
 
+import com.godaddy.vps4.panopta.PanoptaServiceException;
 import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
@@ -13,11 +14,11 @@ import gdg.hfs.orchestration.CommandRetryStrategy;
 
 @CommandMetadata(
         name = "PausePanoptaMonitoring",
-        requestType = UUID.class,
+        requestType = PausePanoptaMonitoring.Request.class,
         retryStrategy = CommandRetryStrategy.NEVER
 )
 
-public class PausePanoptaMonitoring implements Command<UUID, Void> {
+public class PausePanoptaMonitoring implements Command<PausePanoptaMonitoring.Request, Void> {
     private final PanoptaService panoptaService;
 
     @Inject
@@ -26,8 +27,17 @@ public class PausePanoptaMonitoring implements Command<UUID, Void> {
     }
 
     @Override
-    public Void execute(CommandContext context, UUID vmId) {
-        panoptaService.pauseServerMonitoring(vmId);
+    public Void execute(CommandContext context, Request request) {
+        try {
+            panoptaService.pauseServerMonitoring(request.vmId, request.shopperId);
+        } catch (PanoptaServiceException e) {
+            throw new RuntimeException(e);
+        }
         return null;
+    }
+
+    public static class Request {
+        public UUID vmId;
+        public String shopperId;
     }
 }

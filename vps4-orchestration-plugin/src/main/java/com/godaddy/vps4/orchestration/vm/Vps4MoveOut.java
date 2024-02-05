@@ -89,7 +89,7 @@ public class Vps4MoveOut extends ActionCommand<Vps4MoveOut.Request, Void> {
                 try {
                     context.execute("RemoveUser-" + r.username, Vps4RemoveSupportUser.class, r);
                 } catch (Exception e) {
-                    logger.error("Exception while removing support user {} for VM {} and shopper {}",
+                    logger.error("Exception while removing support user {} for VM {}",
                                  r.username, r.vmId, e);
                 }
                 return null;
@@ -132,6 +132,9 @@ public class Vps4MoveOut extends ActionCommand<Vps4MoveOut.Request, Void> {
             // uninstalling the agent greatly improves the chances that a reinstall will work
             context.execute(UninstallPanoptaAgent.class, hfsVmId);
         } catch (Exception ignored) {}
-        context.execute(RemovePanoptaMonitoring.class, vmId);
+        RemovePanoptaMonitoring.Request request = new RemovePanoptaMonitoring.Request();
+        request.vmId = vmId;
+        request.orionGuid = virtualMachineService.getOrionGuidByVmId(vmId);
+        context.execute(RemovePanoptaMonitoring.class, request);
     }
 }

@@ -133,7 +133,10 @@ public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4Dest
     }
 
     private void removeMonitoring() {
-        context.execute(RemovePanoptaMonitoring.class, vm.vmId);
+        RemovePanoptaMonitoring.Request removePanoptaMonitoringRequest = new RemovePanoptaMonitoring.Request();
+        removePanoptaMonitoringRequest.vmId = vm.vmId;
+        removePanoptaMonitoringRequest.orionGuid = vm.orionGuid;
+        context.execute(RemovePanoptaMonitoring.class, removePanoptaMonitoringRequest);
     }
 
     private void removeIp() {

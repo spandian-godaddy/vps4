@@ -2,8 +2,7 @@ package com.godaddy.vps4.orchestration.panopta;
 
 import org.junit.Test;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.*;
 import static org.mockito.internal.verification.VerificationModeFactory.times;
 
 import java.util.UUID;
@@ -31,8 +30,15 @@ public class PausePanoptaMonitoringTest {
 
     @Test
     public void testExecuteSuccess() throws PanoptaServiceException {
+        String shopperId = "test-shopper";
         UUID vmId = UUID.fromString("89111e35-6b2d-48c6-b293-d8cdb5207b19");
-        command.execute(context, vmId);
-        verify(panoptaService, times(1)).pauseServerMonitoring(vmId);
+
+        PausePanoptaMonitoring.Request request = new PausePanoptaMonitoring.Request();
+        request.shopperId = shopperId;
+        request.vmId = vmId;
+
+        command.execute(context, request);
+
+        verify(panoptaService, times(1)).pauseServerMonitoring(vmId, shopperId);
     }
 }

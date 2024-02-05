@@ -40,6 +40,7 @@ import javax.cache.Cache;
 import javax.cache.CacheManager;
 import javax.ws.rs.NotFoundException;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -123,7 +124,7 @@ public class DefaultPanoptaServiceTest {
         shopperId = "dummy-shopper-id";
         credit = createDummyCredit();
         partnerCustomerKey = "gdtest_" + shopperId;
-        customerKey = "someCustomerKey";
+        customerKey = "2hum-wpmt-vswt-2g3b";
         serverKey = "someServerKey";
         panoptaDetail = new PanoptaDetail(vmId, partnerCustomerKey,
                                           customerKey, serverId, serverKey,
@@ -131,14 +132,14 @@ public class DefaultPanoptaServiceTest {
         setupPanoptaServers();
         setupGraphIdLists();
         setupGraphs();
-        setupCustomerList();
+        setupCustomers();
         setupServerGroups();
         setupPanoptaMetrics();
         setupOtherMocks();
         when(cacheManager.getCache(CacheName.PANOPTA_METRIC_GRAPH,
                                    String.class,
                                    DefaultPanoptaService.CachedMonitoringGraphs.class)).thenReturn(cache);
-        defaultPanoptaService = new DefaultPanoptaService(pool,
+        defaultPanoptaService = spy(new DefaultPanoptaService(pool,
                                                           cacheManager,
                                                           panoptaApiCustomerService,
                                                           panoptaApiServerService,
@@ -146,7 +147,7 @@ public class DefaultPanoptaServiceTest {
                                                           panoptaApiOutageService,
                                                           panoptaDataService,
                                                           config,
-                                                          panoptaMetricMapper);
+                                                          panoptaMetricMapper));
     }
 
     @After
@@ -222,7 +223,7 @@ public class DefaultPanoptaServiceTest {
         networkGraph.values = new ArrayList<>();
     }
 
-    private void setupCustomerList() throws IOException {
+    private void setupCustomers() throws IOException {
         String mock = "{\n" +
                 "  \"customer_list\": [\n" +
                 "    {\n" +
@@ -245,6 +246,7 @@ public class DefaultPanoptaServiceTest {
                 "}\n";
         PanoptaApiCustomerList fakePanoptaCustomers = objectMapper.readValue(mock, PanoptaApiCustomerList.class);
         when(panoptaApiCustomerService.getCustomer(partnerCustomerKey)).thenReturn(fakePanoptaCustomers);
+        when(panoptaApiCustomerService.getCustomersByStatus(partnerCustomerKey, "active")).thenReturn(fakePanoptaCustomers);
         when(panoptaApiCustomerList.getCustomerList()).thenReturn(fakePanoptaCustomers.getCustomerList());
     }
 
@@ -478,23 +480,23 @@ public class DefaultPanoptaServiceTest {
     }
 
     @Test
-    public void testDoesNotPauseMonitoringWhenNoDbEntry() {
+    public void testDoesNotPauseMonitoringWhenNoDbEntry() throws PanoptaServiceException {
         when(panoptaDataService.getPanoptaDetails(vmId)).thenReturn(null);
-        defaultPanoptaService.pauseServerMonitoring(vmId);
+        defaultPanoptaService.pauseServerMonitoring(vmId, shopperId);
         verify(panoptaApiServerService, never()).getServer(serverId, partnerCustomerKey);
     }
 
     @Test
-    public void testDoesNotPauseMonitoringWhenPanoptaAlreadySuspended() {
+    public void testDoesNotPauseMonitoringWhenPanoptaAlreadySuspended() throws PanoptaServiceException {
         server.status = "suspended";
-        defaultPanoptaService.pauseServerMonitoring(vmId);
+        defaultPanoptaService.pauseServerMonitoring(vmId, shopperId);
         verify(panoptaApiServerService, never()).updateServer(eq(serverId), eq(partnerCustomerKey), any());
     }
 
     @Test
-    public void testPauseMonitoringSuccess() {
+    public void testPauseMonitoringSuccess() throws PanoptaServiceException {
         server.status = "active";
-        defaultPanoptaService.pauseServerMonitoring(vmId);
+        defaultPanoptaService.pauseServerMonitoring(vmId, shopperId);
         verify(panoptaApiServerService).updateServer(eq(serverId), eq(partnerCustomerKey), any());
     }
 
@@ -559,7 +561,7 @@ public class DefaultPanoptaServiceTest {
     }
 
     @Test
-    public void testApplyTemplates() throws PanoptaServiceException {
+    public void testApplyTemplates() {
         String[] templates = { "https://api2.panopta.com/v2/server_template/fake_template_base",
                 "https://api2.panopta.com/v2/server_template/fake_template_dc" };
 
@@ -603,8 +605,8 @@ public class DefaultPanoptaServiceTest {
         assertNull(result);
     }
     @Test
-    public void testDeleteServer() {
-        defaultPanoptaService.deleteServer(vmId);
+    public void testDeleteServer() throws PanoptaServiceException {
+        defaultPanoptaService.deleteServer(vmId, shopperId);
         verify(panoptaApiServerService).deleteServer(serverId, partnerCustomerKey);
     }
 
@@ -703,7 +705,7 @@ public class DefaultPanoptaServiceTest {
         PanoptaOutage mockOutage = mock(PanoptaOutage.class);
         mockOutage.metricIds = Collections.singleton(affectedMetric.id);
         Map<Long, List<String>> networkMetricMetadata = new HashMap<>();
-        networkMetricMetadata.put(affectedMetric.id, Arrays.asList("Unable to resolve host name additionalFqdn.fake"));
+        networkMetricMetadata.put(affectedMetric.id, Collections.singletonList("Unable to resolve host name additionalFqdn.fake"));
         mockOutage.networkMetricMetadata = networkMetricMetadata;
         when(panoptaMetricMapper.getVmMetric(affectedMetric.typeId)).thenReturn(VmMetric.HTTP_DOMAIN);
         when(panoptaMetricMapper.getVmMetric(unaffectedMetric.typeId)).thenReturn(VmMetric.SSH);
@@ -711,7 +713,7 @@ public class DefaultPanoptaServiceTest {
 
         VmOutage outage = defaultPanoptaService.getOutage(vmId, 123);
 
-        assertEquals(Arrays.asList("Unable to resolve host name additionalFqdn.fake"), outage.domainMonitoringMetadata.get(0).metadata);
+        assertEquals(Collections.singletonList("Unable to resolve host name additionalFqdn.fake"), outage.domainMonitoringMetadata.get(0).metadata);
         assertEquals("additionalFqdn.fake", outage.domainMonitoringMetadata.get(0).additionalFqdn);
         assertEquals(VmMetric.HTTP_DOMAIN, outage.domainMonitoringMetadata.get(0).metric);
 
@@ -907,5 +909,95 @@ public class DefaultPanoptaServiceTest {
     @Test
     public void testGetPartnerCustomerKey() {
         assertEquals(partnerCustomerKey, defaultPanoptaService.getPartnerCustomerKey(shopperId));
+    }
+
+    @Test
+    public void testValidateAndGetOrCreatePanoptaCustomerGetsCustomerFromDb() throws PanoptaServiceException {
+        when(panoptaDataService.getPanoptaCustomerDetails(shopperId)).thenReturn(panoptaCustomerDetails);
+        when(panoptaCustomerDetails.getCustomerKey()).thenReturn(customerKey);
+
+        defaultPanoptaService.validateAndGetOrCreatePanoptaCustomer(shopperId);
+
+        verify(panoptaDataService, times(1)).getPanoptaCustomerDetails(shopperId);
+        verify(defaultPanoptaService, times(1)).getCustomer(shopperId);
+        verify(defaultPanoptaService, never()).createCustomer(shopperId);
+        verify(panoptaDataService, never()).createOrUpdatePanoptaCustomer(anyString(), anyString());
+    }
+
+    @Test
+    public void testValidateAndGetOrCreatePanoptaCustomerCreatesPanoptaCustomer() throws PanoptaServiceException, JsonProcessingException {
+        String mock = "{\n" +
+                "  \"customer_list\": [],\n" +
+                "  \"meta\": {\n" +
+                "    \"limit\": 50,\n" +
+                "    \"next\": null,\n" +
+                "    \"offset\": 0,\n" +
+                "    \"previous\": null,\n" +
+                "    \"total_count\": 0\n" +
+                "  }\n" +
+                "}\n";
+        PanoptaApiCustomerList fakePanoptaCustomers = objectMapper.readValue(mock, PanoptaApiCustomerList.class);
+        when(panoptaApiCustomerService.getCustomersByStatus(partnerCustomerKey, "active")).thenReturn(fakePanoptaCustomers);
+        when(panoptaDataService.getPanoptaCustomerDetails(shopperId)).thenReturn(null);
+
+        defaultPanoptaService.validateAndGetOrCreatePanoptaCustomer(shopperId);
+
+        verify(panoptaDataService, times(2)).getPanoptaCustomerDetails(shopperId);
+        verify(defaultPanoptaService, times(1)).getCustomer(shopperId);
+        verify(defaultPanoptaService, times(1)).createCustomer(shopperId);
+        verify(panoptaDataService, times(1)).createOrUpdatePanoptaCustomer(anyString(), anyString());
+    }
+
+    @Test
+    public void testValidateAndGetOrCreatePanoptaCustomerGetsCustomerFromPanoptaAndStoresInDb() throws PanoptaServiceException {
+        when(panoptaDataService.getPanoptaCustomerDetails(shopperId)).thenReturn(panoptaCustomerDetails);
+
+        defaultPanoptaService.validateAndGetOrCreatePanoptaCustomer(shopperId);
+
+        verify(panoptaDataService, times(2)).getPanoptaCustomerDetails(shopperId);
+        verify(defaultPanoptaService, times(1)).getCustomer(shopperId);
+        verify(defaultPanoptaService, never()).createCustomer(shopperId);
+        verify(panoptaDataService, times(1)).createOrUpdatePanoptaCustomer(anyString(), anyString());
+    }
+
+    @Test
+    public void testValidateAndGetOrCreatePanoptaCustomerCreatesCustomerAndUpdatesDbIfDestroyedInPanopta() throws PanoptaServiceException, JsonProcessingException {
+        String mock = "{\n" +
+                "  \"customer_list\": [],\n" +
+                "  \"meta\": {\n" +
+                "    \"limit\": 50,\n" +
+                "    \"next\": null,\n" +
+                "    \"offset\": 0,\n" +
+                "    \"previous\": null,\n" +
+                "    \"total_count\": 0\n" +
+                "  }\n" +
+                "}\n";
+        PanoptaApiCustomerList fakePanoptaCustomers = objectMapper.readValue(mock, PanoptaApiCustomerList.class);
+        when(panoptaApiCustomerService.getCustomersByStatus(partnerCustomerKey, "active")).thenReturn(fakePanoptaCustomers);
+        when(panoptaDataService.getPanoptaCustomerDetails(shopperId)).thenReturn(panoptaCustomerDetails);
+        when(panoptaCustomerDetails.getCustomerKey()).thenReturn(null);
+
+        defaultPanoptaService.validateAndGetOrCreatePanoptaCustomer(shopperId);
+
+        verify(panoptaDataService, times(2)).getPanoptaCustomerDetails(shopperId);
+        verify(panoptaDataService, times(1)).setAllPanoptaServersOfCustomerDestroyed(shopperId);
+        verify(panoptaDataService, times(1)).checkAndSetPanoptaCustomerDestroyed(shopperId);
+        verify(defaultPanoptaService, times(1)).getCustomer(shopperId);
+        verify(defaultPanoptaService, times(1)).createCustomer(shopperId);
+        verify(panoptaDataService, times(1)).createOrUpdatePanoptaCustomer(anyString(), anyString());
+    }
+
+    @Test
+    public void testValidateAndGetOrCreatePanoptaCustomerUpdatesDbIfCustomerKeyIsOutOfSync() throws PanoptaServiceException {
+        when(panoptaDataService.getPanoptaCustomerDetails(shopperId)).thenReturn(panoptaCustomerDetails);
+        when(panoptaCustomerDetails.getCustomerKey()).thenReturn(customerKey+"-2");
+
+        defaultPanoptaService.validateAndGetOrCreatePanoptaCustomer(shopperId);
+
+        verify(panoptaDataService, times(2)).getPanoptaCustomerDetails(shopperId);
+        verify(panoptaDataService, times(1)).setAllPanoptaServersOfCustomerDestroyed(shopperId);
+        verify(panoptaDataService, times(1)).checkAndSetPanoptaCustomerDestroyed(shopperId);
+        verify(defaultPanoptaService, times(1)).getCustomer(shopperId);
+        verify(panoptaDataService, times(1)).createOrUpdatePanoptaCustomer(anyString(), anyString());
     }
 }

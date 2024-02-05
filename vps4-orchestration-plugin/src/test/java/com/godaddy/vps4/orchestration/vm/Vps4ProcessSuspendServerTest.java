@@ -1,6 +1,5 @@
 package com.godaddy.vps4.orchestration.vm;
 
-import com.godaddy.hfs.vm.VmAction;
 import com.godaddy.vps4.cdn.CdnDataService;
 import com.godaddy.vps4.cdn.model.CdnBypassWAF;
 import com.godaddy.vps4.cdn.model.CdnCacheLevel;
@@ -26,8 +25,8 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import java.util.Collections;
 import java.util.UUID;
-import java.util.function.Function;
 
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.startsWith;
@@ -42,6 +41,7 @@ public class Vps4ProcessSuspendServerTest {
     CdnDataService cdnDataService = mock(CdnDataService.class);
     CommandContext context = mock(CommandContext.class);
     VirtualMachine vm;
+    String shopperId = "test-shopper";
     VmCdnSite vmCdnSite;
     VirtualMachineCredit credit;
     @Captor
@@ -58,7 +58,7 @@ public class Vps4ProcessSuspendServerTest {
         vmCdnSite.vmId = vm.vmId;
         vmCdnSite.siteId = "fakeSiteId";
         credit = mock(VirtualMachineCredit.class);
-        when(credit.getShopperId()).thenReturn("fakeShopperId");
+        when(credit.getShopperId()).thenReturn(shopperId);
         when(cdnDataService.getActiveCdnSitesOfVm(vm.vmId)).thenReturn(Collections.singletonList(vmCdnSite));
         when(creditService.getVirtualMachineCredit(vm.orionGuid)).thenReturn(credit);
     }
@@ -90,10 +90,15 @@ public class Vps4ProcessSuspendServerTest {
     @Test
     public void testPausePanoptaMonitoring(){
         when(vm.spec.isVirtualMachine()).thenReturn(true);
+        ArgumentCaptor<PausePanoptaMonitoring.Request> pauseMonitoringCaptor = ArgumentCaptor.forClass(PausePanoptaMonitoring.Request.class);
         VmActionRequest request = new VmActionRequest();
         request.virtualMachine = vm;
         command.executeWithAction(context, request);
-        verify(context, times(1)).execute(eq(PausePanoptaMonitoring.class), any());
+        verify(context, times(1)).execute(eq(PausePanoptaMonitoring.class), pauseMonitoringCaptor.capture());
+
+        PausePanoptaMonitoring.Request r = pauseMonitoringCaptor.getValue();
+        assertEquals(vm.vmId, r.vmId);
+        assertEquals(shopperId, r.shopperId);
     }
 
     @Test
@@ -112,7 +117,7 @@ public class Vps4ProcessSuspendServerTest {
         Assert.assertEquals(CdnBypassWAF.ENABLED, req.bypassWAF);
         Assert.assertEquals(CdnCacheLevel.CACHING_DISABLED, req.cacheLevel);
         Assert.assertEquals(null, req.encryptedCustomerJwt);
-        Assert.assertEquals("fakeShopperId", req.shopperId);
+        Assert.assertEquals("test-shopper", req.shopperId);
         Assert.assertEquals(vmCdnSite.siteId, req.siteId);
     }
 

@@ -58,12 +58,9 @@ public class Vps4MoveOutTest {
     private Vps4MoveOut command;
     private Vps4MoveOut.Request request;
     private VirtualMachine vm;
-    private List<VmUser> supportUsers;
-    private PanoptaServerDetails panoptaServerDetails;
 
-    @Captor private ArgumentCaptor<String> commandNameCaptor;
     @Captor private ArgumentCaptor<Vps4RemoveSupportUser.Request> removeSupportUserRequestCaptor;
-    @Captor private ArgumentCaptor<Function<CommandContext, Void>> lambda;
+    @Captor private ArgumentCaptor<RemovePanoptaMonitoring.Request> removeMonitoringCaptor;
 
     @Before
     public void setUp() {
@@ -82,22 +79,24 @@ public class Vps4MoveOutTest {
         vm.backupJobId = request.backupJobId;
         vm.vmId = request.vmId;
         vm.hfsVmId = 42L;
+        vm.orionGuid = UUID.randomUUID();
 
         VmUser[] supportUserArray = new VmUser[] {
                 new VmUser("lobster", request.vmId, true, VmUserType.SUPPORT),
                 new VmUser("duck", request.vmId, true, VmUserType.SUPPORT)
         };
-        supportUsers = Arrays.asList(supportUserArray);
+        List<VmUser> supportUsers = Arrays.asList(supportUserArray);
 
         when(context.getId()).thenReturn(UUID.randomUUID());
         when(virtualMachineService.getVirtualMachine(request.vmId)).thenReturn(vm);
+        when(virtualMachineService.getOrionGuidByVmId(request.vmId)).thenReturn(vm.orionGuid);
         when(vmUserService.listUsers(request.vmId, VmUserType.SUPPORT)).thenReturn(supportUsers);
         when(config.get("panopta.api.templates.webhook")).thenReturn("test-template-id");
         setUpPanoptaServerDetails();
     }
 
     private void setUpPanoptaServerDetails() {
-        panoptaServerDetails = new PanoptaServerDetails();
+        PanoptaServerDetails panoptaServerDetails = new PanoptaServerDetails();
         panoptaServerDetails.setServerId(1234);
         panoptaServerDetails.setPartnerCustomerKey("test-customer");
         when(panoptaDataService.getPanoptaServerDetails(vm.vmId)).thenReturn(panoptaServerDetails);
@@ -176,7 +175,11 @@ public class Vps4MoveOutTest {
     public void removesPanoptaMonitoring() {
         command.execute(context, request);
         verify(context, times(1)).execute(UninstallPanoptaAgent.class, vm.hfsVmId);
-        verify(context, times(1)).execute(RemovePanoptaMonitoring.class, vm.vmId);
+        verify(context, times(1)).execute(eq(RemovePanoptaMonitoring.class), removeMonitoringCaptor.capture());
+
+        RemovePanoptaMonitoring.Request r = removeMonitoringCaptor.getValue();
+        assertEquals(vm.vmId, r.vmId);
+        assertEquals(vm.orionGuid, r.orionGuid);
     }
 
     @Test
@@ -185,6 +188,10 @@ public class Vps4MoveOutTest {
                 .thenThrow(new RuntimeException("test exception"));
         command.execute(context, request);
         verify(context, times(1)).execute(UninstallPanoptaAgent.class, vm.hfsVmId);
-        verify(context, times(1)).execute(RemovePanoptaMonitoring.class, vm.vmId);
+        verify(context, times(1)).execute(eq(RemovePanoptaMonitoring.class), removeMonitoringCaptor.capture());
+
+        RemovePanoptaMonitoring.Request r = removeMonitoringCaptor.getValue();
+        assertEquals(request.vmId, r.vmId);
+        assertEquals(vm.orionGuid, r.orionGuid);
     }
 }

@@ -118,8 +118,14 @@ public class Vps4DestroyVmTest {
 
     @Test
     public void executesRemovesMonitoring() {
+        ArgumentCaptor<RemovePanoptaMonitoring.Request> removeMonitoringCaptor = ArgumentCaptor.forClass(RemovePanoptaMonitoring.Request.class);
+
         command.execute(context, request);
-        verify(context).execute(RemovePanoptaMonitoring.class, vm.vmId);
+
+        verify(context).execute(eq(RemovePanoptaMonitoring.class), removeMonitoringCaptor.capture());
+        RemovePanoptaMonitoring.Request r = removeMonitoringCaptor.getValue();
+        assertEquals(vmId, r.vmId);
+        assertEquals(vm.orionGuid, r.orionGuid);
     }
 
     @Test

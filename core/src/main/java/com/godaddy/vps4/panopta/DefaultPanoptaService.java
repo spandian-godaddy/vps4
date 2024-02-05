@@ -291,7 +291,8 @@ public class DefaultPanoptaService implements PanoptaService {
     }
 
     @Override
-    public void deleteServer(UUID vmId) {
+    public void deleteServer(UUID vmId, String shopperId) throws PanoptaServiceException {
+        validateAndGetOrCreatePanoptaCustomer(shopperId);
         PanoptaDetail panoptaDetails = panoptaDataService.getPanoptaDetails(vmId);
         if (panoptaDetails != null) {
             logger.info("Attempting to delete server {} from panopta.", panoptaDetails.getServerId());
@@ -526,7 +527,8 @@ public class DefaultPanoptaService implements PanoptaService {
     }
 
     @Override
-    public void pauseServerMonitoring(UUID vmId) {
+    public void pauseServerMonitoring(UUID vmId, String shopperId) throws PanoptaServiceException {
+        validateAndGetOrCreatePanoptaCustomer(shopperId);
         PanoptaDetail panoptaDetail = panoptaDataService.getPanoptaDetails(vmId);
         if (panoptaDetail == null) {
             return;
@@ -690,5 +692,40 @@ public class DefaultPanoptaService implements PanoptaService {
             }
         }
         return outageMetrics;
+    }
+
+    @Override
+    public PanoptaCustomerDetails validateAndGetOrCreatePanoptaCustomer(String shopperId) throws PanoptaServiceException {
+        PanoptaCustomerDetails customerInDb = panoptaDataService.getPanoptaCustomerDetails(shopperId);
+        PanoptaCustomer customerInPanopta = getCustomer(shopperId);
+
+        if (customerInPanopta == null) {
+            if (customerInDb != null) {
+                logger.info("Panopta customer is not active. Cleaning up customer and servers from DB.");
+                destroyPanoptaCustomerAndServersInDb(shopperId);
+            }
+            customerInPanopta = createCustomer(shopperId);
+            customerInDb = createAndGetCustomerInDb(shopperId, customerInPanopta.customerKey);
+        } else {
+            if (customerInDb != null && !customerInPanopta.customerKey.equals(customerInDb.getCustomerKey())) {
+                logger.info("Panopta customer is out of sync. Re-creating customer with latest Panopta data.");
+                destroyPanoptaCustomerAndServersInDb(shopperId);
+                customerInDb = createAndGetCustomerInDb(shopperId, customerInPanopta.customerKey);
+            } else if (customerInDb == null) {
+                logger.info("Panopta customer is not present in this DB.");
+                customerInDb = createAndGetCustomerInDb(shopperId, customerInPanopta.customerKey);
+            }
+        }
+        return customerInDb;
+    }
+
+    private void destroyPanoptaCustomerAndServersInDb(String shopperId) {
+        panoptaDataService.setAllPanoptaServersOfCustomerDestroyed(shopperId);
+        panoptaDataService.checkAndSetPanoptaCustomerDestroyed(shopperId);
+    }
+
+    private PanoptaCustomerDetails createAndGetCustomerInDb(String shopperId, String customerKey) {
+        panoptaDataService.createOrUpdatePanoptaCustomer(shopperId, customerKey);
+        return panoptaDataService.getPanoptaCustomerDetails(shopperId);
     }
 }

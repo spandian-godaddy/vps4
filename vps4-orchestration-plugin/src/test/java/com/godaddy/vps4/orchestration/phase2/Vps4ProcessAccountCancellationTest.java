@@ -1,5 +1,6 @@
 package com.godaddy.vps4.orchestration.phase2;
 
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.eq;
@@ -19,6 +20,7 @@ import java.util.function.Function;
 
 import javax.sql.DataSource;
 
+import com.godaddy.vps4.orchestration.panopta.PausePanoptaMonitoring;
 import com.godaddy.vps4.cdn.CdnDataService;
 import com.godaddy.vps4.cdn.model.CdnBypassWAF;
 import com.godaddy.vps4.cdn.model.CdnCacheLevel;
@@ -44,7 +46,6 @@ import com.godaddy.vps4.orchestration.account.Vps4ProcessAccountCancellation;
 import com.godaddy.vps4.orchestration.hfs.vm.RescueVm;
 import com.godaddy.vps4.orchestration.hfs.vm.StopVm;
 import com.godaddy.vps4.orchestration.scheduler.ScheduleZombieVmCleanup;
-import com.godaddy.vps4.orchestration.vm.VmActionRequest;
 import com.godaddy.vps4.orchestration.vm.Vps4RecordScheduledJobForVm;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.scheduledJob.ScheduledJob;
@@ -71,13 +72,13 @@ public class Vps4ProcessAccountCancellationTest {
     private UUID orionGuid;
     private VirtualMachine vm;
     private VirtualMachine dedicatedServer;
-    private long stopActionId = 1234;
     private VirtualMachineCredit virtualMachineCredit;
     private Vps4ProcessAccountCancellation.Request request;
+    private static final VmService vmService = mock(VmService.class);
+    private static final Config config  = mock(Config.class);
+    private long stopActionId = 1234;
     private VmCdnSite vmCdnSite = mock(VmCdnSite.class);
-    private static VmService vmService = mock(VmService.class);
     private static CdnDataService cdnDataService = mock(CdnDataService.class);
-    private static Config config  = mock(Config.class);
     private VmAction rescueDedicatedVmAction;
 
     @Inject Vps4UserService vps4UserService;
@@ -90,6 +91,7 @@ public class Vps4ProcessAccountCancellationTest {
     @Captor private ArgumentCaptor<Function<CommandContext, Void>> markZombieLambdaCaptor;
     @Captor private ArgumentCaptor<ScheduleZombieVmCleanup.Request> zombieCleanupArgumentCaptor;
     @Captor private ArgumentCaptor<Vps4RecordScheduledJobForVm.Request> recordJobArgumentCaptor;
+    @Captor private ArgumentCaptor<PausePanoptaMonitoring.Request> pauseMonitoringArgumentCaptor;
     @Captor private ArgumentCaptor<Vps4ModifyCdnSite.Request> modifyCdnSiteLambdaCaptor;
 
     @BeforeClass
@@ -144,12 +146,11 @@ public class Vps4ProcessAccountCancellationTest {
         if (productId != null)
             productMeta.put("product_id", productId.toString());
 
-        VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+        return new VirtualMachineCredit.Builder(mock(DataCenterService.class))
                 .withAccountGuid(orionGuid.toString())
                 .withProductMeta(productMeta)
                 .withShopperID("fakeShopperId")
                 .build();
-        return credit;
     }
 
     private void addTestSqlData() {
@@ -169,6 +170,7 @@ public class Vps4ProcessAccountCancellationTest {
                 .thenReturn(validUntil.toEpochMilli());
         when(mockContext.execute(eq("GetVirtualMachine"), any(Function.class), eq(VirtualMachine.class)))
             .thenReturn(vm);
+        long stopActionId = 1234;
         when(mockContext.execute(eq("CreateVmStopAction"), any(Function.class), eq(long.class)))
                 .thenReturn(stopActionId);
         when(mockContext.getId()).thenReturn(UUID.randomUUID());
@@ -326,5 +328,15 @@ public class Vps4ProcessAccountCancellationTest {
         command.execute(context, request);
         verify(context, times(0)).execute(any(), any(Function.class), any());
         verify(context, times(0)).execute(any(Class.class), any());
+    }
+
+    @Test
+    public void pausesPanoptaMonitoring() {
+        command.execute(context, request);
+        verify(context, times(1)).execute(eq(PausePanoptaMonitoring.class), pauseMonitoringArgumentCaptor.capture());
+
+        PausePanoptaMonitoring.Request r = pauseMonitoringArgumentCaptor.getValue();
+        assertEquals(vm.vmId, r.vmId);
+        assertEquals(virtualMachineCredit.getShopperId(), r.shopperId);
     }
 }

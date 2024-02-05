@@ -32,7 +32,6 @@ import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.InstallPanoptaAgent;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.UninstallPanoptaAgent;
 import com.godaddy.vps4.orchestration.monitoring.RemovePanoptaMonitoring;
-import com.godaddy.vps4.panopta.PanoptaCustomer;
 import com.godaddy.vps4.panopta.PanoptaDataService;
 import com.godaddy.vps4.panopta.PanoptaServer;
 import com.godaddy.vps4.panopta.PanoptaService;
@@ -65,14 +64,12 @@ public class SetupPanoptaTest {
     private final String serverKey = "fake-server-key";
     private final String partnerCustomerKey = "gdtest_" + shopperId;
     private VirtualMachineCredit credit;
-    private PanoptaCustomer customer;
     private PanoptaCustomerDetails customerDetails;
-    private PanoptaServer server;
     private PanoptaServerDetails serverDetails;
 
     @Captor private ArgumentCaptor<ApplyPanoptaTemplates.Request> applyTemplatesCaptor;
     @Captor private ArgumentCaptor<InstallPanoptaAgent.Request> agentInstallCaptor;
-    @Captor private ArgumentCaptor<String[]> templateCaptor;
+    @Captor private ArgumentCaptor<RemovePanoptaMonitoring.Request> removeMonitoringCaptor;
     @Captor private ArgumentCaptor<String[]> tagCaptor;
     @Captor private ArgumentCaptor<Map<Long, String>> attributeCaptor;
 
@@ -90,26 +87,21 @@ public class SetupPanoptaTest {
 
     private void setupCredit() {
         credit = mock(VirtualMachineCredit.class);
-        when(credit.isManaged()).thenReturn(false);
-        when(credit.hasMonitoring()).thenReturn(false);
         when(credit.getOperatingSystem()).thenReturn("LINUX");
         when(credit.getEntitlementId()).thenReturn(orionGuid);
         when(credit.getResellerId()).thenReturn("1");
         when(creditService.getVirtualMachineCredit(orionGuid)).thenReturn(credit);
-    };
+    }
 
     private void setupPanoptaCustomer() throws PanoptaServiceException {
-        customer = new PanoptaCustomer(customerKey, partnerCustomerKey);
-        when(panoptaService.createCustomer(shopperId)).thenReturn(customer);
-        when(panoptaService.getCustomer(shopperId)).thenReturn(customer);
         customerDetails = mock(PanoptaCustomerDetails.class);
         when(customerDetails.getCustomerKey()).thenReturn(customerKey);
-        when(panoptaDataService.getPanoptaCustomerDetails(shopperId)).thenReturn(customerDetails);
-        doNothing().when(panoptaDataService).createOrUpdatePanoptaCustomer(shopperId, customerKey);
+        when(panoptaService.validateAndGetOrCreatePanoptaCustomer(shopperId))
+                .thenReturn(customerDetails);
     }
 
     private void setupPanoptaServer() throws PanoptaServiceException {
-        server = mock(PanoptaServer.class);
+        PanoptaServer server = mock(PanoptaServer.class);
         when(panoptaService.createServer(eq(shopperId), eq(orionGuid), eq(fqdn), any())).thenReturn(server);
         when(panoptaService.getServer(eq(vmId))).thenReturn(server);
         serverDetails = mock(PanoptaServerDetails.class);
@@ -126,7 +118,7 @@ public class SetupPanoptaTest {
         when(context.execute(eq(InstallPanoptaAgent.class), any(InstallPanoptaAgent.Request.class))).thenReturn(null);
         when(context.execute(eq(WaitForPanoptaAgentSync.class), any())).thenReturn(null);
         when(context.execute(UninstallPanoptaAgent.class, hfsVmId)).thenReturn(null);
-        when(context.execute(RemovePanoptaMonitoring.class, vmId)).thenReturn(null);
+        when(context.execute(eq(RemovePanoptaMonitoring.class), any(RemovePanoptaMonitoring.Request.class))).thenReturn(null);
     }
 
     private void setupConfig() {
@@ -150,60 +142,11 @@ public class SetupPanoptaTest {
     }
 
     @Test
-    public void getsCustomerFromDb() throws PanoptaServiceException {
-        setupPanopta.execute(context, request);
-        verify(panoptaDataService, times(1)).getPanoptaCustomerDetails(shopperId);
-        verify(panoptaService, times(1)).getCustomer(shopperId);
-        verify(panoptaService, never()).createCustomer(shopperId);
-        verify(panoptaDataService, never()).createOrUpdatePanoptaCustomer(anyString(), anyString());
-    }
-
-    @Test
-    public void createsPanoptaCustomer() throws PanoptaServiceException {
-        when(panoptaDataService.getPanoptaCustomerDetails(shopperId))
-                .thenReturn(null)
-                .thenReturn(customerDetails);
-        when(panoptaService.getCustomer(shopperId)).thenReturn(null);
-        setupPanopta.execute(context, request);
-        verify(panoptaDataService, times(2)).getPanoptaCustomerDetails(shopperId);
-        verify(panoptaService, times(1)).getCustomer(shopperId);
-        verify(panoptaService, times(1)).createCustomer(shopperId);
-        verify(panoptaDataService, times(1)).createOrUpdatePanoptaCustomer(anyString(), anyString());
-    }
-
-    @Test
-    public void getsCustomerFromPanoptaAndStoresInDb() throws PanoptaServiceException {
-        when(panoptaDataService.getPanoptaCustomerDetails(shopperId))
-                .thenReturn(null)
+    public void callsValidateAndGetOrCreatePanoptaCustomer() throws PanoptaServiceException {
+        when(panoptaService.validateAndGetOrCreatePanoptaCustomer(shopperId))
                 .thenReturn(customerDetails);
         setupPanopta.execute(context, request);
-        verify(panoptaDataService, times(2)).getPanoptaCustomerDetails(shopperId);
-        verify(panoptaService, times(1)).getCustomer(shopperId);
-        verify(panoptaService, never()).createCustomer(shopperId);
-        verify(panoptaDataService, times(1)).createOrUpdatePanoptaCustomer(anyString(), anyString());
-    }
-
-    @Test
-    public void createsCustomerAndUpdatesDbIfDestroyedInPanopta() throws PanoptaServiceException {
-        when(panoptaService.getCustomer(shopperId)).thenReturn(null);
-        setupPanopta.execute(context, request);
-        verify(panoptaDataService, times(2)).getPanoptaCustomerDetails(shopperId);
-        verify(panoptaDataService, times(1)).setAllPanoptaServersOfCustomerDestroyed(shopperId);
-        verify(panoptaDataService, times(1)).checkAndSetPanoptaCustomerDestroyed(shopperId);
-        verify(panoptaService, times(1)).getCustomer(shopperId);
-        verify(panoptaService, times(1)).createCustomer(shopperId);
-        verify(panoptaDataService, times(1)).createOrUpdatePanoptaCustomer(anyString(), anyString());
-    }
-
-    @Test
-    public void updatesDbIfCustomerKeyIsOutOfSync() {
-        when(customerDetails.getCustomerKey()).thenReturn(customerKey+"-2");
-        setupPanopta.execute(context, request);
-        verify(panoptaDataService, times(2)).getPanoptaCustomerDetails(shopperId);
-        verify(panoptaDataService, times(1)).setAllPanoptaServersOfCustomerDestroyed(shopperId);
-        verify(panoptaDataService, times(1)).checkAndSetPanoptaCustomerDestroyed(shopperId);
-        verify(panoptaService, times(1)).getCustomer(shopperId);
-        verify(panoptaDataService, times(1)).createOrUpdatePanoptaCustomer(anyString(), anyString());
+        verify(panoptaService, times(1)).validateAndGetOrCreatePanoptaCustomer(shopperId);
     }
 
     @Test
@@ -239,7 +182,7 @@ public class SetupPanoptaTest {
     }
 
     @Test
-    public void createsPanoptaServerWithTemplates() throws PanoptaServiceException {
+    public void createsPanoptaServerWithTemplates() {
         when(panoptaDataService.getPanoptaServerDetails(vmId)).thenReturn(null).thenReturn(serverDetails);
         when(panoptaService.getServer(vmId)).thenReturn(null);
         setupPanopta.execute(context, request);
@@ -304,7 +247,7 @@ public class SetupPanoptaTest {
             verify(context, times(1)).execute(eq(InstallPanoptaAgent.class), any());
             verify(context, never()).execute(eq(WaitForPanoptaAgentSync.class), any());
             verify(context, times(1)).execute(UninstallPanoptaAgent.class, hfsVmId);
-            verify(context, times(1)).execute(RemovePanoptaMonitoring.class, vmId);
+            verify(context, times(1)).execute(eq(RemovePanoptaMonitoring.class), any());
         }
     }
 
@@ -319,7 +262,11 @@ public class SetupPanoptaTest {
             verify(context, times(1)).execute(eq(InstallPanoptaAgent.class), any());
             verify(context, never()).execute(eq(WaitForPanoptaAgentSync.class), any());
             verify(context, times(1)).execute(UninstallPanoptaAgent.class, hfsVmId);
-            verify(context, times(1)).execute(RemovePanoptaMonitoring.class, vmId);
+            verify(context, times(1)).execute(eq(RemovePanoptaMonitoring.class), removeMonitoringCaptor.capture());
+
+            RemovePanoptaMonitoring.Request r = removeMonitoringCaptor.getValue();
+            assertEquals(vmId, r.vmId);
+            assertEquals(orionGuid, r.orionGuid);
         }
     }
 
@@ -339,7 +286,11 @@ public class SetupPanoptaTest {
             verify(context, times(1)).execute(eq(InstallPanoptaAgent.class), any());
             verify(context, times(1)).execute(eq(WaitForPanoptaAgentSync.class), any());
             verify(context, times(1)).execute(UninstallPanoptaAgent.class, hfsVmId);
-            verify(context, times(1)).execute(RemovePanoptaMonitoring.class, vmId);
+            verify(context, times(1)).execute(eq(RemovePanoptaMonitoring.class), removeMonitoringCaptor.capture());
+
+            RemovePanoptaMonitoring.Request r = removeMonitoringCaptor.getValue();
+            assertEquals(vmId, r.vmId);
+            assertEquals(orionGuid, r.orionGuid);
         }
     }
 }

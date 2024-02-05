@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import com.godaddy.vps4.panopta.jdbc.PanoptaCustomerDetails;
 import com.godaddy.vps4.vm.VmMetric;
 import com.godaddy.vps4.vm.VmOutage;
 
@@ -34,7 +35,7 @@ public interface PanoptaService {
 
     List<PanoptaServer> getServers(String shopperId, String ipAddress, UUID orionGuid);
 
-    void deleteServer(UUID vmId);
+    void deleteServer(UUID vmId, String shopperId) throws PanoptaServiceException;
 
     void setServerAttributes(UUID vmId, Map<Long, String> attributes);
 
@@ -54,7 +55,7 @@ public interface PanoptaService {
 
     String getPartnerCustomerKey(String shopperId);
 
-    void pauseServerMonitoring(UUID vmId);
+    void pauseServerMonitoring(UUID vmId, String shopperId) throws PanoptaServiceException;
 
     void resumeServerMonitoring(UUID vmId, UUID orionGuid);
 
@@ -69,4 +70,6 @@ public interface PanoptaService {
     List<PanoptaDomain> getAdditionalDomains(UUID vmId);
 
     Set<String> getOutageMetrics(UUID vmId) throws PanoptaServiceException;
+
+    PanoptaCustomerDetails validateAndGetOrCreatePanoptaCustomer(String shopperId) throws PanoptaServiceException;
 }
