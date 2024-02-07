@@ -1,6 +1,5 @@
 package com.godaddy.vps4.orchestration.vm.provision;
 
-import static com.godaddy.vps4.credit.ECommCreditService.ProductMetaField.PLAN_CHANGE_PENDING;
 import static com.godaddy.vps4.vm.CreateVmStep.ConfigureMailRelay;
 import static com.godaddy.vps4.vm.CreateVmStep.ConfigureMonitoring;
 import static com.godaddy.vps4.vm.CreateVmStep.ConfiguringCPanel;
@@ -163,8 +162,6 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
 
         setEcommCommonName(request.orionGuid, request.serverName);
 
-        validatePlanChangePending(request.orionGuid);
-
         setupAutomaticBackupSchedule(request.vmInfo.vmId, request.shopperId);
 
         sendSetupEmail(request, primaryIpAddress);
@@ -201,13 +198,6 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
         } catch (Exception e) {
             logger.warn("Failed to set intents for vm: {}. Provisioning will continue", vmId, e);
         }   
-    }
-
-    protected void validatePlanChangePending(UUID orionGuid) {
-        if (creditService.getVirtualMachineCredit(orionGuid).isPlanChangePending()) {
-            logger.info("Mark pending plan upgrade complete in credit for VM {}", request.vmInfo.vmId);
-            creditService.updateProductMeta(orionGuid, PLAN_CHANGE_PENDING, "false");
-        }
     }
 
     protected String setupPrimaryIp(Vm hfsVm) {

@@ -11,7 +11,6 @@ public class ProdMeta {
     public UUID productId;
     public Instant provisionDate;
     public boolean fullyManagedEmailSent;
-    public boolean planChangePending;
     public Instant purchasedAt;
     public Instant releasedAt;
     public int relayCount;

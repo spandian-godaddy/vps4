@@ -29,7 +29,6 @@ public class Vps4Credit {
         productId = virtualMachineCredit.prodMeta.productId;
         fullyManagedEmailSent = virtualMachineCredit.prodMeta.fullyManagedEmailSent;
         resellerId = virtualMachineCredit.resellerId;
-        planChangePending = virtualMachineCredit.prodMeta.planChangePending;
         pfid = virtualMachineCredit.entitlementData.pfid;
         purchasedAt = virtualMachineCredit.prodMeta.purchasedAt;
         suspended = false;
@@ -56,7 +55,6 @@ public class Vps4Credit {
     public UUID productId;
     public boolean fullyManagedEmailSent;
     public String resellerId;
-    public boolean planChangePending;
     public int pfid;
     public Instant purchasedAt;
     public boolean suspended;

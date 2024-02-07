@@ -1,6 +1,5 @@
 package com.godaddy.vps4.orchestration.vm;
 
-import static com.godaddy.vps4.credit.ECommCreditService.ProductMetaField.PLAN_CHANGE_PENDING;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
@@ -34,7 +33,7 @@ public class Vps4UpgradeOHVmTest {
     ActionService actionService = mock(ActionService.class);
     VirtualMachineService virtualMachineService = mock(VirtualMachineService.class);
     CreditService creditService = mock(CreditService.class);
-    Vps4UpgradeOHVm command = new Vps4UpgradeOHVm(actionService, virtualMachineService, creditService);
+    Vps4UpgradeOHVm command = new Vps4UpgradeOHVm(actionService, virtualMachineService);
     CommandContext context = mock(CommandContext.class);
     Vps4UpgradeOHVm.Request request;
     VirtualMachine vm;
@@ -104,11 +103,5 @@ public class Vps4UpgradeOHVmTest {
     public void updateVmTierInDb() {
         command.executeWithAction(context, request);
         verify(context, times(1)).execute(eq("UpdateVmTier"), any(Function.class), eq(Void.class));
-    }
-
-    @Test
-    public void testUpdateEcommCredit() {
-        command.executeWithAction(context, request);
-        verify(creditService,times(1)).updateProductMeta(eq(vm.orionGuid), eq(PLAN_CHANGE_PENDING), eq("false"));
     }
 }

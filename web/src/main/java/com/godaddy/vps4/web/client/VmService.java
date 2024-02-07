@@ -29,4 +29,8 @@ public interface VmService {
     @GET
     @Path("/{vmId}")
     VirtualMachine getVm(@PathParam("vmId") UUID vmId);
+
+    @POST
+    @Path("/{vmId}/upgrade")
+    VmAction upgradeVm(@PathParam("vmId") UUID vmId);
 }

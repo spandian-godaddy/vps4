@@ -82,11 +82,6 @@ public class Vps4ProvisionDedicated extends Vps4ProvisionVm {
     protected void setupAutomaticBackupSchedule(UUID vps4VmId, String shopperId) {
     }
 
-    /* NO need to validate plan change pending for dedicated servers */
-    @Override
-    protected void validatePlanChangePending(UUID orionGuid) {
-    }
-
     /* NO IP management for Dedicated servers. However, we still track vm-ip mapping in VPS4 Db. */
     @Override
     protected String setupPrimaryIp(Vm hfsVm) {
