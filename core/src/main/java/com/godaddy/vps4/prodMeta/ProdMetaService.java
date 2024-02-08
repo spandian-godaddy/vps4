@@ -1,6 +1,6 @@
 package com.godaddy.vps4.prodMeta;
 
-import java.util.EnumMap;
+import java.util.Map;
 import java.util.UUID;
 
 import com.godaddy.vps4.credit.ECommCreditService.ProductMetaField;
@@ -10,6 +10,6 @@ public interface ProdMetaService {
     void insertProdMeta(UUID entitlementId);
     ProdMeta getProdMeta(UUID entitlementId);
     ProdMeta getProdMetaByVmId(UUID vmId);
-    void updateProdMeta(UUID entitlementId, EnumMap<ProductMetaField, Object> paramsToUpdate);
+    void updateProdMeta(UUID entitlementId, Map<ProductMetaField, Object> paramsToUpdate);
     void deleteProdMeta(UUID entitlementId);
 }
