@@ -1,6 +1,5 @@
 package com.godaddy.vps4.web.cdn;
 
-import com.godaddy.vps4.cdn.model.CdnCacheLevel;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.cdn.CdnDataService;
@@ -10,9 +9,7 @@ import com.godaddy.vps4.cdn.model.CdnSite;
 import com.godaddy.vps4.cdn.model.CdnStatus;
 import com.godaddy.vps4.cdn.model.VmCdnSite;
 import com.godaddy.vps4.jdbc.ResultSubset;
-import com.godaddy.vps4.orchestration.cdn.Vps4SubmitCdnCreation;
 import com.godaddy.vps4.security.GDUserMock;
-import com.godaddy.vps4.util.Cryptography;
 import com.godaddy.vps4.vm.ServerSpec;
 import com.godaddy.vps4.vm.ServerType;
 import com.godaddy.vps4.vm.DataCenter;
@@ -64,22 +61,19 @@ public class CdnResourceTest {
     private CdnDataService cdnDataService = mock(CdnDataService.class);
     private ActionService actionService = mock(ActionService.class);
     private CommandService commandService = mock(CommandService.class);
-    private Cryptography cryptography = mock(Cryptography.class);
     private VirtualMachine vm;
     private VirtualMachineCredit credit;
     private DataCenter dataCenter;
     private CdnSite cdnSite;
     private CdnDetail cdnDetail;
-    private GDUser userShopper;
-    private GDUser userEmployee;
-    private GDUser userEmployee2Shopper;
+    private VmCdnSite vmCdnSite;
+    private GDUser user;
+    private UUID customerId;
     private ResultSubset<Action> actions;
 
     @Before
     public void setupTest() {
-        userShopper = GDUserMock.createShopper();
-        userEmployee = GDUserMock.createEmployee();
-        userEmployee2Shopper = GDUserMock.createEmployee2Shopper();
+        user = GDUserMock.createShopper();
         vmId = UUID.randomUUID();
         long hfsVmId = 1111;
         ServerType vmServerType = new ServerType();
@@ -108,9 +102,12 @@ public class CdnResourceTest {
         Map<String, String> planFeatures = new HashMap<>();
         planFeatures.put("cdnwaf", String.valueOf(5));
 
+        customerId = UUID.randomUUID();
+
         credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
                 .withAccountStatus(AccountStatus.ACTIVE)
-                .withShopperID(userShopper.getShopperId())
+                .withShopperID(user.getShopperId())
+                .withCustomerID(customerId.toString())
                 .withPlanFeatures(planFeatures)
                 .build();
 
@@ -124,16 +121,19 @@ public class CdnResourceTest {
         cdnDetail = new CdnDetail();
         cdnDetail.siteId = "fakeSiteDetailId";
 
+        vmCdnSite = new VmCdnSite();
+        vmCdnSite.domain = cdnSite.domain;
+
         Action vmAction = mock(Action.class);
         actions = new ResultSubset<>(Collections.emptyList(), 0);
 
         when(vmResource.getVm(vmId)).thenReturn(vm);
         when(creditService.getVirtualMachineCredit(vm.orionGuid)).thenReturn(credit);
 
-        when(cdnService.getCdnSites(anyString(), anyString(), any())).thenReturn(Collections.singletonList(cdnSite));
-        when(cdnService.getCdnSiteDetail(anyString(), anyString(), anyString(), any())).thenReturn(cdnDetail);
+        when(cdnService.getCdnSites(any(), any())).thenReturn(Collections.singletonList(cdnSite));
+        when(cdnService.getCdnSiteDetail(any(), anyString(), any())).thenReturn(cdnDetail);
 
-        when(cdnDataService.getActiveCdnSitesOfVm(eq(vmId))).thenReturn(Arrays.asList(new VmCdnSite()));
+        when(cdnDataService.getActiveCdnSitesOfVm(eq(vmId))).thenReturn(Arrays.asList());
 
         when(actionService.getAction(anyLong())).thenReturn(vmAction);
         when(actionService.getActionList(any())).thenReturn(actions);
@@ -142,99 +142,45 @@ public class CdnResourceTest {
     }
 
     @Test
-    public void testGetCdnSitesShopper() {
-        resource = new CdnResource(userShopper, vmResource, creditService, cdnService, cdnDataService,
-                cryptography, actionService, commandService);
+    public void testGetCdnSites() {
+        resource = new CdnResource(user, vmResource, creditService, cdnService, cdnDataService,
+                actionService, commandService);
         List<CdnSite> response = resource.getActiveCdnSites(vmId);
         verify(vmResource, times(1)).getVm(eq(vm.vmId));
         verify(creditService, times(1)).getVirtualMachineCredit(eq(vm.orionGuid));
         verify(cdnService, times(1))
-                .getCdnSites(credit.getShopperId(), userShopper.getToken().getJwt().getParsedString(), vm.vmId);
+                .getCdnSites(credit.getCustomerId(), vm.vmId);
 
         assertEquals(1, response.size());
         assertSame(cdnSite, response.get(0));
     }
 
     @Test
-    public void testGetCdnSitesE2S() {
-        resource = new CdnResource(userEmployee2Shopper, vmResource, creditService, cdnService, cdnDataService,
-                cryptography, actionService, commandService);
-        List<CdnSite> response = resource.getActiveCdnSites(vmId);
-        verify(vmResource, times(1)).getVm(eq(vm.vmId));
-        verify(creditService, times(1)).getVirtualMachineCredit(eq(vm.orionGuid));
-        verify(cdnService, times(1))
-                .getCdnSites(credit.getShopperId(), userShopper.getToken().getJwt().getParsedString(), vm.vmId);
-
-        assertEquals(1, response.size());
-        assertSame(cdnSite, response.get(0));
-    }
-
-    @Test
-    public void testGetCdnSitesEmployee() {
-        resource = new CdnResource(userEmployee, vmResource, creditService, cdnService, cdnDataService,
-                cryptography, actionService, commandService);
-        List<CdnSite> response = resource.getActiveCdnSites(vmId);
-        verify(vmResource, times(1)).getVm(eq(vm.vmId));
-        verify(creditService, times(1)).getVirtualMachineCredit(eq(vm.orionGuid));
-        verify(cdnService, times(1))
-                .getCdnSites(credit.getShopperId(), null, vm.vmId);
-
-        assertEquals(1, response.size());
-        assertSame(cdnSite, response.get(0));
-    }
-
-    @Test
-    public void testGetCdnSiteDetailShopper() {
-        resource = new CdnResource(userShopper, vmResource, creditService, cdnService, cdnDataService,
-                cryptography, actionService, commandService);
+    public void testGetCdnSiteDetail() {
+        resource = new CdnResource(user, vmResource, creditService, cdnService, cdnDataService,
+                actionService, commandService);
         CdnDetail response = resource.getCdnSiteDetail(vmId, cdnDetail.siteId);
         verify(vmResource, times(1)).getVm(eq(vm.vmId));
         verify(creditService, times(1)).getVirtualMachineCredit(eq(vm.orionGuid));
         verify(cdnService, times(1))
-                .getCdnSiteDetail(credit.getShopperId(), userShopper.getToken().getJwt().getParsedString(), cdnDetail.siteId, vm.vmId);
-
-        assertSame(cdnDetail, response);
-    }
-
-    @Test
-    public void testGetCdnSiteDetailE2S() {
-        resource = new CdnResource(userEmployee2Shopper, vmResource, creditService, cdnService, cdnDataService,
-                cryptography, actionService, commandService);
-        CdnDetail response = resource.getCdnSiteDetail(vmId, cdnDetail.siteId);
-        verify(vmResource, times(1)).getVm(eq(vm.vmId));
-        verify(creditService, times(1)).getVirtualMachineCredit(eq(vm.orionGuid));
-        verify(cdnService, times(1))
-                .getCdnSiteDetail(credit.getShopperId(), userShopper.getToken().getJwt().getParsedString(), cdnDetail.siteId, vm.vmId);
-
-        assertSame(cdnDetail, response);
-    }
-
-    @Test
-    public void testGetCdnSiteDetailEmployee() {
-        resource = new CdnResource(userEmployee, vmResource, creditService, cdnService, cdnDataService,
-                cryptography, actionService, commandService);
-        CdnDetail response = resource.getCdnSiteDetail(vmId, cdnDetail.siteId);
-        verify(vmResource, times(1)).getVm(eq(vm.vmId));
-        verify(creditService, times(1)).getVirtualMachineCredit(eq(vm.orionGuid));
-        verify(cdnService, times(1))
-                .getCdnSiteDetail(credit.getShopperId(), null, cdnDetail.siteId, vm.vmId);
+                .getCdnSiteDetail(credit.getCustomerId(), cdnDetail.siteId, vm.vmId);
 
         assertSame(cdnDetail, response);
     }
 
     @Test
     public void testDeleteCdnSiteCreatesAction() {
-        resource = new CdnResource(userEmployee, vmResource, creditService, cdnService, cdnDataService,
-                cryptography, actionService, commandService);
+        resource = new CdnResource(user, vmResource, creditService, cdnService, cdnDataService,
+                actionService, commandService);
         resource.deleteCdnSite(vmId, cdnDetail.siteId);
         verify(actionService, times(1))
-                .createAction(vmId, ActionType.DELETE_CDN, "{}", userEmployee.getUsername());
+                .createAction(vmId, ActionType.DELETE_CDN, "{}", user.getUsername());
     }
 
     @Test
     public void testDeleteCdnSiteExecutesCommand() {
-        resource = new CdnResource(userEmployee, vmResource, creditService, cdnService, cdnDataService,
-                cryptography, actionService, commandService);
+        resource = new CdnResource(user, vmResource, creditService, cdnService, cdnDataService,
+                actionService, commandService);
         resource.deleteCdnSite(vmId, cdnDetail.siteId);
         ArgumentCaptor<CommandGroupSpec> argument = ArgumentCaptor.forClass(CommandGroupSpec.class);
         verify(commandService).executeCommand(argument.capture());
@@ -246,8 +192,8 @@ public class CdnResourceTest {
     public void testDeleteCdnSiteConflictingAction() {
         Action conflictAction = mock(Action.class);
         List<ActionType> conflictTypes = Arrays.asList(ActionType.DELETE_CDN, ActionType.MODIFY_CDN, ActionType.CREATE_CDN, ActionType.VALIDATE_CDN);
-        resource = new CdnResource(userEmployee, vmResource, creditService, cdnService, cdnDataService,
-                cryptography, actionService, commandService);
+        resource = new CdnResource(user, vmResource, creditService, cdnService, cdnDataService,
+                actionService, commandService);
 
         for (ActionType type : conflictTypes) {
             conflictAction.type = type;
@@ -263,19 +209,19 @@ public class CdnResourceTest {
 
     @Test
     public void testUpdateCdnSiteCreatesAction() {
-        resource = new CdnResource(userEmployee, vmResource, creditService, cdnService, cdnDataService,
-                cryptography, actionService, commandService);
+        resource = new CdnResource(user, vmResource, creditService, cdnService, cdnDataService,
+                actionService, commandService);
         VmUpdateCdnRequest req = new VmUpdateCdnRequest();
         req.cacheLevel = "CACHING_OPTIMIZED";
         resource.updateCdnSite(vmId, cdnDetail.siteId, req);
         verify(actionService, times(1))
-                .createAction(vmId, ActionType.MODIFY_CDN, "{}", userEmployee.getUsername());
+                .createAction(vmId, ActionType.MODIFY_CDN, "{}", user.getUsername());
     }
 
     @Test
     public void testUpdateCdnSiteExecutesCommand() {
-        resource = new CdnResource(userEmployee, vmResource, creditService, cdnService, cdnDataService,
-                cryptography, actionService, commandService);
+        resource = new CdnResource(user, vmResource, creditService, cdnService, cdnDataService,
+                actionService, commandService);
         VmUpdateCdnRequest req = new VmUpdateCdnRequest();
         req.cacheLevel = "CACHING_OPTIMIZED";
         resource.updateCdnSite(vmId, cdnDetail.siteId, req);
@@ -289,8 +235,8 @@ public class CdnResourceTest {
     public void testUpdateCdnSiteConflictingAction() {
         Action conflictAction = mock(Action.class);
         List<ActionType> conflictTypes = Arrays.asList(ActionType.DELETE_CDN, ActionType.MODIFY_CDN, ActionType.CREATE_CDN, ActionType.VALIDATE_CDN);
-        resource = new CdnResource(userEmployee, vmResource, creditService, cdnService, cdnDataService,
-                cryptography, actionService, commandService);
+        resource = new CdnResource(user, vmResource, creditService, cdnService, cdnDataService,
+                actionService, commandService);
 
         for (ActionType type : conflictTypes) {
             conflictAction.type = type;
@@ -306,21 +252,23 @@ public class CdnResourceTest {
 
     @Test
     public void testCreateCdnSiteCreatesAction() {
-        resource = new CdnResource(userEmployee, vmResource, creditService, cdnService, cdnDataService,
-                cryptography, actionService, commandService);
+        resource = new CdnResource(user, vmResource, creditService, cdnService, cdnDataService,
+                actionService, commandService);
         VmCreateCdnRequest req = new VmCreateCdnRequest();
         req.cacheLevel = "CACHING_OPTIMIZED";
+        req.domain = "fakedomain2.com";
         resource.createCdnSite(vmId, req);
         verify(actionService, times(1))
-                .createAction(vmId, ActionType.CREATE_CDN, "{}", userEmployee.getUsername());
+                .createAction(vmId, ActionType.CREATE_CDN, "{}", user.getUsername());
     }
 
     @Test
     public void testCreateCdnSiteExecutesCommand() {
-        resource = new CdnResource(userEmployee, vmResource, creditService, cdnService, cdnDataService,
-                cryptography, actionService, commandService);
+        resource = new CdnResource(user, vmResource, creditService, cdnService, cdnDataService,
+                actionService, commandService);
         VmCreateCdnRequest req = new VmCreateCdnRequest();
         req.cacheLevel = "CACHING_OPTIMIZED";
+        req.domain = "fakedomain2.com";
         resource.createCdnSite(vmId, req);
         ArgumentCaptor<CommandGroupSpec> argument = ArgumentCaptor.forClass(CommandGroupSpec.class);
         verify(commandService).executeCommand(argument.capture());
@@ -332,14 +280,17 @@ public class CdnResourceTest {
     public void testCreateCdnSiteConflictingAction() {
         Action conflictAction = mock(Action.class);
         List<ActionType> conflictTypes = Arrays.asList(ActionType.DELETE_CDN, ActionType.MODIFY_CDN, ActionType.CREATE_CDN, ActionType.VALIDATE_CDN);
-        resource = new CdnResource(userEmployee, vmResource, creditService, cdnService, cdnDataService,
-                cryptography, actionService, commandService);
+        resource = new CdnResource(user, vmResource, creditService, cdnService, cdnDataService,
+                actionService, commandService);
+        VmCreateCdnRequest req = new VmCreateCdnRequest();
+        req.cacheLevel = "CACHING_OPTIMIZED";
+        req.domain = "fakedomain2.com";
 
         for (ActionType type : conflictTypes) {
             conflictAction.type = type;
             when(actionService.getIncompleteActions(vmId)).thenReturn(Collections.singletonList(conflictAction));
             try {
-                resource.createCdnSite(vmId, new VmCreateCdnRequest());
+                resource.createCdnSite(vmId, req);
                 fail();
             } catch (Vps4Exception e) {
                 assertEquals("CONFLICTING_INCOMPLETE_ACTION", e.getId());
@@ -352,8 +303,8 @@ public class CdnResourceTest {
         VmCdnSite fillerSite = new VmCdnSite();
         when(cdnDataService.getActiveCdnSitesOfVm(eq(vmId))).thenReturn(Arrays.asList(fillerSite, fillerSite, fillerSite, fillerSite, fillerSite));
 
-        resource = new CdnResource(userEmployee, vmResource, creditService, cdnService, cdnDataService,
-                cryptography, actionService, commandService);
+        resource = new CdnResource(user, vmResource, creditService, cdnService, cdnDataService,
+                actionService, commandService);
         try {
             resource.createCdnSite(vmId, new VmCreateCdnRequest());
             fail();
@@ -363,18 +314,38 @@ public class CdnResourceTest {
     }
 
     @Test
+    public void testCreateCdnSiteDuplicateDomain() {
+        VmCdnSite fillerSite = new VmCdnSite();
+        fillerSite.domain = "fakedomain.com";
+        when(cdnDataService.getActiveCdnSitesOfVm(eq(vmId))).thenReturn(Arrays.asList(fillerSite));
+
+        VmCreateCdnRequest req = new VmCreateCdnRequest();
+        req.domain = fillerSite.domain;
+
+        resource = new CdnResource(user, vmResource, creditService, cdnService, cdnDataService,
+                actionService, commandService);
+        try {
+            resource.createCdnSite(vmId, req);
+            fail();
+        } catch (Vps4Exception e) {
+            assertEquals("DUPLICATE_DOMAIN", e.getId());
+        }
+    }
+
+
+    @Test
     public void testClearCacheCdnSiteCreatesAction() {
-        resource = new CdnResource(userEmployee, vmResource, creditService, cdnService, cdnDataService,
-                cryptography, actionService, commandService);
+        resource = new CdnResource(user, vmResource, creditService, cdnService, cdnDataService,
+                actionService, commandService);
         resource.clearCdnSiteCache(vmId, cdnDetail.siteId);
         verify(actionService, times(1))
-                .createAction(vmId, ActionType.CLEAR_CDN_CACHE, "{}", userEmployee.getUsername());
+                .createAction(vmId, ActionType.CLEAR_CDN_CACHE, "{}", user.getUsername());
     }
 
     @Test
     public void testClearCacheCdnSiteExecutesCommand() {
-        resource = new CdnResource(userEmployee, vmResource, creditService, cdnService, cdnDataService,
-                cryptography, actionService, commandService);
+        resource = new CdnResource(user, vmResource, creditService, cdnService, cdnDataService,
+                actionService, commandService);
         resource.clearCdnSiteCache(vmId, cdnDetail.siteId);
         ArgumentCaptor<CommandGroupSpec> argument = ArgumentCaptor.forClass(CommandGroupSpec.class);
         verify(commandService).executeCommand(argument.capture());
@@ -386,8 +357,8 @@ public class CdnResourceTest {
     public void testClearCacheConflictingAction() {
         Action conflictAction = mock(Action.class);
         List<ActionType> conflictTypes = Arrays.asList(ActionType.CLEAR_CDN_CACHE);
-        resource = new CdnResource(userEmployee, vmResource, creditService, cdnService, cdnDataService,
-                cryptography, actionService, commandService);
+        resource = new CdnResource(user, vmResource, creditService, cdnService, cdnDataService,
+                actionService, commandService);
 
         for (ActionType type : conflictTypes) {
             conflictAction.type = type;
@@ -403,17 +374,17 @@ public class CdnResourceTest {
 
     @Test
     public void testValidateCdnSiteCreatesAction() {
-        resource = new CdnResource(userEmployee, vmResource, creditService, cdnService, cdnDataService,
-                cryptography, actionService, commandService);
+        resource = new CdnResource(user, vmResource, creditService, cdnService, cdnDataService,
+                actionService, commandService);
         resource.validateCdnSite(vmId, cdnDetail.siteId);
         verify(actionService, times(1))
-                .createAction(vmId, ActionType.VALIDATE_CDN, "{}", userEmployee.getUsername());
+                .createAction(vmId, ActionType.VALIDATE_CDN, "{}", user.getUsername());
     }
 
     @Test
     public void testValidateCdnSiteExecutesCommand() {
-        resource = new CdnResource(userEmployee, vmResource, creditService, cdnService, cdnDataService,
-                cryptography, actionService, commandService);
+        resource = new CdnResource(user, vmResource, creditService, cdnService, cdnDataService,
+                actionService, commandService);
         resource.validateCdnSite(vmId, cdnDetail.siteId);
         ArgumentCaptor<CommandGroupSpec> argument = ArgumentCaptor.forClass(CommandGroupSpec.class);
         verify(commandService).executeCommand(argument.capture());
@@ -425,8 +396,8 @@ public class CdnResourceTest {
     public void testValidateCdnConflictingAction() {
         Action conflictAction = mock(Action.class);
         List<ActionType> conflictTypes = Arrays.asList(ActionType.DELETE_CDN, ActionType.MODIFY_CDN, ActionType.CREATE_CDN, ActionType.VALIDATE_CDN);
-        resource = new CdnResource(userEmployee, vmResource, creditService, cdnService, cdnDataService,
-                cryptography, actionService, commandService);
+        resource = new CdnResource(user, vmResource, creditService, cdnService, cdnDataService,
+                actionService, commandService);
 
         for (ActionType type : conflictTypes) {
             conflictAction.type = type;

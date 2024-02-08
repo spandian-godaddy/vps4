@@ -42,6 +42,8 @@ public class Vps4ProcessSuspendServerTest {
     CommandContext context = mock(CommandContext.class);
     VirtualMachine vm;
     String shopperId = "test-shopper";
+    UUID customerId = UUID.randomUUID();
+
     VmCdnSite vmCdnSite;
     VirtualMachineCredit credit;
     @Captor
@@ -59,6 +61,7 @@ public class Vps4ProcessSuspendServerTest {
         vmCdnSite.siteId = "fakeSiteId";
         credit = mock(VirtualMachineCredit.class);
         when(credit.getShopperId()).thenReturn(shopperId);
+        when(credit.getCustomerId()).thenReturn(customerId);
         when(cdnDataService.getActiveCdnSitesOfVm(vm.vmId)).thenReturn(Collections.singletonList(vmCdnSite));
         when(creditService.getVirtualMachineCredit(vm.orionGuid)).thenReturn(credit);
     }
@@ -116,8 +119,7 @@ public class Vps4ProcessSuspendServerTest {
         Assert.assertEquals(vm.vmId, req.vmId);
         Assert.assertEquals(CdnBypassWAF.ENABLED, req.bypassWAF);
         Assert.assertEquals(CdnCacheLevel.CACHING_DISABLED, req.cacheLevel);
-        Assert.assertEquals(null, req.encryptedCustomerJwt);
-        Assert.assertEquals("test-shopper", req.shopperId);
+        Assert.assertEquals(customerId, req.customerId);
         Assert.assertEquals(vmCdnSite.siteId, req.siteId);
     }
 

@@ -42,6 +42,7 @@ public class Vps4ProcessReinstateServerTest {
     CommandContext context = mock(CommandContext.class);
     VirtualMachine vm;
     VirtualMachineCredit credit;
+    UUID customerId;
     VmCdnSite vmCdnSite = mock(VmCdnSite.class);
 
     @Captor
@@ -55,11 +56,12 @@ public class Vps4ProcessReinstateServerTest {
         vm.spec = mock(ServerSpec.class);
         vm.vmId = UUID.randomUUID();
         vm.orionGuid = UUID.randomUUID();
+        customerId = UUID.randomUUID();
         vmCdnSite.siteId = "fakeSiteId";
         vmCdnSite.vmId = vm.vmId;
         credit = mock(VirtualMachineCredit.class);
         when(creditService.getVirtualMachineCredit(vm.orionGuid)).thenReturn(credit);
-        when(credit.getShopperId()).thenReturn("fakeShopperId");
+        when(credit.getCustomerId()).thenReturn(customerId);
         when(cdnDataService.getActiveCdnSitesOfVm(vm.vmId)).thenReturn(Collections.singletonList(vmCdnSite));
     }
 
@@ -112,8 +114,7 @@ public class Vps4ProcessReinstateServerTest {
         Assert.assertEquals(vm.vmId, req.vmId);
         Assert.assertEquals(CdnBypassWAF.DISABLED, req.bypassWAF);
         Assert.assertEquals(CdnCacheLevel.CACHING_OPTIMIZED, req.cacheLevel);
-        Assert.assertEquals(null, req.encryptedCustomerJwt);
-        Assert.assertEquals(credit.getShopperId(), req.shopperId);
+        Assert.assertEquals(credit.getCustomerId(), req.customerId);
         Assert.assertEquals(vmCdnSite.siteId, req.siteId);
     }
 

@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import java.util.List;
+import java.util.UUID;
 
 @CommandMetadata(
         name = "Vps4ProcessReinstateServer",
@@ -55,7 +56,7 @@ public class Vps4ProcessReinstateServer extends ActionCommand<VmActionRequest, V
 
         creditService.updateProductMeta(request.virtualMachine.orionGuid, ECommCreditService.ProductMetaField.SUSPENDED, null);
         resumePanoptaMonitoring(context, request);
-        getAndUnpauseCdnSites(context, request, credit.getShopperId());
+        getAndUnpauseCdnSites(context, request, credit.getCustomerId());
         if(request.virtualMachine.spec.isVirtualMachine())
             reinstateVm(context, request);
         else
@@ -67,16 +68,15 @@ public class Vps4ProcessReinstateServer extends ActionCommand<VmActionRequest, V
         context.execute(ResumePanoptaMonitoring.class, request.virtualMachine);
     }
 
-    public void getAndUnpauseCdnSites(CommandContext context, VmActionRequest request, String shopperId) {
+    public void getAndUnpauseCdnSites(CommandContext context, VmActionRequest request, UUID customerId) {
         List<VmCdnSite> cdnSites = cdnDataService.getActiveCdnSitesOfVm(request.virtualMachine.vmId);
         if (cdnSites != null) {
             for (VmCdnSite site : cdnSites) {
                 Vps4ModifyCdnSite.Request req = new Vps4ModifyCdnSite.Request();
-                req.encryptedCustomerJwt = null;
                 req.vmId = request.virtualMachine.vmId;
                 req.bypassWAF = CdnBypassWAF.DISABLED;
                 req.cacheLevel = CdnCacheLevel.CACHING_OPTIMIZED;
-                req.shopperId = shopperId;
+                req.customerId = customerId;
                 req.siteId = site.siteId;
                 context.execute("ModifyCdnSite-" + site.siteId, Vps4ModifyCdnSite.class, req);
             }

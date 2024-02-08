@@ -27,23 +27,19 @@ public class Vps4ValidateCdn extends ActionCommand<Vps4ValidateCdn.Request, Void
     public static final Logger logger = LoggerFactory.getLogger(Vps4ValidateCdn.class);
     private final CdnService cdnService;
     private final CdnDataService cdnDataService;
-    private final Cryptography cryptography;
     private Request request;
 
     @Inject
-    public Vps4ValidateCdn(ActionService actionService, CdnDataService cdnDataService, CdnService cdnService,
-                           Cryptography cryptography) {
+    public Vps4ValidateCdn(ActionService actionService, CdnDataService cdnDataService, CdnService cdnService) {
         super(actionService);
         this.cdnService = cdnService;
         this.cdnDataService = cdnDataService;
-        this.cryptography = cryptography;
     }
 
     public static class Request extends VmActionRequest {
         public UUID vmId;
+        public UUID customerId;
         public String siteId;
-        public byte[] encryptedCustomerJwt;
-        public String shopperId;
     }
 
     @Override
@@ -52,8 +48,7 @@ public class Vps4ValidateCdn extends ActionCommand<Vps4ValidateCdn.Request, Void
 
         verifyCdnBelongsToVmId();
 
-        CdnDetail cdnDetail = cdnService.getCdnSiteDetail(request.shopperId,
-                cryptography.decryptIgnoreNull(request.encryptedCustomerJwt), request.siteId, request.vmId, true);
+        CdnDetail cdnDetail = cdnService.getCdnSiteDetail(request.customerId, request.siteId, request.vmId, true);
 
         CdnStatus status = getCdnStatus(cdnDetail);
 
@@ -88,9 +83,7 @@ public class Vps4ValidateCdn extends ActionCommand<Vps4ValidateCdn.Request, Void
 
     public void submitValidationRequestAndPoll(CommandContext context, CdnDetail cdnDetail) {
         context.execute("SubmitRequestCdnValidation", ctx -> {
-            cdnService.validateCdn(request.shopperId,
-                    cryptography.decryptIgnoreNull(request.encryptedCustomerJwt),
-                    request.siteId);
+            cdnService.validateCdn(request.customerId, request.siteId);
             return null;
         }, Void.class);
 
@@ -99,8 +92,7 @@ public class Vps4ValidateCdn extends ActionCommand<Vps4ValidateCdn.Request, Void
 
     void pollForValidationCompletion(CommandContext context, String siteId, CdnDetail cdnDetail) {
         WaitForCdnValidationStatusJob.Request waitRequest = new WaitForCdnValidationStatusJob.Request();
-        waitRequest.encryptedCustomerJwt = request.encryptedCustomerJwt;
-        waitRequest.shopperId = request.shopperId;
+        waitRequest.customerId = request.customerId;
         waitRequest.siteId = siteId;
         waitRequest.vmId = request.vmId;
         waitRequest.certificateValidation = cdnDetail.productData.cloudflare.certificateValidation;
@@ -113,8 +105,7 @@ public class Vps4ValidateCdn extends ActionCommand<Vps4ValidateCdn.Request, Void
         logger.error("CDN status is FAILED for siteId {} for VM: {}. Attempting to clean up CDN", request.siteId, request.vmId);
         try {
             logger.info("Attempting to issue deletion of cdn siteId {} of vmId {}", request.siteId, request.vmId);
-            cdnService.deleteCdnSite(request.shopperId,
-                    cryptography.decryptIgnoreNull(request.encryptedCustomerJwt), request.siteId);
+            cdnService.deleteCdnSite(request.customerId, request.siteId);
             cdnDataService.destroyCdnSite(request.vmId, request.siteId);
         } catch (Exception ignored) {}
         throw new RuntimeException("CDN status is FAILED for siteId " + request.siteId);

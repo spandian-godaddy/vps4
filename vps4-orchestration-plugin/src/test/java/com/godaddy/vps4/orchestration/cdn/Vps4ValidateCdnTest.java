@@ -39,11 +39,11 @@ public class Vps4ValidateCdnTest {
     ActionService actionService = mock(ActionService.class);
     CdnService cdnService = mock(CdnService.class);
     CdnDataService cdnDataService = mock(CdnDataService.class);
-    Cryptography cryptography = mock(Cryptography.class);
     Vps4ValidateCdn command;
     CommandContext context = mock(CommandContext.class);
 
     UUID vmId = UUID.randomUUID();
+    UUID customerId = UUID.randomUUID();
 
     String encryptedJwtString = "encryptedJwt";
     String siteId = "fakeSiteId";
@@ -63,10 +63,9 @@ public class Vps4ValidateCdnTest {
     public void setUp() {
         when(context.getId()).thenReturn(UUID.randomUUID());
         request = new Vps4ValidateCdn.Request();
-        request.encryptedCustomerJwt = encryptedJwt;
         request.siteId = siteId;
         request.vmId = vmId;
-        request.shopperId = shopperId;
+        request.customerId = customerId;
         vmCdnSite = new VmCdnSite();
         vmCdnSite.siteId = siteId;
         vmCdnSite.vmId = vmId;
@@ -78,10 +77,9 @@ public class Vps4ValidateCdnTest {
         cdnDetail.productData = productData;
 
         when(cdnDataService.getCdnSiteFromId(vmId, siteId)).thenReturn(vmCdnSite);
-        when(cryptography.decryptIgnoreNull(any())).thenReturn(decryptedJwtString);
-        when(cdnService.getCdnSiteDetail(anyString(), anyString(), anyString(), any(), anyBoolean())).thenReturn(cdnDetail);
+        when(cdnService.getCdnSiteDetail(any(), anyString(), any(), anyBoolean())).thenReturn(cdnDetail);
 
-        command = new Vps4ValidateCdn(actionService, cdnDataService, cdnService, cryptography);
+        command = new Vps4ValidateCdn(actionService, cdnDataService, cdnService);
     }
 
     @Test
@@ -99,15 +97,14 @@ public class Vps4ValidateCdnTest {
         verify(context).execute(eq(WaitForCdnValidationStatusJob.class), waitRequestArgumentCaptor.capture());
 
         WaitForCdnValidationStatusJob.Request req = waitRequestArgumentCaptor.getValue();
-        assertEquals(shopperId, req.shopperId);
+        assertEquals(customerId, req.customerId);
         assertEquals(siteId, req.siteId);
-        assertEquals(encryptedJwt, req.encryptedCustomerJwt);
     }
 
     @Test
     public void testReturnsIfCdnIsAlreadyValidated() {
         cdnDetail.status = CdnStatus.SUCCESS;
-        when(cdnService.getCdnSiteDetail(anyString(), anyString(), anyString(), any(), anyBoolean())).thenReturn(cdnDetail);
+        when(cdnService.getCdnSiteDetail(any(), anyString(), any(), anyBoolean())).thenReturn(cdnDetail);
 
         command.executeWithAction(context, request);
 
@@ -118,13 +115,13 @@ public class Vps4ValidateCdnTest {
     @Test
     public void testThrowsErrorAndQuitsGracefullyIfCdnAlreadyFailedValidation() {
         cdnDetail.status = CdnStatus.FAILED;
-        when(cdnService.getCdnSiteDetail(anyString(), anyString(), anyString(), any(), anyBoolean())).thenReturn(cdnDetail);
+        when(cdnService.getCdnSiteDetail(any(), anyString(), any(), anyBoolean())).thenReturn(cdnDetail);
 
         try {
             command.executeWithAction(context, request);
             fail();
         } catch (RuntimeException e) {
-            verify(cdnService, times(1)).deleteCdnSite(anyString(), anyString(), anyString());
+            verify(cdnService, times(1)).deleteCdnSite(any(), anyString());
             verify(cdnDataService, times(1)).destroyCdnSite(any(), anyString());
 
             assertEquals("CDN status is FAILED for siteId fakeSiteId", e.getMessage());

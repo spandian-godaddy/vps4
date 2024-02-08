@@ -5,7 +5,6 @@ import com.godaddy.vps4.cdn.CdnService;
 import com.godaddy.vps4.cdn.model.CdnDetail;
 import com.godaddy.vps4.cdn.model.CdnStatus;
 import com.godaddy.vps4.orchestration.scheduler.Utils;
-import com.godaddy.vps4.util.Cryptography;
 import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
@@ -25,17 +24,14 @@ public class WaitForCdnCreationJob implements Command<WaitForCdnCreationJob.Requ
     private static final Logger logger = LoggerFactory.getLogger(WaitForCdnCreationJob.class);
 
     private final CdnService cdnService;
-    private final Cryptography cryptography;
 
     @Inject
-    public WaitForCdnCreationJob(CdnService cdnService, Cryptography cryptography) {
+    public WaitForCdnCreationJob(CdnService cdnService) {
         this.cdnService = cdnService;
-        this.cryptography = cryptography;
     }
 
     public static class Request {
-        public String shopperId;
-        public byte[] encryptedCustomerJwt;
+        public UUID customerId;
         public String siteId;
         public UUID vmId;
     }
@@ -46,16 +42,14 @@ public class WaitForCdnCreationJob implements Command<WaitForCdnCreationJob.Requ
                 cdnDetail.productData.cloudflare.domainValidation != null));
     }
 
-
     @Override
     public Void execute(CommandContext context, WaitForCdnCreationJob.Request request) {
         CdnDetail cdnDetail;
-        String customerJwt = cryptography.decryptIgnoreNull(request.encryptedCustomerJwt);
         do {
             cdnDetail = Utils.runWithRetriesForServerAndProcessingErrorException(context,
                                                               logger,
                                                               () -> cdnService.getCdnSiteDetail(
-                                                                      request.shopperId, customerJwt, request.siteId, request.vmId, true
+                                                                      request.customerId, request.siteId, request.vmId, true
                                                               ), 10000);
         } while (cdnDetail != null && cdnDetail.status != CdnStatus.FAILED
                 && !isCdnVerificationInfoPopulated(cdnDetail));

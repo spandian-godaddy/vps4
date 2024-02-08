@@ -70,6 +70,7 @@ public class Vps4ProcessAccountCancellationTest {
     private CommandContext context;
     private UUID vps4VmId;
     private UUID orionGuid;
+    private UUID customerId;
     private VirtualMachine vm;
     private VirtualMachine dedicatedServer;
     private VirtualMachineCredit virtualMachineCredit;
@@ -119,6 +120,7 @@ public class Vps4ProcessAccountCancellationTest {
         addTestSqlData();
         vmCdnSite.vmId = vps4VmId;
         vmCdnSite.siteId = "fakeSiteId";
+        customerId = UUID.randomUUID();
         context = setupMockContext();
         virtualMachineCredit = getVirtualMachineCredit(vps4VmId);
         request = new Vps4ProcessAccountCancellation.Request();
@@ -150,6 +152,7 @@ public class Vps4ProcessAccountCancellationTest {
                 .withAccountGuid(orionGuid.toString())
                 .withProductMeta(productMeta)
                 .withShopperID("fakeShopperId")
+                .withCustomerID(customerId.toString())
                 .build();
     }
 
@@ -216,8 +219,7 @@ public class Vps4ProcessAccountCancellationTest {
         Assert.assertEquals(vm.vmId, req.vmId);
         Assert.assertEquals(CdnBypassWAF.ENABLED, req.bypassWAF);
         Assert.assertEquals(CdnCacheLevel.CACHING_DISABLED, req.cacheLevel);
-        Assert.assertEquals(null, req.encryptedCustomerJwt);
-        Assert.assertEquals(virtualMachineCredit.getShopperId(), req.shopperId);
+        Assert.assertEquals(customerId, req.customerId);
         Assert.assertEquals(vmCdnSite.siteId, req.siteId);
     }
 
