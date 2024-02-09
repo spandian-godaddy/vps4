@@ -477,6 +477,7 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
 
             Vps4DestroyVm.Request destroyRequest = new Vps4DestroyVm.Request();
             destroyRequest.virtualMachine = virtualMachineService.getVirtualMachine(request.vmInfo.vmId);
+            destroyRequest.customerId = credit.getCustomerId();
             destroyVm(destroyRequest);
 
             throw new RuntimeException("Server is no longer tied to credit");

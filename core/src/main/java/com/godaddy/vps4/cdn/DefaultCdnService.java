@@ -13,8 +13,6 @@ import com.godaddy.vps4.cdn.model.CdnBypassWAF;
 import com.godaddy.vps4.cdn.model.CdnCacheLevel;
 import com.godaddy.vps4.cdn.model.CdnVerificationMethod;
 import com.godaddy.vps4.network.IpAddress;
-import com.godaddy.vps4.sso.Vps4SsoService;
-import com.godaddy.vps4.sso.models.Vps4SsoToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,40 +24,27 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class DefaultCdnService implements CdnService {
-    private static final String CDN_PLAN_ID = "WSSWAFBasic";
+    private static final String CDN_PLAN_ID = "VPSWAFCDNBasic";
     private static final String CDN_CLOUDFLARE_PROVIDER = "CLOUDFLARE";
     private static final Logger logger = LoggerFactory.getLogger(DefaultCdnService.class);
 
-    private final Vps4SsoService ssoService;
     private final CdnClientService cdnClientService;
     private final CdnDataService cdnDataService;
 
     @Inject
     public DefaultCdnService(CdnClientService cdnClientService,
-                             CdnDataService cdnDataService,
-                             Vps4SsoService ssoService)
+                             CdnDataService cdnDataService)
     {
         this.cdnClientService = cdnClientService;
         this.cdnDataService = cdnDataService;
-        this.ssoService = ssoService;
-    }
-
-    protected String getAuthToken(String shopperId, String customerJwt) {
-        String ssoTokenHeader = "sso-jwt ";
-        if (customerJwt == null) {
-            Vps4SsoToken token = ssoService.getDelegationToken("idp", shopperId);
-            ssoTokenHeader += token.data;
-        } else {
-            ssoTokenHeader += customerJwt;
-        }
-        return ssoTokenHeader;
     }
 
     @Override
-    public List<CdnSite> getCdnSites(String shopperId, String customerJwt, UUID vmId) {
+    public List<CdnSite> getCdnSites(UUID customerId, UUID vmId) {
         List<CdnSite> returnedSites = new ArrayList<>();
         List<VmCdnSite> vmCdnSiteList = cdnDataService.getActiveCdnSitesOfVm(vmId);
-        List<CdnSite> cdnSites =  cdnClientService.getCdnSites(getAuthToken(shopperId, customerJwt));
+        logger.info("customerId {}", customerId);
+        List<CdnSite> cdnSites =  cdnClientService.getCdnSites(customerId);
         List<String> vmCdnSiteIds = vmCdnSiteList.stream().map(site -> site.siteId.toLowerCase()).collect(Collectors.toList());
         if (cdnSites != null ) {
             returnedSites = cdnSites.stream().filter(cdnSite ->
@@ -69,35 +54,35 @@ public class DefaultCdnService implements CdnService {
     }
 
     @Override
-    public CdnDetail getCdnSiteDetail(String shopperId, String customerJwt, String siteId, UUID vmId, boolean skipDbCheck) {
+    public CdnDetail getCdnSiteDetail(UUID customerId, String siteId, UUID vmId, boolean skipDbCheck) {
         if (!skipDbCheck) {
             VmCdnSite vmCdnSite = cdnDataService.getCdnSiteFromId(vmId, siteId);
             if (vmCdnSite == null) {
                 throw new NotFoundException("Could not find site id " + siteId + " belonging to vmId " + vmId);
             }
         }
-        return cdnClientService.getCdnSiteDetail(getAuthToken(shopperId, customerJwt), siteId);
+        return cdnClientService.getCdnSiteDetail(customerId, siteId);
     }
 
     @Override
-    public CdnDetail getCdnSiteDetail(String shopperId, String customerJwt, String siteId, UUID vmId) {
-        return getCdnSiteDetail(shopperId, customerJwt, siteId, vmId, false);
+    public CdnDetail getCdnSiteDetail(UUID customerId, String siteId, UUID vmId) {
+        return getCdnSiteDetail(customerId, siteId, vmId, false);
     }
 
     @Override
-    public CdnClientInvalidateCacheResponse invalidateCdnCache(String shopperId, String customerJwt, String siteId) {
-        return cdnClientService.invalidateCdnCache(getAuthToken(shopperId, customerJwt), siteId);
+    public CdnClientInvalidateCacheResponse invalidateCdnCache(UUID customerId, String siteId) {
+        return cdnClientService.invalidateCdnCache(customerId, siteId);
     }
 
     @Override
-    public CdnClientInvalidateStatusResponse getCdnInvalidateCacheStatus(String shopperId, String customerJwt, String siteId, String invalidationId) {
-        CdnClientInvalidateStatusResponse res =  cdnClientService.getCdnInvalidateStatus(getAuthToken(shopperId, customerJwt), siteId, invalidationId);
+    public CdnClientInvalidateStatusResponse getCdnInvalidateCacheStatus(UUID customerId, String siteId, String invalidationId) {
+        CdnClientInvalidateStatusResponse res =  cdnClientService.getCdnInvalidateStatus(customerId, siteId, invalidationId);
 
         return res;
     }
 
     @Override
-    public CdnClientCreateResponse createCdn(String shopperId, String customerJwt, String domain, IpAddress ipAddress, String cacheLevel, String bypassWAF) {
+    public CdnClientCreateResponse createCdn(UUID customerId, String domain, IpAddress ipAddress, String cacheLevel, String bypassWAF) {
         CdnClientCreateRequest req = new CdnClientCreateRequest();
         CdnOrigin cdnOrigin = new CdnOrigin(domain, ipAddress.ipAddress, 0, true);
         req.domain = domain;
@@ -111,24 +96,24 @@ public class DefaultCdnService implements CdnService {
         req.origins = new CdnOrigin[]{cdnOrigin};
         req.verificationMethod = CdnVerificationMethod.TXT.toString();
 
-        return cdnClientService.createCdnSite(getAuthToken(shopperId, customerJwt), req);
+        return cdnClientService.createCdnSite(customerId, req);
     }
 
     @Override
-    public void validateCdn(String shopperId, String customerJwt, String siteId) {
-        cdnClientService.requestCdnValidation(getAuthToken(shopperId, customerJwt), siteId);
+    public void validateCdn(UUID customerId, String siteId) {
+        cdnClientService.requestCdnValidation(customerId, siteId);
     }
 
     @Override
-    public void deleteCdnSite(String shopperId, String customerJwt, String siteId) {
-        cdnClientService.deleteCdnSite(getAuthToken(shopperId, customerJwt), siteId);
+    public void deleteCdnSite(UUID customerId, String siteId) {
+        cdnClientService.deleteCdnSite(customerId, siteId);
     }
 
     @Override
-    public void updateCdnSite(String shopperId, String customerJwt, String siteId, CdnCacheLevel cacheLevel, CdnBypassWAF bypassWAF) {
+    public void updateCdnSite(UUID customerId, String siteId, CdnCacheLevel cacheLevel, CdnBypassWAF bypassWAF) {
         CdnClientUpdateRequest req = new CdnClientUpdateRequest();
         req.bypassWAF = bypassWAF == null ? null : bypassWAF.toString();
         req.cacheLevel = cacheLevel == null ? null : cacheLevel.toString();
-        cdnClientService.modifyCdnSite(getAuthToken(shopperId, customerJwt), siteId, req);
+        cdnClientService.modifyCdnSite(customerId, siteId, req);
     }
 }

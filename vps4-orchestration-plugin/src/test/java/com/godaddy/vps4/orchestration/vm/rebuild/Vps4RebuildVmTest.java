@@ -91,6 +91,7 @@ public class Vps4RebuildVmTest {
 
     UUID vps4VmId = UUID.randomUUID();
     UUID orionGuid = UUID.randomUUID();
+    UUID customerId = UUID.randomUUID();
     String shopperId = "12345678";
     long originalHfsVmId = 123L;
     long newHfsVmId = 456L;
@@ -166,7 +167,7 @@ public class Vps4RebuildVmTest {
         request.rebuildVmInfo.serverName = vm.name;
         request.rebuildVmInfo.hostname = "host.name";
         request.rebuildVmInfo.encryptedPassword = "encrypted".getBytes();
-        request.rebuildVmInfo.encryptedCustomerJwt = "encryptedCustJwt".getBytes();
+        request.rebuildVmInfo.customerId = customerId;
         request.rebuildVmInfo.shopperId = shopperId;
         request.rebuildVmInfo.keepAdditionalIps = true;
         request.rebuildVmInfo.gdUserName = "fake-employee";
@@ -233,8 +234,7 @@ public class Vps4RebuildVmTest {
         Vps4RemoveCdnSite.Request req = argument.getValue();
         assertEquals(vmCdnSite.siteId, req.siteId);
         assertEquals(vps4VmId, req.vmId);
-        assertEquals(request.rebuildVmInfo.encryptedCustomerJwt, req.encryptedCustomerJwt);
-        assertEquals(request.rebuildVmInfo.shopperId, req.shopperId);
+        assertEquals(request.rebuildVmInfo.customerId, req.customerId);
     }
 
     @Test

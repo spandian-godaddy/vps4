@@ -27,19 +27,16 @@ public class WaitForCdnValidationStatusJob implements Command<WaitForCdnValidati
     private static final Logger logger = LoggerFactory.getLogger(WaitForCdnValidationStatusJob.class);
 
     private final CdnService cdnService;
-    private final Cryptography cryptography;
 
     @Inject
-    public WaitForCdnValidationStatusJob(CdnService cdnService, Cryptography cryptography) {
+    public WaitForCdnValidationStatusJob(CdnService cdnService) {
         this.cdnService = cdnService;
-        this.cryptography = cryptography;
     }
 
     public static class Request {
-        public String shopperId;
-        public byte[] encryptedCustomerJwt;
         public String siteId;
         public UUID vmId;
+        public UUID customerId;
         public CdnValidation[] certificateValidation;
         public CdnValidation[] domainValidation;
     }
@@ -62,12 +59,11 @@ public class WaitForCdnValidationStatusJob implements Command<WaitForCdnValidati
     @Override
     public Void execute(CommandContext context, WaitForCdnValidationStatusJob.Request request) {
         CdnDetail cdnDetail;
-        String customerJwt = cryptography.decryptIgnoreNull(request.encryptedCustomerJwt);
         do {
             cdnDetail = Utils.runWithRetriesForServerAndProcessingErrorException(context,
                                                               logger,
                                                               () -> cdnService.getCdnSiteDetail(
-                                                                      request.shopperId, customerJwt, request.siteId, request.vmId, true
+                                                                      request.customerId, request.siteId, request.vmId, true
                                                               ), 20000);
 
         } while (cdnDetail != null && !wasNewVerificationInfoAdded(request.certificateValidation, request.domainValidation,

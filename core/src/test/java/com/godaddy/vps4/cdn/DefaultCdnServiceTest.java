@@ -41,18 +41,14 @@ import static org.mockito.Mockito.eq;
 public class DefaultCdnServiceTest {
     private CdnClientService cdnClientService = mock(CdnClientService.class);
     private CdnDataService cdnDataService = mock(CdnDataService.class);
-    private Vps4SsoService vps4SsoService = mock(Vps4SsoService.class);
     private CdnService service;
     @Captor
     private ArgumentCaptor<CdnClientUpdateRequest> modifyCdnArgumentCaptor;
     @Captor
     private ArgumentCaptor<CdnClientCreateRequest> createCdnArgumentCaptor;
 
-
-    String shopperId = "12345678";
-    String shopperJwt = "fakeShopperJwt";
     UUID vmId = UUID.randomUUID();
-    Vps4SsoToken token;
+    UUID customerId = UUID.randomUUID();
     CdnSite cdnSite;
     VmCdnSite vmCdnSite;
     CdnDetail cdnSiteDetail;
@@ -61,7 +57,7 @@ public class DefaultCdnServiceTest {
 
     @Before
     public void setupTest() {
-        service = new DefaultCdnService(cdnClientService, cdnDataService, vps4SsoService);
+        service = new DefaultCdnService(cdnClientService, cdnDataService);
 
         cdnSite = new CdnSite();
         cdnSite.siteId = "fakeSiteId";
@@ -76,32 +72,19 @@ public class DefaultCdnServiceTest {
         vmCdnSite = new VmCdnSite();
         vmCdnSite.siteId = cdnSite.siteId;
 
-        token = new Vps4SsoToken(1,"fakeMessage", shopperJwt);
-        when(vps4SsoService.getDelegationToken("idp", shopperId)).thenReturn(token);
-        when(cdnClientService.getCdnSites(anyString())).thenReturn(Collections.singletonList(cdnSite));
-        when(cdnClientService.getCdnSiteDetail(anyString(), anyString())).thenReturn(cdnSiteDetail);
-        when(cdnClientService.invalidateCdnCache(anyString(), anyString())).thenReturn(invalidateCacheResponse);
-        when(cdnClientService.getCdnInvalidateStatus(anyString(), anyString(), anyString())).thenReturn(invalidateStatusResponse);
+        when(cdnClientService.getCdnSites(any())).thenReturn(Collections.singletonList(cdnSite));
+        when(cdnClientService.getCdnSiteDetail(any(), anyString())).thenReturn(cdnSiteDetail);
+        when(cdnClientService.invalidateCdnCache(any(), anyString())).thenReturn(invalidateCacheResponse);
+        when(cdnClientService.getCdnInvalidateStatus(any(), anyString(), anyString())).thenReturn(invalidateStatusResponse);
 
         when(cdnDataService.getCdnSiteFromId(eq(vmId), anyString())).thenReturn(vmCdnSite);
         when(cdnDataService.getActiveCdnSitesOfVm(eq(vmId))).thenReturn(Collections.singletonList(vmCdnSite));
     }
 
     @Test
-    public void testGetCdnSitesNullCustomerJwt() {
-        List<CdnSite> response = service.getCdnSites(shopperId, null, vmId);
-        verify(vps4SsoService, times(1)).getDelegationToken("idp", shopperId);
-        verify(cdnClientService, times(1)).getCdnSites("sso-jwt " + shopperJwt);
-
-        assertEquals(1, response.size());
-        assertSame(cdnSite, response.get(0));
-    }
-
-    @Test
-    public void testGetCdnSitesWithCustomerJwt() {
-        List<CdnSite> response = service.getCdnSites(shopperId, "customerJwt", vmId);
-        verify(vps4SsoService, times(0)).getDelegationToken("idp", shopperId);
-        verify(cdnClientService, times(1)).getCdnSites("sso-jwt customerJwt");
+    public void testGetCdnSites() {
+        List<CdnSite> response = service.getCdnSites(customerId, vmId);
+        verify(cdnClientService, times(1)).getCdnSites(customerId);
 
         assertEquals(1, response.size());
         assertSame(cdnSite, response.get(0));
@@ -111,20 +94,18 @@ public class DefaultCdnServiceTest {
     public void testGetCdnSitesDbEmptyList() {
         when(cdnDataService.getActiveCdnSitesOfVm(eq(vmId))).thenReturn(Collections.emptyList());
 
-        List<CdnSite> response = service.getCdnSites(shopperId, "customerJwt", vmId);
-        verify(vps4SsoService, times(0)).getDelegationToken("idp", shopperId);
-        verify(cdnClientService, times(1)).getCdnSites("sso-jwt customerJwt");
+        List<CdnSite> response = service.getCdnSites(customerId, vmId);
+        verify(cdnClientService, times(1)).getCdnSites(customerId);
 
         assertEquals(0, response.size());
     }
 
     @Test
     public void testGetCdnSitesNull() {
-        when(cdnClientService.getCdnSites(anyString())).thenReturn(null);
+        when(cdnClientService.getCdnSites(any())).thenReturn(null);
 
-        List<CdnSite> response = service.getCdnSites(shopperId, "customerJwt", vmId);
-        verify(vps4SsoService, times(0)).getDelegationToken("idp", shopperId);
-        verify(cdnClientService, times(1)).getCdnSites("sso-jwt customerJwt");
+        List<CdnSite> response = service.getCdnSites(customerId, vmId);
+        verify(cdnClientService, times(1)).getCdnSites(customerId);
 
         assertEquals(0, response.size());
     }
@@ -134,27 +115,16 @@ public class DefaultCdnServiceTest {
         VmCdnSite wrongCdnSite = new VmCdnSite();
         wrongCdnSite.siteId = "wrongSiteId";
         when(cdnDataService.getActiveCdnSitesOfVm(eq(vmId))).thenReturn(Collections.singletonList(wrongCdnSite));
-        List<CdnSite> response = service.getCdnSites(shopperId, "customerJwt", vmId);
-        verify(vps4SsoService, times(0)).getDelegationToken("idp", shopperId);
-        verify(cdnClientService, times(1)).getCdnSites("sso-jwt customerJwt");
+        List<CdnSite> response = service.getCdnSites(customerId, vmId);
+        verify(cdnClientService, times(1)).getCdnSites(customerId);
 
         assertEquals(0, response.size());
     }
 
     @Test
-    public void testGetCdnSiteNullCustomerJwt() {
-        CdnDetail response = service.getCdnSiteDetail(shopperId, null, cdnSiteDetail.siteId, vmId);
-        verify(vps4SsoService, times(1)).getDelegationToken("idp", shopperId);
-        verify(cdnClientService, times(1)).getCdnSiteDetail("sso-jwt " + shopperJwt, cdnSiteDetail.siteId);
-
-        assertSame(cdnSiteDetail, response);
-    }
-
-    @Test
-    public void testGetCdnSiteWithCustomerJwt() {
-        CdnDetail response = service.getCdnSiteDetail(shopperId, "customerJwt", cdnSiteDetail.siteId, vmId);
-        verify(vps4SsoService, times(0)).getDelegationToken("idp", shopperId);
-        verify(cdnClientService, times(1)).getCdnSiteDetail("sso-jwt customerJwt", cdnSiteDetail.siteId);
+    public void testGetCdnSite() {
+        CdnDetail response = service.getCdnSiteDetail(customerId, cdnSiteDetail.siteId, vmId);
+        verify(cdnClientService, times(1)).getCdnSiteDetail(customerId, cdnSiteDetail.siteId);
 
         assertSame(cdnSiteDetail, response);
     }
@@ -163,30 +133,28 @@ public class DefaultCdnServiceTest {
     public void testGetCdnSiteDetailDbNotFoundThrowsException() {
         when(cdnDataService.getCdnSiteFromId(eq(vmId), anyString())).thenReturn(null);
 
-        service.getCdnSiteDetail(shopperId, "customerJwt", cdnSiteDetail.siteId, vmId);
+        service.getCdnSiteDetail(customerId, cdnSiteDetail.siteId, vmId);
     }
 
     @Test
     public void testDeleteCdnSiteSuccessful() {
-        service.deleteCdnSite(shopperId, null, cdnSiteDetail.siteId);
-        verify(vps4SsoService, times(1)).getDelegationToken("idp", shopperId);
-        verify(cdnClientService, times(1)).deleteCdnSite("sso-jwt " + shopperJwt, cdnSiteDetail.siteId);
+        service.deleteCdnSite(customerId, cdnSiteDetail.siteId);
+        verify(cdnClientService, times(1)).deleteCdnSite(customerId, cdnSiteDetail.siteId);
     }
 
     @Test(expected = NotFoundException.class)
     public void testDeleteCdnSiteThrowsException() {
-        when(cdnClientService.deleteCdnSite(anyString(), anyString())).thenThrow(new NotFoundException());
+        when(cdnClientService.deleteCdnSite(any(), anyString())).thenThrow(new NotFoundException());
 
-        service.deleteCdnSite(shopperId, null, cdnSiteDetail.siteId);
+        service.deleteCdnSite(customerId, cdnSiteDetail.siteId);
     }
 
     @Test
     public void testModifyCdnSiteSuccessful() {
-        service.updateCdnSite(shopperId, null, cdnSiteDetail.siteId, CdnCacheLevel.CACHING_DISABLED, CdnBypassWAF.DISABLED);
+        service.updateCdnSite(customerId, cdnSiteDetail.siteId, CdnCacheLevel.CACHING_DISABLED, CdnBypassWAF.DISABLED);
 
-        verify(vps4SsoService, times(1)).getDelegationToken("idp", shopperId);
         verify(cdnClientService, times(1))
-                .modifyCdnSite(eq("sso-jwt " + shopperJwt), eq(cdnSiteDetail.siteId), modifyCdnArgumentCaptor.capture());
+                .modifyCdnSite(eq(customerId), eq(cdnSiteDetail.siteId), modifyCdnArgumentCaptor.capture());
 
         CdnClientUpdateRequest req = modifyCdnArgumentCaptor.getValue();
 
@@ -196,9 +164,9 @@ public class DefaultCdnServiceTest {
 
     @Test
     public void testModifyCdnSiteNullBypassWAF() {
-        service.updateCdnSite(shopperId, null, cdnSiteDetail.siteId, CdnCacheLevel.CACHING_DISABLED, null);
+        service.updateCdnSite(customerId, cdnSiteDetail.siteId, CdnCacheLevel.CACHING_DISABLED, null);
         verify(cdnClientService, times(1))
-                .modifyCdnSite(eq("sso-jwt " + shopperJwt), eq(cdnSiteDetail.siteId), modifyCdnArgumentCaptor.capture());
+                .modifyCdnSite(eq(customerId), eq(cdnSiteDetail.siteId), modifyCdnArgumentCaptor.capture());
 
         CdnClientUpdateRequest req = modifyCdnArgumentCaptor.getValue();
 
@@ -208,9 +176,9 @@ public class DefaultCdnServiceTest {
 
     @Test
     public void testModifyCdnSiteNullCacheLevel() {
-        service.updateCdnSite(shopperId, null, cdnSiteDetail.siteId, null, CdnBypassWAF.DISABLED);
+        service.updateCdnSite(customerId, cdnSiteDetail.siteId, null, CdnBypassWAF.DISABLED);
         verify(cdnClientService, times(1))
-                .modifyCdnSite(eq("sso-jwt " + shopperJwt), eq(cdnSiteDetail.siteId), modifyCdnArgumentCaptor.capture());
+                .modifyCdnSite(eq(customerId), eq(cdnSiteDetail.siteId), modifyCdnArgumentCaptor.capture());
 
         CdnClientUpdateRequest req = modifyCdnArgumentCaptor.getValue();
 
@@ -221,17 +189,16 @@ public class DefaultCdnServiceTest {
 
     @Test(expected = NotFoundException.class)
     public void testModifyCdnSiteThrowsException() {
-        when(cdnClientService.modifyCdnSite(anyString(), anyString(), any())).thenThrow(new NotFoundException());
+        when(cdnClientService.modifyCdnSite(any(), anyString(), any())).thenThrow(new NotFoundException());
 
-        service.updateCdnSite(shopperId, null, cdnSiteDetail.siteId, null, CdnBypassWAF.DISABLED);
+        service.updateCdnSite(customerId, cdnSiteDetail.siteId, null, CdnBypassWAF.DISABLED);
     }
 
     @Test
     public void testClearCdnSiteCacheSuccessful() {
-        CdnClientInvalidateCacheResponse response = service.invalidateCdnCache(shopperId, null, cdnSiteDetail.siteId);
-        verify(vps4SsoService, times(1)).getDelegationToken("idp", shopperId);
+        CdnClientInvalidateCacheResponse response = service.invalidateCdnCache(customerId, cdnSiteDetail.siteId);
         verify(cdnClientService, times(1))
-                .invalidateCdnCache(eq("sso-jwt " + shopperJwt), eq(cdnSiteDetail.siteId));
+                .invalidateCdnCache(customerId, cdnSiteDetail.siteId);
 
         assertSame(invalidateCacheResponse, response);
     }
@@ -240,11 +207,10 @@ public class DefaultCdnServiceTest {
     public void testCreateCdnSiteSuccessful() {
         IpAddress address = new IpAddress();
         address.ipAddress = "fakeIpAddress";
-        service.createCdn(shopperId, null, "fakedomain.com", address,
+        service.createCdn(customerId, "fakedomain.com", address,
                 CdnCacheLevel.CACHING_DISABLED.toString(), CdnBypassWAF.DISABLED.toString());
-        verify(vps4SsoService, times(1)).getDelegationToken("idp", shopperId);
         verify(cdnClientService, times(1))
-                .createCdnSite(eq("sso-jwt " + shopperJwt), createCdnArgumentCaptor.capture());
+                .createCdnSite(eq(customerId), createCdnArgumentCaptor.capture());
 
         CdnClientCreateRequest req = createCdnArgumentCaptor.getValue();
 
@@ -256,7 +222,7 @@ public class DefaultCdnServiceTest {
         assertEquals(address.ipAddress, req.origins[0].address);
         assertEquals("js", req.autoMinify[0]);
         assertEquals("fakedomain.com", req.domain);
-        assertEquals("WSSWAFBasic", req.planId);
+        assertEquals("VPSWAFCDNBasic", req.planId);
         assertEquals("CLOUDFLARE", req.provider);
         assertEquals("https", req.sslRedirect);
         assertEquals("off", req.imageOptimization);
@@ -266,20 +232,17 @@ public class DefaultCdnServiceTest {
 
     @Test
     public void testGetCdnInvalidateCacheStatusSuccessful() {
-        CdnClientInvalidateStatusResponse response = service.getCdnInvalidateCacheStatus(shopperId, null, cdnSiteDetail.siteId, "fakeInvalidationId");
-        verify(vps4SsoService, times(1)).getDelegationToken("idp", shopperId);
+        CdnClientInvalidateStatusResponse response = service.getCdnInvalidateCacheStatus(customerId, cdnSiteDetail.siteId, "fakeInvalidationId");
         verify(cdnClientService, times(1))
-                .getCdnInvalidateStatus(eq("sso-jwt " + shopperJwt), eq(cdnSiteDetail.siteId), eq("fakeInvalidationId"));
+                .getCdnInvalidateStatus(customerId, cdnSiteDetail.siteId, "fakeInvalidationId");
 
         assertSame(invalidateStatusResponse, response);
     }
 
     @Test
     public void testValidateCdnSuccessful() {
-        service.validateCdn(shopperId, null, cdnSiteDetail.siteId);
-
-        verify(vps4SsoService, times(1)).getDelegationToken("idp", shopperId);
+        service.validateCdn(customerId, cdnSiteDetail.siteId);
         verify(cdnClientService, times(1))
-                .requestCdnValidation(eq("sso-jwt " + shopperJwt), eq(cdnSiteDetail.siteId));
+                .requestCdnValidation(customerId, cdnSiteDetail.siteId);
     }
 }

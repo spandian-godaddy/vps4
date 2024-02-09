@@ -26,22 +26,17 @@ import static org.mockito.Mockito.when;
 public class WaitForCdnCreationJobTest {
     private CommandContext context;
     private CdnService cdnService;
-    private Cryptography cryptography;
     private WaitForCdnCreationJob command;
 
     private CdnDetail cdnDetail;
     private final UUID vmId = UUID.randomUUID();
-
-    String encryptedJwtString = "encryptedJwt";
+    private final UUID customerId = UUID.randomUUID();
     String siteId = "fakeSiteId";
-    String shopperId = "fakeShopperId";
-    String decryptedJwtString = "decryptedJwt";
 
     @Before
     public void setUp() throws Exception {
         context = mock(CommandContext.class);
         cdnService = mock(CdnService.class);
-        cryptography = mock(Cryptography.class);
 
         CdnValidation cdnValidation = new CdnValidation();
         cdnValidation.name = "validationName";
@@ -53,10 +48,9 @@ public class WaitForCdnCreationJobTest {
         cdnDetail.siteId = siteId;
         cdnDetail.productData = productData;
 
-        when(cdnService.getCdnSiteDetail(anyString(), anyString(), anyString(), any(), anyBoolean())).thenReturn(cdnDetail);
-        when(cryptography.decryptIgnoreNull(any())).thenReturn(decryptedJwtString);
+        when(cdnService.getCdnSiteDetail(any(), anyString(), any(), anyBoolean())).thenReturn(cdnDetail);
 
-        command = new WaitForCdnCreationJob(cdnService, cryptography);
+        command = new WaitForCdnCreationJob(cdnService);
     }
 
     @Test
@@ -64,9 +58,8 @@ public class WaitForCdnCreationJobTest {
         WaitForCdnCreationJob.Request request = new WaitForCdnCreationJob.Request();
         request.vmId = vmId;
         request.siteId = siteId;
-        request.shopperId = shopperId;
-        request.encryptedCustomerJwt = encryptedJwtString.getBytes();
+        request.customerId = customerId;
         command.execute(context, request);
-        verify(cdnService, times(1)).getCdnSiteDetail(shopperId, decryptedJwtString, siteId, vmId, true);
+        verify(cdnService, times(1)).getCdnSiteDetail(customerId, siteId, vmId, true);
     }
 }

@@ -166,15 +166,6 @@ public class VmRebuildResourceTest {
     }
 
     // === Shopper Tests ===
-
-    private void verifySuccessfulVmRebuildByAdmin(boolean nullCustJwt) {
-        VmAction vmAction = getVmRebuildResource().rebuild(ourVm.vmId, getRequestPayload(goodPassword, imageName));
-
-        Assert.assertEquals(vmAction.type, ActionType.REBUILD_VM);
-        Assert.assertEquals(vmAction.virtualMachineId, ourVm.vmId);
-        verifyCommandRequestParams(ourVm, nullCustJwt);
-    }
-
     private void verifySuccessfulVmRebuild() {
         VmAction vmAction = getVmRebuildResource().rebuild(ourVm.vmId, getRequestPayload(goodPassword, imageName));
 
@@ -198,10 +189,6 @@ public class VmRebuildResourceTest {
     }
 
     private void verifyCommandRequestParams(VirtualMachine vm) {
-        verifyCommandRequestParams(vm, false);
-    }
-
-    private void verifyCommandRequestParams(VirtualMachine vm, boolean nullCustomerJwt) {
         CommandService commandService = injector.getInstance(CommandService.class);
         verify(commandService, times(1))
                 .executeCommand(commandGroupSpecArgumentCaptor.capture());
@@ -217,12 +204,6 @@ public class VmRebuildResourceTest {
         Assert.assertEquals(commandRequest.rebuildVmInfo.keepAdditionalIps, true);
         Assert.assertEquals(commandRequest.rebuildVmInfo.gdUserName, "tester");
         Assert.assertEquals(commandRequest.rebuildVmInfo.shopperId, "validUserShopperId");
-
-        if (nullCustomerJwt) {
-            Assert.assertNull(commandRequest.rebuildVmInfo.encryptedCustomerJwt);
-        } else {
-            Assert.assertNotNull(commandRequest.rebuildVmInfo.encryptedCustomerJwt);
-        }
     }
 
 
@@ -275,7 +256,7 @@ public class VmRebuildResourceTest {
     @Test
     public void verifyAdminRebuildVm() {
         user = admin;
-        verifySuccessfulVmRebuildByAdmin(true);
+        verifySuccessfulVmRebuild();
     }
 
     @Test(expected = ForbiddenException.class)
@@ -387,7 +368,7 @@ public class VmRebuildResourceTest {
     @Test
     public void anAdminWithShopperHeaderSetCanRebuildOurVm() {
         user = adminWithShopperHeader;
-        verifySuccessfulVmRebuildByAdmin(false);
+        verifySuccessfulVmRebuild();
     }
 
     @Test
