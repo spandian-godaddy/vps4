@@ -6,6 +6,7 @@ import com.godaddy.vps4.cdn.model.CdnClientInvalidateCacheResponse;
 import com.godaddy.vps4.cdn.model.VmCdnSite;
 import com.godaddy.vps4.orchestration.ActionCommand;
 import com.godaddy.vps4.orchestration.vm.VmActionRequest;
+import com.godaddy.vps4.util.Cryptography;
 import com.godaddy.vps4.vm.ActionService;
 import com.google.inject.Inject;
 import gdg.hfs.orchestration.CommandContext;
@@ -25,20 +26,23 @@ public class Vps4ClearCdnCache extends ActionCommand<Vps4ClearCdnCache.Request, 
     public static final Logger logger = LoggerFactory.getLogger(Vps4ClearCdnCache.class);
     private final CdnDataService cdnDataService;
     private final CdnService cdnService;
+    private final Cryptography cryptography;
     private Request request;
 
     @Inject
-    public Vps4ClearCdnCache(ActionService actionService, CdnDataService cdnDataService, CdnService cdnService) {
+    public Vps4ClearCdnCache(ActionService actionService, CdnDataService cdnDataService, CdnService cdnService,
+                             Cryptography cryptography) {
         super(actionService);
         this.cdnDataService = cdnDataService;
         this.cdnService = cdnService;
+        this.cryptography = cryptography;
     }
 
     public static class Request extends VmActionRequest {
         public UUID vmId;
-        public UUID customerId;
         public String siteId;
         public byte[] encryptedCustomerJwt;
+        public String shopperId;
     }
 
 
@@ -59,11 +63,13 @@ public class Vps4ClearCdnCache extends ActionCommand<Vps4ClearCdnCache.Request, 
         verifyCdnBelongsToVmId();
 
         CdnClientInvalidateCacheResponse response = context.execute("ClearCdnCache",
-                                    ctx -> cdnService.invalidateCdnCache(request.customerId, request.siteId),
+                                    ctx -> cdnService.invalidateCdnCache(request.shopperId,
+                                            cryptography.decryptIgnoreNull(request.encryptedCustomerJwt), request.siteId),
                 CdnClientInvalidateCacheResponse.class);
 
         WaitForCdnClearCacheJob.Request waitRequest = new WaitForCdnClearCacheJob.Request();
-        waitRequest.customerId = request.customerId;
+        waitRequest.encryptedCustomerJwt = request.encryptedCustomerJwt;
+        waitRequest.shopperId = request.shopperId;
         waitRequest.siteId = request.siteId;
         waitRequest.validationId = response.invalidationId;
         context.execute(WaitForCdnClearCacheJob.class, waitRequest);

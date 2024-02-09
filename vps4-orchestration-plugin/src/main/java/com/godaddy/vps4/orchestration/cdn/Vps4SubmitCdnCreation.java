@@ -9,6 +9,7 @@ import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.NetworkService;
 import com.godaddy.vps4.orchestration.ActionCommand;
 import com.godaddy.vps4.orchestration.vm.VmActionRequest;
+import com.godaddy.vps4.util.Cryptography;
 import com.godaddy.vps4.vm.ActionService;
 import com.google.inject.Inject;
 import gdg.hfs.orchestration.CommandContext;
@@ -31,24 +32,28 @@ public class Vps4SubmitCdnCreation extends ActionCommand<Vps4SubmitCdnCreation.R
     private final CdnDataService cdnDataService;
 
     private final NetworkService networkService;
+    private final Cryptography cryptography;
     private Request request;
 
     @Inject
     public Vps4SubmitCdnCreation(ActionService actionService, CdnDataService cdnDataService, CdnService cdnService,
-                                 NetworkService networkService) {
+                                 NetworkService networkService, Cryptography cryptography) {
         super(actionService);
         this.cdnService = cdnService;
         this.cdnDataService = cdnDataService;
         this.networkService = networkService;
+        this.cryptography = cryptography;
     }
 
     public static class Request extends VmActionRequest {
         public UUID vmId;
-        public UUID customerId;
         public String domain;
         public String ipAddress;
+        public byte[] encryptedCustomerJwt;
+        public String shopperId;
         public CdnCacheLevel cacheLevel;
         public CdnBypassWAF bypassWAF;
+
     }
 
 
@@ -64,16 +69,18 @@ public class Vps4SubmitCdnCreation extends ActionCommand<Vps4SubmitCdnCreation.R
     void waitForCdnCreationJobOrFailGracefully(CommandContext context, String siteId) {
         try {
             WaitForCdnCreationJob.Request waitRequest = new WaitForCdnCreationJob.Request();
+            waitRequest.encryptedCustomerJwt = request.encryptedCustomerJwt;
+            waitRequest.shopperId = request.shopperId;
             waitRequest.siteId = siteId;
             waitRequest.vmId = request.vmId;
-            waitRequest.customerId = request.customerId;
             context.execute(WaitForCdnCreationJob.class, waitRequest);
         }
         catch (Exception e) {
             logger.error("Error while waiting for cdn creation job for siteId {} for VM: {}. Error details: {}", siteId, request.vmId, e);
             try {
                 logger.info("Attempting to issue deletion of cdn siteId {} of vmId {}", siteId, request.vmId);
-                cdnService.deleteCdnSite(request.customerId, siteId);
+                cdnService.deleteCdnSite(request.shopperId,
+                        cryptography.decryptIgnoreNull(request.encryptedCustomerJwt), siteId);
             } catch (Exception ignored) {}
             throw e;
         }
@@ -86,7 +93,8 @@ public class Vps4SubmitCdnCreation extends ActionCommand<Vps4SubmitCdnCreation.R
         IpAddress address = getIpAddressOfVmId();
 
         CdnClientCreateResponse response = context.execute("SubmitCreateCdn",
-                                    ctx -> cdnService.createCdn(request.customerId,
+                                    ctx -> cdnService.createCdn(request.shopperId,
+                                            cryptography.decryptIgnoreNull(request.encryptedCustomerJwt),
                                             request.domain, address, request.cacheLevel.toString(), request.bypassWAF.toString()),
                 CdnClientCreateResponse.class);
 

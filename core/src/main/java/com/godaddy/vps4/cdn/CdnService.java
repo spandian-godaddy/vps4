@@ -13,15 +13,15 @@ import java.util.List;
 import java.util.UUID;
 
 public interface CdnService {
-    List<CdnSite> getCdnSites(UUID customerId, UUID vmId);
-    CdnDetail getCdnSiteDetail(UUID customerId, String siteId, UUID vmId, boolean skipDbCheck);
-    CdnDetail getCdnSiteDetail(UUID customerId, String siteId, UUID vmId);
-    CdnClientInvalidateCacheResponse invalidateCdnCache(UUID customerId, String siteId);
-    CdnClientInvalidateStatusResponse getCdnInvalidateCacheStatus(UUID customerId, String siteId, String invalidationId);
-    CdnClientCreateResponse createCdn(UUID customerId, String domain, IpAddress ipAddress, String cacheLevel, String bypassWAF);
+    List<CdnSite> getCdnSites(String shopperId, String customerJwt, UUID vmId);
+    CdnDetail getCdnSiteDetail(String shopperId, String customerJwt, String siteId, UUID vmId, boolean skipDbCheck);
+    CdnDetail getCdnSiteDetail(String shopperId, String customerJwt, String siteId, UUID vmId);
+    CdnClientInvalidateCacheResponse invalidateCdnCache(String shopperId, String customerJwt, String siteId);
+    CdnClientInvalidateStatusResponse getCdnInvalidateCacheStatus(String shopperId, String customerJwt, String siteId, String invalidationId);
+    CdnClientCreateResponse createCdn(String shopperId, String customerJwt, String domain, IpAddress ipAddress, String cacheLevel, String bypassWAF);
 
-    void validateCdn(UUID customerId, String siteId);
+    void validateCdn(String shopperId, String customerJwt, String siteId);
 
-    void deleteCdnSite(UUID customerId, String siteId);
-    void updateCdnSite(UUID customerId, String siteId, CdnCacheLevel cacheLevel, CdnBypassWAF bypassWAF);
+    void deleteCdnSite(String shopperId, String customerJwt, String siteId);
+    void updateCdnSite(String shopperId, String customerJwt, String siteId, CdnCacheLevel cacheLevel, CdnBypassWAF bypassWAF);
 }

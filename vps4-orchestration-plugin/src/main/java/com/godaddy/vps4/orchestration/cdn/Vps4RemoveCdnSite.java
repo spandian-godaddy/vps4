@@ -5,6 +5,7 @@ import com.godaddy.vps4.cdn.CdnService;
 import com.godaddy.vps4.cdn.model.VmCdnSite;
 import com.godaddy.vps4.orchestration.ActionCommand;
 import com.godaddy.vps4.orchestration.vm.VmActionRequest;
+import com.godaddy.vps4.util.Cryptography;
 import com.godaddy.vps4.vm.ActionService;
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
@@ -26,14 +27,17 @@ public class Vps4RemoveCdnSite extends ActionCommand<Vps4RemoveCdnSite.Request, 
 
     private final CdnDataService cdnDataService;
     private final CdnService cdnService;
+    private final Cryptography cryptography;
 
     private Request request;
 
     @Inject
-    public Vps4RemoveCdnSite(ActionService actionService, CdnDataService cdnDataService, CdnService cdnService) {
+    public Vps4RemoveCdnSite(ActionService actionService, CdnDataService cdnDataService, CdnService cdnService,
+                             Cryptography cryptography) {
         super(actionService);
         this.cdnDataService = cdnDataService;
         this.cdnService = cdnService;
+        this.cryptography = cryptography;
     }
 
     @Override
@@ -51,7 +55,8 @@ public class Vps4RemoveCdnSite extends ActionCommand<Vps4RemoveCdnSite.Request, 
 
     public void issueCdnSiteDeletion() {
         logger.info("Attempting to issue deletion of cdn siteId {} of vmId {}", request.siteId, request.vmId);
-        cdnService.deleteCdnSite(request.customerId, request.siteId);
+        cdnService.deleteCdnSite(request.shopperId,
+                cryptography.decryptIgnoreNull(request.encryptedCustomerJwt), request.siteId);
     }
 
     public void verifyCdnBelongsToVmId() {
@@ -64,7 +69,8 @@ public class Vps4RemoveCdnSite extends ActionCommand<Vps4RemoveCdnSite.Request, 
 
     public static class Request extends VmActionRequest {
         public UUID vmId;
-        public UUID customerId;
         public String siteId;
+        public byte[] encryptedCustomerJwt;
+        public String shopperId;
     }
 }

@@ -37,17 +37,23 @@ public class Vps4SubmitCdnCreationTest {
     ActionService actionService = mock(ActionService.class);
     CdnService cdnService = mock(CdnService.class);
     CdnDataService cdnDataService = mock(CdnDataService.class);
+    Cryptography cryptography = mock(Cryptography.class);
     NetworkService networkService = mock(NetworkService.class);
     Vps4SubmitCdnCreation command;
     CommandContext context = mock(CommandContext.class);
 
     UUID vmId = UUID.randomUUID();
-    UUID customerId = UUID.randomUUID();
 
+    String encryptedJwtString = "encryptedJwt";
     String siteId = "fakeSiteId";
+
+    String shopperId = "fakeShopperId";
+    String decryptedJwtString = "decryptedJwt";
     String domain = "fakeDomain";
 
     IpAddress ipAddress = new IpAddress();
+
+    byte[] encryptedJwt = encryptedJwtString.getBytes();
     Vps4SubmitCdnCreation.Request request;
     VmCdnSite vmCdnSite;
     CdnClientCreateResponse response;
@@ -62,12 +68,14 @@ public class Vps4SubmitCdnCreationTest {
         when(context.getId()).thenReturn(UUID.randomUUID());
         ipAddress.ipAddress = "fakeIpAddress";
         request = new Vps4SubmitCdnCreation.Request();
+        request.encryptedCustomerJwt = encryptedJwt;
         request.vmId = vmId;
+        request.shopperId = shopperId;
         request.domain = domain;
         request.ipAddress = ipAddress.ipAddress;
         request.bypassWAF = CdnBypassWAF.ENABLED;
         request.cacheLevel = CdnCacheLevel.CACHING_DISABLED;
-        request.customerId = customerId;
+
         vmCdnSite = new VmCdnSite();
         vmCdnSite.siteId = siteId;
         vmCdnSite.vmId = vmId;
@@ -76,15 +84,16 @@ public class Vps4SubmitCdnCreationTest {
         response.siteId = "fakeSiteId";
         response.revision = 1;
 
-        when(cdnService.createCdn(customerId, domain, ipAddress,
+        when(cdnService.createCdn(shopperId, decryptedJwtString, domain, ipAddress,
                 CdnCacheLevel.CACHING_DISABLED.toString(), CdnBypassWAF.ENABLED.toString())).thenReturn(response);
         when(context.execute(eq("SubmitCreateCdn"),
                 Matchers.<Function<CommandContext, CdnClientCreateResponse>>any(),
                 eq(CdnClientCreateResponse.class)))
                 .thenReturn(response);
+        when(cryptography.decryptIgnoreNull(any())).thenReturn(decryptedJwtString);
         when(networkService.getActiveIpAddressOfVm(vmId, ipAddress.ipAddress)).thenReturn(ipAddress);
 
-        command = new Vps4SubmitCdnCreation(actionService, cdnDataService, cdnService, networkService);
+        command = new Vps4SubmitCdnCreation(actionService, cdnDataService, cdnService, networkService, cryptography);
     }
 
     @Test
@@ -112,9 +121,10 @@ public class Vps4SubmitCdnCreationTest {
         verify(context).execute(eq(WaitForCdnCreationJob.class), waitRequestArgumentCaptor.capture());
 
         WaitForCdnCreationJob.Request req = waitRequestArgumentCaptor.getValue();
-        assertEquals(customerId, req.customerId);
+        assertEquals(shopperId, req.shopperId);
         assertEquals(siteId, req.siteId);
         assertEquals(vmId, req.vmId);
+        assertEquals(encryptedJwt, req.encryptedCustomerJwt);
     }
 
 
@@ -128,7 +138,8 @@ public class Vps4SubmitCdnCreationTest {
             fail();
         }
         catch(RuntimeException e) {
-            verify(cdnService).deleteCdnSite(request.customerId, siteId);
+            verify(cdnService).deleteCdnSite(request.shopperId,
+                    cryptography.decryptIgnoreNull(request.encryptedCustomerJwt), siteId);
         }
     }
 }

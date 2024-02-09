@@ -153,11 +153,12 @@ public class Vps4ProcessAccountCancellation extends ActionCommand<Vps4ProcessAcc
         if (cdnSites != null) {
             for (VmCdnSite site : cdnSites) {
                 Vps4ModifyCdnSite.Request req = new Vps4ModifyCdnSite.Request();
+                req.encryptedCustomerJwt = null;
                 req.vmId = vmId;
                 req.bypassWAF = CdnBypassWAF.ENABLED;
                 req.cacheLevel = CdnCacheLevel.CACHING_DISABLED;
+                req.shopperId = credit.getShopperId();
                 req.siteId = site.siteId;
-                req.customerId = credit.getCustomerId();
                 context.execute("ModifyCdnSite-" + site.siteId, Vps4ModifyCdnSite.class, req);
             }
         }

@@ -113,7 +113,7 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Void> {
             getAndRemoveAdditionalIps(oldHfsVmId);
         }
 
-        getAndRemoveActiveCdnSites(request.rebuildVmInfo.customerId);
+        getAndRemoveActiveCdnSites(request.rebuildVmInfo.shopperId, request.rebuildVmInfo.encryptedCustomerJwt);
 
         long newHfsVmId = rebuildServer(oldHfsVmId);
 
@@ -154,14 +154,15 @@ public class Vps4RebuildVm extends ActionCommand<Vps4RebuildVm.Request, Void> {
         }
     }
 
-    private void getAndRemoveActiveCdnSites(UUID customerId) {
+    private void getAndRemoveActiveCdnSites(String shopperId, byte[] encryptedCustomerJwt) {
         List<VmCdnSite> activeCdnSites = cdnDataService.getActiveCdnSitesOfVm(vps4VmId);
         if (activeCdnSites != null) {
             for (VmCdnSite site : activeCdnSites) {
                 Vps4RemoveCdnSite.Request req = new Vps4RemoveCdnSite.Request();
                 req.vmId = vps4VmId;
                 req.siteId = site.siteId;
-                req.customerId = customerId;
+                req.shopperId = shopperId;
+                req.encryptedCustomerJwt = encryptedCustomerJwt;
                 context.execute("RemoveCdnSite-" + site.siteId, Vps4RemoveCdnSite.class, req);
             }
         }

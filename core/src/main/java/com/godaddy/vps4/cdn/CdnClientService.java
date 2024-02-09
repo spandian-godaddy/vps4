@@ -23,42 +23,42 @@ import javax.ws.rs.PathParam;
 
 import javax.ws.rs.core.MediaType;
 import java.util.List;
-import java.util.UUID;
 
 @Path("/")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 public interface CdnClientService {
     @GET
-    @Path("/customers/{customerId}/sites")
-    List<CdnSite> getCdnSites(@PathParam("customerId") UUID customerId);
+    @Path("/sites")
+    List<CdnSite> getCdnSites(@HeaderParam("Authorization") String ssoJwt);
 
     @GET
-    @Path("/customers/{customerId}/sites/{siteId}")
-    CdnDetail getCdnSiteDetail(@PathParam("customerId") UUID customerId, @PathParam("siteId") String siteId);
+    @Path("/sites/{siteId}")
+    CdnDetail getCdnSiteDetail(@HeaderParam("Authorization") String ssoJwt, @PathParam("siteId") String siteId);
 
     @GET
-    @Path("/customers/{customerId}/sites/{siteId}/cache/{invalidationId}")
-    CdnClientInvalidateStatusResponse getCdnInvalidateStatus(@PathParam("customerId") UUID customerId, @PathParam("siteId") String siteId, @PathParam("invalidationId") String invalidationId);
-
-    @DELETE
-    @Path("/customers/{customerId}/sites/{siteId}/cache")
-    CdnClientInvalidateCacheResponse invalidateCdnCache(@PathParam("customerId") UUID customerId, @PathParam("siteId") String siteId);
+    @Path("/sites/{siteId}/cache/{invalidationId}")
+    CdnClientInvalidateStatusResponse getCdnInvalidateStatus(@HeaderParam("Authorization") String ssoJwt, @PathParam("siteId") String siteId, @PathParam("invalidationId") String invalidationId);
 
     @POST
-    @Path("/customers/{customerId}/sites/{siteId}/validations")
-    void requestCdnValidation(@PathParam("customerId") UUID customerId, @PathParam("siteId") String siteId);
-
-    @DELETE
-    @Path("/customers/{customerId}/sites/{siteId}")
-    CdnClientResponse deleteCdnSite(@PathParam("customerId") UUID customerId, @PathParam("siteId") String siteId);
+    @Path("/sites/{siteId}/validations")
+    void requestCdnValidation(@HeaderParam("Authorization") String ssoJwt, @PathParam("siteId") String siteId);
 
     @POST
-    @Path("/customers/{customerId}/sites")
-    CdnClientCreateResponse createCdnSite(@PathParam("customerId") UUID customerId, CdnClientCreateRequest request);
+    @Path("/sites")
+    CdnClientCreateResponse createCdnSite(@HeaderParam("Authorization") String ssoJwt, CdnClientCreateRequest request);
+
+    @DELETE
+    @Path("/sites/{siteId}/cache")
+    CdnClientInvalidateCacheResponse invalidateCdnCache(@HeaderParam("Authorization") String ssoJwt, @PathParam("siteId") String siteId);
+
+    @DELETE
+    @Path("/sites/{siteId}")
+    CdnClientResponse deleteCdnSite(@HeaderParam("Authorization") String ssoJwt, @PathParam("siteId") String siteId);
 
     @PATCH
-    @Path("/customers/{customerId}/sites/{siteId}")
-    CdnClientResponse modifyCdnSite(@PathParam("customerId") UUID customerId, @PathParam("siteId") String siteId, CdnClientUpdateRequest updateCdnRequest);
+    @Path("/sites/{siteId}")
+    CdnClientResponse modifyCdnSite(@HeaderParam("Authorization") String ssoJwt, @PathParam("siteId") String siteId, CdnClientUpdateRequest updateCdnRequest);
+
 
 }

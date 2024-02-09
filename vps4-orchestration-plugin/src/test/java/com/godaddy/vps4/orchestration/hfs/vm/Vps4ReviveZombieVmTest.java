@@ -24,6 +24,7 @@ import com.godaddy.vps4.cdn.model.CdnDetail;
 import com.godaddy.vps4.cdn.model.CdnStatus;
 import com.godaddy.vps4.cdn.model.VmCdnSite;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
+import com.godaddy.vps4.util.Cryptography;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -70,11 +71,11 @@ public class Vps4ReviveZombieVmTest{
     private PanoptaDataService panoptaDataService;
     private PanoptaService panoptaService;
     private CdnDataService cdnDataService;
+    private Cryptography cryptography;
     private CdnService cdnService;
     private VmCdnSite vmCdnSite;
     private CdnDetail cdnDetail;
     private VirtualMachineCredit vmCredit;
-    private UUID customerId;
 
     @Before
     public void setup() throws PanoptaServiceException {
@@ -87,6 +88,7 @@ public class Vps4ReviveZombieVmTest{
         panoptaDataService = mock(PanoptaDataService.class);
         panoptaService = mock(PanoptaService.class);
         cdnDataService = mock(CdnDataService.class);
+        cryptography = mock(Cryptography.class);
         cdnService = mock(CdnService.class);
 
         job = new ScheduledJob();
@@ -120,11 +122,10 @@ public class Vps4ReviveZombieVmTest{
 
         cdnDetail = new CdnDetail();
         cdnDetail.status = CdnStatus.SUCCESS;
-        when(cdnService.getCdnSiteDetail(any(), anyString(), any(), anyBoolean())).thenReturn(cdnDetail);
+        when(cdnService.getCdnSiteDetail(anyString(), anyString(), anyString(), any(), anyBoolean())).thenReturn(cdnDetail);
 
-        customerId = UUID.randomUUID();
         vmCredit = mock(VirtualMachineCredit.class);
-        when(vmCredit.getCustomerId()).thenReturn(customerId);
+        when(vmCredit.getShopperId()).thenReturn("fakeShopperId");
         when(creditService.getVirtualMachineCredit(any())).thenReturn(vmCredit);
 
         PanoptaDetail panoptaDetail = new PanoptaDetail(job.vmId, "partnerCustomerKey",
@@ -141,6 +142,7 @@ public class Vps4ReviveZombieVmTest{
             binder.bind(PanoptaDataService.class).toInstance(panoptaDataService);
             binder.bind(PanoptaService.class).toInstance(panoptaService);
             binder.bind(CdnDataService.class).toInstance(cdnDataService);
+            binder.bind(Cryptography.class).toInstance(cryptography);
             binder.bind(CdnService.class).toInstance(cdnService);
         });
 
@@ -171,7 +173,7 @@ public class Vps4ReviveZombieVmTest{
         verify(vmService, times(0)).endRescueVm(vm.hfsVmId);
         verify(vmService, times(1)).startVm(vm.hfsVmId);
         verify(cdnDataService, times(1)).getActiveCdnSitesOfVm(request.vmId);
-        verify(cdnService, times(1)).updateCdnSite(customerId, "fakeSiteId", CdnCacheLevel.CACHING_OPTIMIZED, CdnBypassWAF.DISABLED);
+        verify(cdnService, times(1)).updateCdnSite("fakeShopperId", null, "fakeSiteId", CdnCacheLevel.CACHING_OPTIMIZED, CdnBypassWAF.DISABLED);
     }
 
     @Test
@@ -198,6 +200,6 @@ public class Vps4ReviveZombieVmTest{
         verify(vmService, times(1)).endRescueVm(vm.hfsVmId);
         verify(vmService, times(0)).startVm(vm.hfsVmId);
         verify(cdnDataService, times(1)).getActiveCdnSitesOfVm(request.vmId);
-        verify(cdnService, times(1)).updateCdnSite(customerId, "fakeSiteId", CdnCacheLevel.CACHING_OPTIMIZED, CdnBypassWAF.DISABLED);
+        verify(cdnService, times(1)).updateCdnSite("fakeShopperId", null, "fakeSiteId", CdnCacheLevel.CACHING_OPTIMIZED, CdnBypassWAF.DISABLED);
     }
 }

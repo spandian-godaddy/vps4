@@ -16,6 +16,7 @@ public class RebuildVmInfo {
     public Image image;
     public String username;
     public byte[] encryptedPassword;
+    public byte[] encryptedCustomerJwt;
     public String zone;
     public String serverName;
     public String privateLabelId;
@@ -25,7 +26,6 @@ public class RebuildVmInfo {
     public String gdUserName;
     public boolean isManaged;
     public String controlPanel;
-    public UUID customerId;
     public PleskLicenseType pleskLicenseType;
 
     public RebuildVmInfo() {

@@ -83,7 +83,9 @@ public class Vps4DestroyVmTest {
         request.virtualMachine = vm;
         request.actionId = 13L;
         request.gdUserName = "fake-employee";
-        request.customerId = UUID.randomUUID();
+        request.shopperId = "fakeShopperId";
+        String encryptedJwtString = "fakeCustomerJwt";
+        request.encryptedCustomerJwt = encryptedJwtString.getBytes();
 
         primaryIp.hfsAddressId = 23L;
         primaryIp.validUntil = Instant.MAX;
@@ -170,7 +172,8 @@ public class Vps4DestroyVmTest {
         Vps4RemoveCdnSite.Request req = cdnRequest.getValue();
         assertEquals(vm.vmId, req.vmId);
         assertEquals(vmCdnSite.siteId, req.siteId);
-        assertEquals(request.customerId, req.customerId);
+        assertEquals(request.shopperId, req.shopperId);
+        assertEquals(request.encryptedCustomerJwt, req.encryptedCustomerJwt);
     }
 
     @Test

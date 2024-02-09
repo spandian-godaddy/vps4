@@ -53,7 +53,8 @@ public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4Dest
     private CommandContext context;
     private VirtualMachine vm;
     private String gdUserName;
-    private UUID customerId;
+    private String shopperId;
+    private byte[] encryptedCustomerJwt;
     private long actionId;
 
     @Inject
@@ -76,7 +77,8 @@ public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4Dest
         this.context = context;
         this.vm = request.virtualMachine;
         this.gdUserName = request.gdUserName;
-        this.customerId = request.customerId;
+        this.shopperId = request.shopperId;
+        this.encryptedCustomerJwt = request.encryptedCustomerJwt;
         this.actionId = request.actionId;
 
         logger.info("Destroying server {}", vm.vmId);
@@ -183,7 +185,8 @@ public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4Dest
                 Vps4RemoveCdnSite.Request req = new Vps4RemoveCdnSite.Request();
                 req.vmId = vm.vmId;
                 req.siteId = site.siteId;
-                req.customerId = this.customerId;
+                req.shopperId = this.shopperId;
+                req.encryptedCustomerJwt = this.encryptedCustomerJwt;
                 context.execute("RemoveCdnSite-" + site.siteId, Vps4RemoveCdnSite.class, req);
             }
         }
@@ -268,7 +271,8 @@ public class Vps4DestroyVm extends ActionCommand<Vps4DestroyVm.Request, Vps4Dest
 
     public static class Request extends VmActionRequest {
         public String gdUserName;
-        public UUID customerId;
+        public String shopperId;
+        public byte[] encryptedCustomerJwt;
     }
 
     public static class Response {
