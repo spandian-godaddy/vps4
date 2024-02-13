@@ -1,6 +1,5 @@
 package com.godaddy.vps4.web.credit;
 
-import java.util.Map;
 import java.util.UUID;
 
 import javax.ws.rs.Consumes;
@@ -11,9 +10,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.godaddy.vps4.PATCH;
 import com.godaddy.vps4.credit.CreditService;
@@ -33,7 +29,7 @@ import io.swagger.annotations.Api;
 @Path("/api/credits")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-@RequiresRole(roles = { GDUser.Role.ADMIN })
+@RequiresRole(roles = { GDUser.Role.ADMIN, GDUser.Role.CROSS_DC_VPS4 })
 public class CreditProdMetaResource {
     private final ProdMetaService prodMetaService;
     private final CreditService creditService;
