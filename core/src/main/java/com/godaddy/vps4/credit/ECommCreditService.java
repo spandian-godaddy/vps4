@@ -37,6 +37,7 @@ public class ECommCreditService implements CreditService {
         PRODUCT_ID,
         PROVISION_DATE,
         FULLY_MANAGED_EMAIL_SENT,
+        PLAN_CHANGE_PENDING,
         PURCHASED_AT,
         RELEASED_AT,
         RELAY_COUNT,
@@ -248,14 +249,14 @@ public class ECommCreditService implements CreditService {
         prodMeta.to.putAll(fromEnumMap(requestedTo));
         prodMeta.from.putAll(fromEnumMap(expectedFrom));
 
-        prodMeta.to.replaceAll(this::cleanProdMeta);
+        prodMeta.to.replaceAll((k,v) -> cleanProdMeta(k,v));
 
         ecommService.updateProductMetadata(entitlementId.toString(), prodMeta);
     }
 
     private String cleanProdMeta(String key, String value) {
         // Set value of non-existing enum fields and boolean false flags to null
-        // This will cause hfs to remove the fields and keep the ecomm prod metadata clean
+        // This will cause hfs to remove the fields and keep the ecomm prod meta data clean
         if (value == null || value.equals("false"))
             return null;
 

@@ -6,7 +6,14 @@ import com.godaddy.vps4.credit.ECommCreditService.PlanFeatures;
 import com.godaddy.vps4.credit.ECommCreditService.ProductMetaField;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.messaging.MessagingService;
-import com.godaddy.vps4.vm.*;
+import com.godaddy.vps4.vm.AccountStatus;
+import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.DataCenter;
+import com.godaddy.vps4.vm.DataCenterService;
+import com.godaddy.vps4.vm.ServerSpec;
+import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.vm.VirtualMachineService;
+import com.godaddy.vps4.vm.VmAction;
 import com.godaddy.vps4.web.client.VmService;
 import com.godaddy.vps4.web.client.VmShopperMergeService;
 import com.godaddy.vps4.web.client.VmSuspendReinstateService;
@@ -25,13 +32,15 @@ import org.mockito.Mockito;
 import javax.ws.rs.InternalServerErrorException;
 import javax.ws.rs.ProcessingException;
 import javax.ws.rs.ServiceUnavailableException;
+import java.io.IOException;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
 import static java.time.temporal.ChronoUnit.DAYS;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
@@ -86,10 +95,7 @@ public class Vps4AccountMessageHandlerTest {
         orionGuid = UUID.randomUUID();
 
         ServerSpec vmSpec = new ServerSpec();
-        ServerType serverType = new ServerType();
-        serverType.platform = ServerType.Platform.OPTIMIZED_HOSTING;
         vmSpec.tier = 10;
-        vmSpec.serverType = serverType;
 
         vm = new VirtualMachine(UUID.randomUUID(),
                                 123L,
@@ -394,9 +400,10 @@ public class Vps4AccountMessageHandlerTest {
         verify(creditServiceMock, times(1)).getVirtualMachineCredit(anyObject());
         verify(vmSuspendReinstateService, never()).processSuspend(eq(vm.vmId));
         verify(creditServiceMock, never()).setStatus(eq(orionGuid), eq(AccountStatus.ABUSE_SUSPENDED));
+        verify(creditServiceMock, times(1))
+                .updateProductMeta(eq(orionGuid), eq(ProductMetaField.PLAN_CHANGE_PENDING), eq(String.valueOf(true)));
         ArgumentCaptor<CommandGroupSpec> argument = ArgumentCaptor.forClass(CommandGroupSpec.class);
         verify(commandServiceMock, times(1)).executeCommand(argument.capture());
-        verify(vmService, times(1)).upgradeVm(eq(vm.vmId));
         assertEquals("Vps4PlanChange", argument.getValue().commands.get(0).command);
     }
 
@@ -544,6 +551,24 @@ public class Vps4AccountMessageHandlerTest {
     }
 
     @Test
+    public void testHandleMessageCausesTierUpgradePending() throws MessageHandlerException {
+        planFeatures.put(PlanFeatures.TIER.toString(), UPGRADED_TIER);
+        mockVmCredit(AccountStatus.ACTIVE, vm.vmId);
+        callHandleMessage(createTestKafkaMessage("updated"));
+
+        verify(creditServiceMock, times(1)).updateProductMeta(orionGuid, ProductMetaField.PLAN_CHANGE_PENDING, "true");
+    }
+
+    @Test
+    public void testHandleMessageIgnoresUnsupportedDowngrades() throws MessageHandlerException {
+        planFeatures.put(PlanFeatures.TIER.toString(), DOWNGRADE_TIER);
+        mockVmCredit(AccountStatus.ACTIVE, vm.vmId);
+        callHandleMessage(createTestKafkaMessage("updated"));
+
+        verify(creditServiceMock, times(0)).updateProductMeta(orionGuid, ProductMetaField.PLAN_CHANGE_PENDING, "true");
+    }
+
+    @Test
     public void testHandleUnsupportedMessage() throws MessageHandlerException {
         callHandleMessage(createTestKafkaMessage("unsupported_message"));
 
@@ -590,7 +615,7 @@ public class Vps4AccountMessageHandlerTest {
         try {
             callHandleMessage(createTestKafkaMessage("shopper_changed"));
         } catch (MessageHandlerException ex) {
-            assertFalse(ex.shouldRetry());
+            assertTrue(!ex.shouldRetry());
         }
     }
 

@@ -38,6 +38,7 @@ public class BuilderTest {
     private final DataCenter dc = new DataCenter(dcId, "foobar");
     private final Instant provisionDate = Instant.now();
     private final Boolean fullyManagedEmailSent = Boolean.FALSE;
+    private final Boolean planChangePending = Boolean.TRUE;
     private final UUID productId = UUID.randomUUID();
 
     @Before
@@ -54,6 +55,7 @@ public class BuilderTest {
         productMeta.put(ProductMetaField.DATA_CENTER.toString(), String.valueOf(dcId));
         productMeta.put(ProductMetaField.PROVISION_DATE.toString(), provisionDate.toString());
         productMeta.put(ProductMetaField.FULLY_MANAGED_EMAIL_SENT.toString(), fullyManagedEmailSent.toString());
+        productMeta.put(ProductMetaField.PLAN_CHANGE_PENDING.toString(), planChangePending.toString());
         productMeta.put(ProductMetaField.PRODUCT_ID.toString(), productId.toString());
         productMeta.put(ProductMetaField.SUSPENDED.toString(), String.valueOf(false));
     }
@@ -132,6 +134,7 @@ public class BuilderTest {
         assertEquals(dc, credit.getDataCenter());
         assertEquals(provisionDate, credit.getProvisionDate());
         assertEquals(fullyManagedEmailSent, credit.isFullyManagedEmailSent());
+        assertEquals(planChangePending, credit.isPlanChangePending());
         assertEquals(productId, credit.getProductId());
     }
 

@@ -67,7 +67,7 @@ public class HfsCpanelApiTokenService implements CpanelApiTokenService {
             throw new RuntimeException("CPanel generate API token failed");
         }
 
-        logger.info("generate API token complete for HFS action id {}", hfsAction.actionId);
+        logger.info("generate API token complete: {}", hfsAction);
 
         return hfsAction.responsePayload;
     }
@@ -80,8 +80,7 @@ public class HfsCpanelApiTokenService implements CpanelApiTokenService {
         {
             logger.info("Sending API token generation request to HFS for vm: {}", vmId);
             hfsAction = this.cPanelService.requestApiToken(vmId);
-            Long prevHfsActionId = cache.getAndPut(vmId, hfsAction.actionId);
-            logger.info("updating cache from action Id {} to new action Id {} for vm: {}", prevHfsActionId, hfsAction.actionId, vmId);
+            cache.put(vmId, hfsAction.actionId);
         } else {
             hfsAction = cPanelService.getAction(hfsActionId);
 

@@ -10,8 +10,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import java.util.UUID;
-
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -22,25 +20,30 @@ import static org.mockito.Mockito.when;
 public class WaitForCdnClearCacheJobTest {
     private CommandContext context;
     private CdnService cdnService;
+    private Cryptography cryptography;
     private WaitForCdnClearCacheJob command;
 
     CdnClientInvalidateStatusResponse response;
+    String encryptedJwtString = "encryptedJwt";
     String siteId = "fakeSiteId";
     String validationId = "fakeValidationId";
-    UUID customerId = UUID.randomUUID();
+    String shopperId = "fakeShopperId";
+    String decryptedJwtString = "decryptedJwt";
 
     @Before
     public void setUp() throws Exception {
         context = mock(CommandContext.class);
         cdnService = mock(CdnService.class);
+        cryptography = mock(Cryptography.class);
 
         response = new CdnClientInvalidateStatusResponse();
         response.status = CdnStatus.SUCCESS;
         response.message = "success";
 
-        when(cdnService.getCdnInvalidateCacheStatus(any(), any(), any())).thenReturn(response);
+        when(cdnService.getCdnInvalidateCacheStatus(any(), any(), any(), any())).thenReturn(response);
+        when(cryptography.decryptIgnoreNull(any())).thenReturn(decryptedJwtString);
 
-        command = new WaitForCdnClearCacheJob(cdnService);
+        command = new WaitForCdnClearCacheJob(cdnService, cryptography);
     }
 
     @Test
@@ -48,8 +51,9 @@ public class WaitForCdnClearCacheJobTest {
         WaitForCdnClearCacheJob.Request request = new WaitForCdnClearCacheJob.Request();
         request.siteId = siteId;
         request.validationId = validationId;
-        request.customerId = customerId;
+        request.shopperId = shopperId;
+        request.encryptedCustomerJwt = encryptedJwtString.getBytes();
         command.execute(context, request);
-        verify(cdnService, times(1)).getCdnInvalidateCacheStatus(customerId, siteId, validationId);
+        verify(cdnService, times(1)).getCdnInvalidateCacheStatus(shopperId, decryptedJwtString, siteId, validationId);
     }
 }

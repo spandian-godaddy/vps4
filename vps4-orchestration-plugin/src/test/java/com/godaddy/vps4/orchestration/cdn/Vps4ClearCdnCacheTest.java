@@ -4,6 +4,7 @@ import com.godaddy.vps4.cdn.CdnDataService;
 import com.godaddy.vps4.cdn.CdnService;
 import com.godaddy.vps4.cdn.model.CdnClientInvalidateCacheResponse;
 import com.godaddy.vps4.cdn.model.VmCdnSite;
+import com.godaddy.vps4.util.Cryptography;
 import com.godaddy.vps4.vm.ActionService;
 import gdg.hfs.orchestration.CommandContext;
 import org.junit.Before;
@@ -20,6 +21,7 @@ import java.util.UUID;
 import java.util.function.Function;
 
 import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.any;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -30,11 +32,19 @@ public class Vps4ClearCdnCacheTest {
     ActionService actionService = mock(ActionService.class);
     CdnService cdnService = mock(CdnService.class);
     CdnDataService cdnDataService = mock(CdnDataService.class);
+    Cryptography cryptography = mock(Cryptography.class);
     Vps4ClearCdnCache command;
     CommandContext context = mock(CommandContext.class);
+
     UUID vmId = UUID.randomUUID();
-    UUID customerId = UUID.randomUUID();
+
+    String encryptedJwtString = "encryptedJwt";
     String siteId = "fakeSiteId";
+
+    String shopperId = "fakeShopperId";
+    String decryptedJwtString = "decryptedJwt";
+
+    byte[] encryptedJwt = encryptedJwtString.getBytes();
     Vps4ClearCdnCache.Request request;
     VmCdnSite vmCdnSite;
     CdnClientInvalidateCacheResponse response;
@@ -48,9 +58,10 @@ public class Vps4ClearCdnCacheTest {
     public void setUp() {
         when(context.getId()).thenReturn(UUID.randomUUID());
         request = new Vps4ClearCdnCache.Request();
-        request.customerId = customerId;
+        request.encryptedCustomerJwt = encryptedJwt;
         request.siteId = siteId;
         request.vmId = vmId;
+        request.shopperId = shopperId;
         vmCdnSite = new VmCdnSite();
         vmCdnSite.siteId = siteId;
         vmCdnSite.vmId = vmId;
@@ -63,9 +74,10 @@ public class Vps4ClearCdnCacheTest {
                 Matchers.<Function<CommandContext, CdnClientInvalidateCacheResponse>>any(),
                 eq(CdnClientInvalidateCacheResponse.class)))
                 .thenReturn(response);
-        when(cdnService.invalidateCdnCache(customerId, siteId)).thenReturn(response);
+        when(cryptography.decryptIgnoreNull(any())).thenReturn(decryptedJwtString);
+        when(cdnService.invalidateCdnCache(shopperId, decryptedJwtString, siteId)).thenReturn(response);
 
-        command = new Vps4ClearCdnCache(actionService, cdnDataService, cdnService);
+        command = new Vps4ClearCdnCache(actionService, cdnDataService, cdnService, cryptography);
     }
 
     @Test
@@ -86,8 +98,9 @@ public class Vps4ClearCdnCacheTest {
         verify(context).execute(eq(WaitForCdnClearCacheJob.class), waitRequestArgumentCaptor.capture());
 
         WaitForCdnClearCacheJob.Request req = waitRequestArgumentCaptor.getValue();
+        assertEquals(shopperId, req.shopperId);
         assertEquals(siteId, req.siteId);
         assertEquals(response.invalidationId, req.validationId);
-        assertEquals(customerId, req.customerId);
+        assertEquals(encryptedJwt, req.encryptedCustomerJwt);
     }
 }

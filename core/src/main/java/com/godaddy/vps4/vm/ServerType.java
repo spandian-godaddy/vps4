@@ -35,9 +35,7 @@ public class ServerType {
             @Override public String getDestroyCommand() {return "Vps4DestroyVm";}
             @Override public String getRebuildCommand() {return "Vps4RebuildVm";}
             @Override public String getRestoreCommand() {return "Vps4RestoreVm";}
-            @Deprecated @Override public String getUpgradeCommand() {
-                throw new UnsupportedOperationException("Deprecated due to Openstack EOL");
-            }
+            @Override public String getUpgradeCommand() {return "Vps4UpgradeVm";}
             @Override public String toString() {return "OPENSTACK";}
         },
         OVH(2) {

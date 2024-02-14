@@ -70,14 +70,14 @@ public class KeyManagerBuilder {
         String keyPath = config.get(clientCertKeyPath);
         String certPath = config.get(clientCertPath);
 
-        logger.info("reading key/cert from {}/{}", keyPath, certPath);
+        logger.info("reading HFS key/cert from {}/{}", keyPath, certPath);
 
         try {
             byte[] bytesKey = config.getData(keyPath);
             byte[] bytesCrt = config.getData(certPath);
 
-            Objects.requireNonNull(bytesKey, keyPath + " key is required");
-            Objects.requireNonNull(bytesCrt, certPath + " cert is required");
+            Objects.requireNonNull(bytesKey, "HFS key is required");
+            Objects.requireNonNull(bytesCrt, "HFS cert is required");
 
             PEMFile privatePemFile = PEMFile.readPEM(new InputStreamReader(
                     new ByteArrayInputStream(bytesKey),

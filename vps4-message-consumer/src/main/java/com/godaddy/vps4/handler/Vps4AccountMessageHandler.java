@@ -6,7 +6,10 @@ import com.godaddy.vps4.credit.ECommCreditService.ProductMetaField;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.messaging.MessagingService;
 import com.godaddy.vps4.orchestration.vm.Vps4PlanChange;
-import com.godaddy.vps4.vm.*;
+import com.godaddy.vps4.vm.AccountStatus;
+import com.godaddy.vps4.vm.ActionService;
+import com.godaddy.vps4.vm.VirtualMachine;
+import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.client.VmService;
 import com.godaddy.vps4.web.client.VmShopperMergeService;
 import com.godaddy.vps4.web.client.VmSuspendReinstateService;
@@ -208,10 +211,16 @@ public class Vps4AccountMessageHandler implements MessageHandler {
     private void processPlanChange(VirtualMachineCredit credit, VirtualMachine vm) {
         if (vm != null) {
             if (credit.getTier() > vm.spec.tier) {
-                vmService.upgradeVm(vm.vmId);
+                setPlanChangePendingInProductMeta(credit);
             }
+
             updateVmManagedLevel(credit, vm);
         }
+    }
+
+    private void setPlanChangePendingInProductMeta(VirtualMachineCredit credit) {
+        creditService.updateProductMeta(credit.getEntitlementId(), ProductMetaField.PLAN_CHANGE_PENDING,
+                String.valueOf(true));
     }
 
     private void updateVmManagedLevel(VirtualMachineCredit credit, VirtualMachine vm) {
@@ -262,7 +271,7 @@ public class Vps4AccountMessageHandler implements MessageHandler {
     private void handleMessageProcessingException(Vps4AccountMessage vps4Message, Exception ex)
             throws MessageHandlerException {
         boolean shouldRetry;
-        logger.error("Failed while handling message for account {} with exception", vps4Message.accountGuid, ex);
+        logger.error("Failed while handling message for account {} with exception {}", vps4Message.accountGuid, ex);
 
         switch (vps4Message.notificationType) {
             case UPDATED:

@@ -101,10 +101,11 @@ public class Vps4ReviveZombieVm extends ActionCommand<Vps4ReviveZombieVm.Request
         if (cdnSites != null) {
             for (VmCdnSite site : cdnSites) {
                 Vps4ModifyCdnSite.Request req = new Vps4ModifyCdnSite.Request();
+                req.encryptedCustomerJwt = null;
                 req.vmId = request.vmId;
                 req.bypassWAF = CdnBypassWAF.DISABLED;
                 req.cacheLevel = CdnCacheLevel.CACHING_OPTIMIZED;
-                req.customerId = credit.getCustomerId();
+                req.shopperId = credit.getShopperId();
                 req.siteId = site.siteId;
                 context.execute("ModifyCdnSite-" + site.siteId, Vps4ModifyCdnSite.class, req);
             }

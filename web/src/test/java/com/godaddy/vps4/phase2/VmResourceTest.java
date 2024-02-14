@@ -202,17 +202,12 @@ public class VmResourceTest {
         VirtualMachine vm = createTestVm();
         SqlTestData.invalidateTestVm(vm.vmId, dataSource);
 
-        VirtualMachine result = null;
-        Vps4Exception exception = null;
         try {
-            result = getVmResource().getVm(vm.vmId);
+            getVmResource().getVm(vm.vmId);
+            Assert.fail("Exception not thrown");
         } catch (Vps4Exception e) {
-            exception = e;
+            Assert.assertEquals("VM_DELETED", e.getId());
         }
-
-        Assert.assertNull(result);
-        Assert.assertNotNull(exception);
-        Assert.assertEquals("VM_DELETED", exception.getId());
     }
 
     @Test

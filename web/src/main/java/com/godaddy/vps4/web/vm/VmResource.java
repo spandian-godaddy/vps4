@@ -376,13 +376,14 @@ public class VmResource {
     @Path("/{vmId}")
     public VmAction destroyVm(@PathParam("vmId") UUID vmId) {
         VirtualMachine vm = getVm(vmId);
-        VirtualMachineCredit credit = creditService.getVirtualMachineCredit(vm.orionGuid);
+
         String destroyMethod = vm.spec.serverType.platform.getDestroyCommand();
 
         Vps4DestroyVm.Request destroyRequest = new Vps4DestroyVm.Request();
         destroyRequest.virtualMachine = vm;
         destroyRequest.gdUserName = user.getUsername();
-        destroyRequest.customerId = credit.getCustomerId();
+        destroyRequest.encryptedCustomerJwt = cryptography.encryptIgnoreNull(getCustomerJwt());
+        destroyRequest.shopperId = user.isShopper() ? user.getShopperId(): creditService.getVirtualMachineCredit(vm.orionGuid).getShopperId();
 
         return createActionAndExecute(actionService, commandService, vm.vmId,
                                       ActionType.DESTROY_VM, destroyRequest, destroyMethod, user);

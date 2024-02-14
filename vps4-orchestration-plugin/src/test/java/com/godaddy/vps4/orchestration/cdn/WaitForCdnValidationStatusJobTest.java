@@ -29,17 +29,22 @@ import static org.mockito.Mockito.when;
 public class WaitForCdnValidationStatusJobTest {
     private CommandContext context;
     private CdnService cdnService;
+    private Cryptography cryptography;
     private WaitForCdnValidationStatusJob command;
 
     private CdnDetail cdnDetail;
     private final UUID vmId = UUID.randomUUID();
-    private final UUID customerId = UUID.randomUUID();
+
+    String encryptedJwtString = "encryptedJwt";
     String siteId = "fakeSiteId";
+    String shopperId = "fakeShopperId";
+    String decryptedJwtString = "decryptedJwt";
 
     @Before
     public void setUp() throws Exception {
         context = mock(CommandContext.class);
         cdnService = mock(CdnService.class);
+        cryptography = mock(Cryptography.class);
 
         CdnValidation cdnValidation = new CdnValidation();
         cdnValidation.name = "validationName";
@@ -51,9 +56,10 @@ public class WaitForCdnValidationStatusJobTest {
         cdnDetail.siteId = siteId;
         cdnDetail.productData = productData;
 
-        when(cdnService.getCdnSiteDetail(any(), anyString(), any(), anyBoolean())).thenReturn(cdnDetail);
+        when(cdnService.getCdnSiteDetail(anyString(), anyString(), anyString(), any(), anyBoolean())).thenReturn(cdnDetail);
+        when(cryptography.decryptIgnoreNull(any())).thenReturn(decryptedJwtString);
 
-        command = new WaitForCdnValidationStatusJob(cdnService);
+        command = new WaitForCdnValidationStatusJob(cdnService, cryptography);
     }
 
     @Test
@@ -61,7 +67,8 @@ public class WaitForCdnValidationStatusJobTest {
         WaitForCdnValidationStatusJob.Request request = new WaitForCdnValidationStatusJob.Request();
         request.vmId = vmId;
         request.siteId = siteId;
-        request.customerId = customerId;
+        request.shopperId = shopperId;
+        request.encryptedCustomerJwt = encryptedJwtString.getBytes();
         try {
             command.execute(context, request);
             fail();
@@ -73,15 +80,16 @@ public class WaitForCdnValidationStatusJobTest {
     @Test
     public void returnsIfStatusIsSuccess() {
         cdnDetail.status = CdnStatus.SUCCESS;
-        when(cdnService.getCdnSiteDetail(any(), anyString(), any(), anyBoolean())).thenReturn(cdnDetail);
+        when(cdnService.getCdnSiteDetail(anyString(), anyString(), anyString(), any(), anyBoolean())).thenReturn(cdnDetail);
 
         WaitForCdnValidationStatusJob.Request request = new WaitForCdnValidationStatusJob.Request();
         request.vmId = vmId;
         request.siteId = siteId;
-        request.customerId = customerId;
+        request.shopperId = shopperId;
+        request.encryptedCustomerJwt = encryptedJwtString.getBytes();
         request.certificateValidation = cdnDetail.productData.cloudflare.certificateValidation;
 
         command.execute(context, request);
-        verify(cdnService, times(1)).getCdnSiteDetail(customerId, siteId, vmId, true);
+        verify(cdnService, times(1)).getCdnSiteDetail(shopperId, decryptedJwtString, siteId, vmId, true);
     }
 }

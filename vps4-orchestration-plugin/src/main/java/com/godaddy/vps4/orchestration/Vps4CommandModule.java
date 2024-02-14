@@ -87,6 +87,7 @@ import com.godaddy.vps4.orchestration.vm.Vps4SyncVmStatus;
 import com.godaddy.vps4.orchestration.vm.Vps4TestCommand;
 import com.godaddy.vps4.orchestration.vm.Vps4UnclaimCredit;
 import com.godaddy.vps4.orchestration.vm.Vps4UpgradeOHVm;
+import com.godaddy.vps4.orchestration.vm.Vps4UpgradeVm;
 import com.godaddy.vps4.orchestration.vm.provision.Vps4ProvisionDedicated;
 import com.godaddy.vps4.orchestration.vm.provision.Vps4ProvisionOHVm;
 import com.godaddy.vps4.orchestration.vm.provision.Vps4ProvisionVm;
@@ -146,6 +147,7 @@ public class Vps4CommandModule extends AbstractModule {
         bind(SendVmOutageCreatedEmail.class);
         bind(SendVmOutageResolvedEmail.class);
         bind(Vps4CancelAction.class);
+        bind(Vps4UpgradeVm.class);
         bind(Vps4UpgradeOHVm.class);
         bind(Vps4EndRescue.class);
         bind(Vps4Rescue.class);

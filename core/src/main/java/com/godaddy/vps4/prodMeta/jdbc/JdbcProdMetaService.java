@@ -7,7 +7,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
-import java.util.Map;
+import java.util.EnumMap;
 import java.util.UUID;
 
 import com.godaddy.hfs.jdbc.Sql;
@@ -79,13 +79,13 @@ public class JdbcProdMetaService implements ProdMetaService {
     }
 
     @Override
-    public void updateProdMeta(UUID entitlementId, Map<ProductMetaField, Object> paramsToUpdate) {
+    public void updateProdMeta(UUID entitlementId, EnumMap<ProductMetaField, Object> paramsToUpdate) {
         if (!paramsToUpdate.isEmpty()) {
-            ArrayList<Object> values = new ArrayList<>();
+            ArrayList<Object> values = new ArrayList<Object>();
             StringBuilder nameSets = new StringBuilder();
             nameSets.append("UPDATE prod_meta vm SET ");
-            for (Map.Entry<ProductMetaField, Object> pair : paramsToUpdate.entrySet()) {
-                if (!values.isEmpty())
+            for (EnumMap.Entry<ProductMetaField, Object> pair : paramsToUpdate.entrySet()) {
+                if (values.size() > 0)
                     nameSets.append(", ");
                 nameSets.append(pair.getKey());
                 nameSets.append("=?");

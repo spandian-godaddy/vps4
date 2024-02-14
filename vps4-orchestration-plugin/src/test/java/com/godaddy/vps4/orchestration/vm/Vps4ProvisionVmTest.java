@@ -1,5 +1,6 @@
 package com.godaddy.vps4.orchestration.vm;
 
+import static com.godaddy.vps4.credit.ECommCreditService.ProductMetaField.PLAN_CHANGE_PENDING;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
@@ -382,6 +383,13 @@ public class Vps4ProvisionVmTest {
     public void doesNotRebootLinuxServer() {
         command.executeWithAction(context, this.request);
         verify(context, never()).execute(eq(Vps4RestartVm.class), any());
+    }
+
+    @Test
+    public void validatePlanChangePending() {
+        when(credit.isPlanChangePending()).thenReturn(true);
+        command.executeWithAction(context, request);
+        verify(creditService, times(1)).updateProductMeta(orionGuid, PLAN_CHANGE_PENDING, "false");
     }
 
     @Test

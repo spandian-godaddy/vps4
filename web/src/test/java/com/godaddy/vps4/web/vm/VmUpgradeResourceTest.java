@@ -1,5 +1,6 @@
 package com.godaddy.vps4.web.vm;
 
+import static org.junit.Assert.assertNull;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyObject;
@@ -15,7 +16,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import com.godaddy.vps4.web.Vps4Exception;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -35,7 +35,10 @@ import com.godaddy.vps4.vm.ServerSpec;
 import com.godaddy.vps4.vm.ServerType;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
+import com.godaddy.vps4.vm.Image;
+import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.GDUser;
+import com.godaddy.vps4.web.vm.VmUpgradeResource.UpgradeVmRequest;
 
 import gdg.hfs.orchestration.CommandService;
 import gdg.hfs.orchestration.CommandState;
@@ -43,18 +46,22 @@ import gdg.hfs.orchestration.CommandState;
 public class VmUpgradeResourceTest {
 
     private GDUser user;
+    private VirtualMachineService virtualMachineService;
     private CreditService creditService;
     private ActionService actionService;
     private VmUpgradeResource resource;
     private VirtualMachineCredit testCredit;
     private VirtualMachine testVm;
+    private CommandService commandService;
+    private Cryptography cryptography;
+    private Config config;
 
 
     @Before
     public void setupTest() {
         user = GDUserMock.createShopper();
 
-        testCredit = setupCredit();
+        testCredit = setupCredit(Boolean.TRUE);
 
         testVm = new VirtualMachine();
         testVm.validOn = Instant.now();
@@ -64,12 +71,12 @@ public class VmUpgradeResourceTest {
         testVm.orionGuid = testCredit.getEntitlementId();
         testVm.dataCenter = new DataCenter(1, "phx3");
 
-        VirtualMachineService virtualMachineService = mock(VirtualMachineService.class);
+        virtualMachineService = mock(VirtualMachineService.class);
         creditService = mock(CreditService.class);
         actionService = mock(ActionService.class);
-        CommandService commandService = mock(CommandService.class);
-        Cryptography cryptography = mock(Cryptography.class);
-        Config config = mock(Config.class);
+        commandService = mock(CommandService.class);
+        cryptography = mock(Cryptography.class);
+        config = mock(Config.class);
 
         when(commandService.executeCommand(anyObject())).thenReturn(new CommandState());
         when(virtualMachineService.getVirtualMachine(testVm.vmId)).thenReturn(testVm);
@@ -81,28 +88,71 @@ public class VmUpgradeResourceTest {
         when(actionService.getAction(anyLong())).thenReturn(testAction);
 
         resource = new VmUpgradeResource(user, virtualMachineService, creditService, actionService, commandService,
-                cryptography, config);
+                                         cryptography, config);
     }
 
-    private VirtualMachineCredit setupCredit() {
+    private VirtualMachineCredit setupCredit(Boolean planChangePending) {
         Map<String, String> planFeatures = new HashMap<>();
         planFeatures.put("tier", String.valueOf(40));
+
+        Map<String, String> productMeta = new HashMap<>();
+        productMeta.put("plan_change_pending", planChangePending.toString());
 
         return new VirtualMachineCredit.Builder(mock(DataCenterService.class))
             .withAccountGuid(UUID.randomUUID().toString())
             .withAccountStatus(AccountStatus.ACTIVE)
             .withShopperID(user.getShopperId())
+            .withProductMeta(productMeta)
             .withPlanFeatures(planFeatures)
             .build();
     }
 
+    @Test(expected = Vps4Exception.class)
+    public void testUpgradeVmNoPlanChangePending() {
+        testCredit = setupCredit(Boolean.FALSE);
+        when(creditService.getVirtualMachineCredit(testCredit.getEntitlementId())).thenReturn(testCredit);
+        UpgradeVmRequest upgradeVmRequest= new UpgradeVmRequest();
+        resource.upgradeVm(testVm.vmId, upgradeVmRequest);
+    }
+
     @Test
-    public void testUpgradeOHVm() {
+    public void testUpgradeOpenstackVmWithValidPassword() {
+        testVm.spec = new ServerSpec();
+        testVm.spec.serverType = new ServerType();
+        testVm.spec.serverType.platform = ServerType.Platform.OPENSTACK;
+        testVm.image = new Image();
+        testVm.image.controlPanel = Image.ControlPanel.MYH;
+        when(creditService.getVirtualMachineCredit(testCredit.getEntitlementId())).thenReturn(testCredit);
+        String password = "T0ta!1yRand0m";
+        UpgradeVmRequest upgradeVmRequest= new UpgradeVmRequest();
+        upgradeVmRequest.password = password;
+        resource.upgradeVm(testVm.vmId, upgradeVmRequest);
+        verify(actionService, times(1)).createAction(eq(testVm.vmId), eq(ActionType.UPGRADE_VM), anyString(), anyString());
+    }
+
+    @Test(expected = Vps4Exception.class)
+    public void testUpgradeOpenstackVmWithInvalidPassword() {
+        testVm.spec = new ServerSpec();
+        testVm.spec.serverType = new ServerType();
+        testVm.spec.serverType.platform = ServerType.Platform.OPENSTACK;
+        testVm.image = new Image();
+        testVm.image.controlPanel = Image.ControlPanel.MYH;
+        when(creditService.getVirtualMachineCredit(testCredit.getEntitlementId())).thenReturn(testCredit);
+        String password = "";
+        UpgradeVmRequest upgradeVmRequest= new UpgradeVmRequest();
+        upgradeVmRequest.password = password;
+        resource.upgradeVm(testVm.vmId, upgradeVmRequest);
+    }
+
+    @Test
+    public void testUpgradeOHVmNoPasswordNeeded() {
         testVm.spec = new ServerSpec();
         testVm.spec.serverType = new ServerType();
         testVm.spec.serverType.platform = ServerType.Platform.OPTIMIZED_HOSTING;
         when(creditService.getVirtualMachineCredit(testCredit.getEntitlementId())).thenReturn(testCredit);
-        resource.upgradeVm(testVm.vmId);
+        UpgradeVmRequest upgradeVmRequest= new UpgradeVmRequest();
+        resource.upgradeVm(testVm.vmId, upgradeVmRequest);
+        assertNull(upgradeVmRequest.password);
         verify(actionService, times(1)).createAction(eq(testVm.vmId), eq(ActionType.UPGRADE_VM), anyString(), anyString());
     }
 
@@ -112,17 +162,9 @@ public class VmUpgradeResourceTest {
         testVm.spec.serverType = new ServerType();
         testVm.spec.serverType.platform = ServerType.Platform.OVH;
         when(creditService.getVirtualMachineCredit(testCredit.getEntitlementId())).thenReturn(testCredit);
-        resource.upgradeVm(testVm.vmId);
+        UpgradeVmRequest upgradeVmRequest= new UpgradeVmRequest();
+        resource.upgradeVm(testVm.vmId, upgradeVmRequest);
     }
 
-    @Test(expected = Vps4Exception.class)
-    public void testUpgradeNotAllowed() {
-        testVm.spec = new ServerSpec();
-        testVm.spec.tier = 40;
-        testVm.spec.serverType = new ServerType();
-        testVm.spec.serverType.platform = ServerType.Platform.OPTIMIZED_HOSTING;
-        when(creditService.getVirtualMachineCredit(testCredit.getEntitlementId())).thenReturn(testCredit);
-        resource.upgradeVm(testVm.vmId);
-    }
 
 }

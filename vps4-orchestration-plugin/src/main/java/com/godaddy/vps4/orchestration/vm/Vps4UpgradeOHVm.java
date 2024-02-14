@@ -1,5 +1,7 @@
 package com.godaddy.vps4.orchestration.vm;
 
+import static com.godaddy.vps4.credit.ECommCreditService.ProductMetaField.PLAN_CHANGE_PENDING;
+
 import java.util.Collections;
 import java.util.UUID;
 
@@ -31,13 +33,16 @@ public class Vps4UpgradeOHVm extends ActionCommand<Vps4UpgradeOHVm.Request, Void
     private static final Logger logger = LoggerFactory.getLogger(Vps4UpgradeOHVm.class);
 
     private final VirtualMachineService virtualMachineService;
+    private final CreditService creditService;
     private CommandContext context;
     private Request request;
 
     @Inject
-    public Vps4UpgradeOHVm(ActionService actionService, VirtualMachineService virtualMachineService) {
+    public Vps4UpgradeOHVm(ActionService actionService, VirtualMachineService virtualMachineService,
+                           CreditService creditService) {
         super(actionService);
         this.virtualMachineService = virtualMachineService;
+        this.creditService = creditService;
     }
 
     @Override
@@ -65,6 +70,7 @@ public class Vps4UpgradeOHVm extends ActionCommand<Vps4UpgradeOHVm.Request, Void
 
     private void updateVmDetails() {
         updateVmTierInDb();
+        updateEcommCredit();
     }
 
     private void updateVmTierInDb() {
@@ -75,6 +81,12 @@ public class Vps4UpgradeOHVm extends ActionCommand<Vps4UpgradeOHVm.Request, Void
             virtualMachineService.updateVirtualMachine(request.virtualMachine.vmId, Collections.singletonMap("spec_id", newSpecId));
             return null;
         }, Void.class);
+    }
+
+    private void updateEcommCredit() {
+        logger.info("Mark pending plan upgrade complete in credit for VM {}", request.virtualMachine.vmId);
+
+        creditService.updateProductMeta(request.virtualMachine.orionGuid, PLAN_CHANGE_PENDING, "false");
     }
 
     public static class Request extends VmActionRequest{
