@@ -25,6 +25,8 @@ import com.godaddy.vps4.panopta.PanoptaDataService;
 import com.godaddy.vps4.panopta.jdbc.PanoptaServerDetails;
 import com.godaddy.vps4.scheduler.api.core.SchedulerJobDetail;
 import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
+import com.godaddy.vps4.vm.DataCenter;
+import com.godaddy.vps4.vm.DataCenterService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.Vps4Api;
@@ -48,6 +50,7 @@ public class VmDetailsResource {
     private final NetworkService networkService;
     private final GDUser user;
     private final VirtualMachineService virtualMachineService;
+    private final DataCenterService dataCenterService;
 
     @Inject
     public VmDetailsResource(VmResource vmResource,
@@ -57,7 +60,8 @@ public class VmDetailsResource {
                              VmZombieResource vmZombieResource,
                              GDUser user,
                              NetworkService networkService,
-                             VirtualMachineService virtualMachineService) {
+                             VirtualMachineService virtualMachineService,
+                             DataCenterService dataCenterService) {
         this.vmResource = vmResource;
         this.creditService = creditService;
         this.schedulerWebService = schedulerWebService;
@@ -66,6 +70,7 @@ public class VmDetailsResource {
         this.user = user;
         this.networkService = networkService;
         this.virtualMachineService = virtualMachineService;
+        this.dataCenterService = dataCenterService;
     }
 
     @GET
@@ -138,7 +143,7 @@ public class VmDetailsResource {
 
         return new VirtualMachineWithDetails(virtualMachine,
                 new VirtualMachineDetails(vm),
-                credit.getDataCenter(),
+                dataCenterService.getDataCenter(credit.prodMeta.dataCenter),
                 credit.getShopperId(),
                 automaticSnapshotSchedule,
                 panoptaDetails,

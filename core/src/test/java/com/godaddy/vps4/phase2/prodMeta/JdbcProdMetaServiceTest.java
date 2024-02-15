@@ -2,6 +2,7 @@ package com.godaddy.vps4.phase2.prodMeta;
 
 import javax.sql.DataSource;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -11,7 +12,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.EnumMap;
+import java.util.List;
 import java.util.UUID;
 
 import com.godaddy.vps4.prodMeta.ProdMetaService;
@@ -25,11 +28,12 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 
-public class JdbcProdMetaTest {
+public class JdbcProdMetaServiceTest {
     static private Injector injectorForDS;
     private Injector injector;
     static private DataSource dataSource;
     static private DataCenterService dataCenterService;
+    List<ProdMeta> prodMetaList;
 
     @BeforeClass
     public static void setUpInternalInjector() {
@@ -41,6 +45,7 @@ public class JdbcProdMetaTest {
 
     @Before
     public void setUp() {
+        prodMetaList = new ArrayList<>();
         injector = Guice.createInjector(new AbstractModule() {
             @Override
             protected void configure() {
@@ -49,6 +54,13 @@ public class JdbcProdMetaTest {
                 bind(DataCenterService.class).toInstance(dataCenterService);
             }
         });
+    }
+
+    @After
+    public void tearDown() {
+        for (ProdMeta prodMeta : prodMetaList) {
+            injector.getInstance(ProdMetaService.class).deleteProdMeta(prodMeta.entitlementId);
+        }
     }
 
     private ProdMeta insertProdMeta(UUID entitlementId) {
@@ -62,7 +74,9 @@ public class JdbcProdMetaTest {
     @Test
     public void testInsertProdMeta() {
         UUID entitlementId = UUID.randomUUID();
+
         ProdMeta prodMeta = insertProdMeta(entitlementId);
+
         assertEquals(entitlementId, prodMeta.entitlementId);
     }
 
@@ -94,7 +108,7 @@ public class JdbcProdMetaTest {
         UUID entitlementId = UUID.randomUUID();
         ProdMeta prodMeta = insertProdMeta(entitlementId);
 
-        prodMeta.dataCenter = new DataCenter(1, "test");
+        prodMeta.dataCenter = 1;
         prodMeta.productId = UUID.randomUUID();
         prodMeta.provisionDate = Instant.now();
         prodMeta.fullyManagedEmailSent = true;
@@ -103,7 +117,7 @@ public class JdbcProdMetaTest {
         prodMeta.relayCount = 99;
 
         EnumMap<ProductMetaField, Object> prodMetaMap = new EnumMap<>(ProductMetaField.class);
-        prodMetaMap.put(ProductMetaField.DATA_CENTER, prodMeta.dataCenter.dataCenterId);
+        prodMetaMap.put(ProductMetaField.DATA_CENTER, prodMeta.dataCenter);
         prodMetaMap.put(ProductMetaField.PRODUCT_ID, prodMeta.productId);
         prodMetaMap.put(ProductMetaField.PROVISION_DATE, prodMeta.provisionDate);
         prodMetaMap.put(ProductMetaField.FULLY_MANAGED_EMAIL_SENT, prodMeta.fullyManagedEmailSent);
@@ -114,7 +128,7 @@ public class JdbcProdMetaTest {
         injector.getInstance(ProdMetaService.class).updateProdMeta(entitlementId, prodMetaMap);
         ProdMeta updatedProdMeta = injector.getInstance(ProdMetaService.class).getProdMeta(entitlementId);
         assertNotNull(updatedProdMeta);
-        assertEquals(prodMeta.dataCenter.dataCenterId, updatedProdMeta.dataCenter.dataCenterId);
+        assertEquals(prodMeta.dataCenter, updatedProdMeta.dataCenter);
         assertEquals(prodMeta.productId, updatedProdMeta.productId);
         assertEquals(prodMeta.provisionDate, updatedProdMeta.provisionDate);
         assertEquals(prodMeta.fullyManagedEmailSent, updatedProdMeta.fullyManagedEmailSent);

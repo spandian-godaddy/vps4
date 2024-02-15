@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.godaddy.vps4.credit.ECommCreditService.PlanFeatures;
 import com.godaddy.vps4.credit.ECommCreditService.ProductMetaField;
+import com.godaddy.vps4.prodMeta.model.ProdMeta;
 import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.DataCenter;
 import com.godaddy.vps4.vm.DataCenterService;
@@ -126,10 +127,6 @@ public class VirtualMachineCredit {
         return entitlementData.accountStatus;
     }
 
-    public DataCenter getDataCenter() {
-        return prodMeta.dataCenter;
-    }
-
     public UUID getProductId() {
         return prodMeta.productId;
     }
@@ -140,10 +137,6 @@ public class VirtualMachineCredit {
 
     public String getResellerId() {
         return resellerId;
-    }
-
-    public boolean isPlanChangePending() {
-        return prodMeta.planChangePending;
     }
 
     public int getPfid() {
@@ -196,7 +189,6 @@ public class VirtualMachineCredit {
                 credit.prodMeta.provisionDate = getDateFromProductMeta(ProductMetaField.PROVISION_DATE.toString());
                 credit.prodMeta.purchasedAt = getDateFromProductMeta(ProductMetaField.PURCHASED_AT.toString());
                 credit.prodMeta.fullyManagedEmailSent = getFlagFromProductMeta(ProductMetaField.FULLY_MANAGED_EMAIL_SENT.toString());
-                credit.prodMeta.planChangePending = getFlagFromProductMeta(ProductMetaField.PLAN_CHANGE_PENDING.toString());
                 credit.prodMeta.dataCenter = getDataCenter();
                 credit.prodMeta.productId = getProductId();
             }
@@ -250,13 +242,9 @@ public class VirtualMachineCredit {
             return this;
         }
 
-        private DataCenter getDataCenter() {
-            DataCenter dc = null;
-            if (productMeta.containsKey(ProductMetaField.DATA_CENTER.toString())) {
-                int dcId = Integer.parseInt(productMeta.get(ProductMetaField.DATA_CENTER.toString()));
-                dc = dataCenterService.getDataCenter(dcId);
-            }
-            return dc;
+        private int getDataCenter() {
+            return productMeta.containsKey(ProductMetaField.DATA_CENTER.toString()) ?
+                    Integer.parseInt(productMeta.get(ProductMetaField.DATA_CENTER.toString())) : 0;
         }
 
         private UUID getProductId() {

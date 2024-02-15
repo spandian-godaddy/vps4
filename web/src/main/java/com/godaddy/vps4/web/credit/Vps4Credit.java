@@ -6,13 +6,14 @@ import java.util.UUID;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.DataCenter;
+import com.godaddy.vps4.vm.DataCenterService;
 
 public class Vps4Credit {
 
     public Vps4Credit() {
     }
 
-    public Vps4Credit (VirtualMachineCredit virtualMachineCredit) {
+    public Vps4Credit (VirtualMachineCredit virtualMachineCredit, DataCenterService dataCenterService) {
         if(virtualMachineCredit == null) {
             return;
         }
@@ -25,11 +26,10 @@ public class Vps4Credit {
         shopperId = virtualMachineCredit.shopperId;
         monitoring = virtualMachineCredit.entitlementData.monitoring;
         accountStatus = virtualMachineCredit.entitlementData.accountStatus;
-        dataCenter = virtualMachineCredit.prodMeta.dataCenter;
+        dataCenter = dataCenterService.getDataCenter(virtualMachineCredit.prodMeta.dataCenter);
         productId = virtualMachineCredit.prodMeta.productId;
         fullyManagedEmailSent = virtualMachineCredit.prodMeta.fullyManagedEmailSent;
         resellerId = virtualMachineCredit.resellerId;
-        planChangePending = virtualMachineCredit.prodMeta.planChangePending;
         pfid = virtualMachineCredit.entitlementData.pfid;
         purchasedAt = virtualMachineCredit.prodMeta.purchasedAt;
         suspended = false;
@@ -42,7 +42,7 @@ public class Vps4Credit {
         managed = virtualMachineCredit.isManaged();
         vmSuspended = false;
     }
-
+    
     public UUID orionGuid;
     public int tier;
     public int managedLevel;
@@ -56,7 +56,6 @@ public class Vps4Credit {
     public UUID productId;
     public boolean fullyManagedEmailSent;
     public String resellerId;
-    public boolean planChangePending;
     public int pfid;
     public Instant purchasedAt;
     public boolean suspended;

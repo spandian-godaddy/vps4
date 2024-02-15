@@ -6,6 +6,7 @@ import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.project.Project;
 import com.godaddy.vps4.project.ProjectService;
 import com.godaddy.vps4.snapshot.Snapshot;
+import com.godaddy.vps4.vm.DataCenter;
 import com.godaddy.vps4.vm.DataCenterService;
 import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.ServerSpec;
@@ -82,11 +83,13 @@ public class OrphanResourceTest {
     public void testInvalidCreditStillAssignedToCredit() {
         Map<String, String> productMeta = new HashMap<>();
         productMeta.put("product_id", vm.vmId.toString());
-        VirtualMachineCredit virtualMachineCredit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+        DataCenterService dataCenterService = mock(DataCenterService.class);
+        when(dataCenterService.getDataCenter(1)).thenReturn(new DataCenter(1, "test"));
+        VirtualMachineCredit virtualMachineCredit = new VirtualMachineCredit.Builder(dataCenterService)
             .withProductMeta(productMeta)
             .build();
-
-        when(creditResource.getCredit(vm.orionGuid)).thenReturn(new Vps4Credit(virtualMachineCredit));
+        Vps4Credit vps4Credit = new Vps4Credit(virtualMachineCredit, dataCenterService);
+        when(creditResource.getCredit(vm.orionGuid)).thenReturn(vps4Credit);
         resource.getOrphanedResources(vm.vmId);
     }
 

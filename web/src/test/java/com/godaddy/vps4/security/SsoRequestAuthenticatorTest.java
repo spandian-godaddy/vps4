@@ -66,6 +66,12 @@ public class SsoRequestAuthenticatorTest {
         return ssoToken;
     }
 
+    private CertificateToken mockSsoCertificateTokenVps4Api() {
+        CertificateToken ssoToken = mock(CertificateToken.class);
+        ssoToken.cn = "vps4.api.authclient.int.dev-godaddy.com";
+        return ssoToken;
+    }
+
     @Test
     public void testAuthenticateInvalidToken() {
         when(tokenExtractor.extractToken(request)).thenReturn(null);
@@ -268,6 +274,22 @@ public class SsoRequestAuthenticatorTest {
     public void testChatterBoxRole() {
         String expectedRole = "CHATTERBOX";
         CertificateToken token = mockSsoCertificateToken();
+        when(tokenExtractor.extractToken(request)).thenReturn(token);
+        String configEntry = String.format("[{ \"name\": \"TestCertName\", \"cn\": \"%s\", \"role\": \"%s\" }]", token.cn, expectedRole);
+        when(config.get("authz_certs")).thenReturn(configEntry);
+
+        GDUser user = authenticator.authenticate(request);
+        Assert.assertEquals(null, user.getShopperId());
+        Assert.assertEquals(false, user.isShopper());
+        Assert.assertEquals(false, user.isAdmin());
+        Assert.assertEquals(false, user.isEmployee());
+        Assert.assertEquals(Arrays.asList(Role.valueOf(expectedRole)), user.roles());
+    }
+
+    @Test
+    public void testVps4ApiRole() {
+        String expectedRole = "CROSS_DC_VPS4";
+        CertificateToken token = mockSsoCertificateTokenVps4Api();
         when(tokenExtractor.extractToken(request)).thenReturn(token);
         String configEntry = String.format("[{ \"name\": \"TestCertName\", \"cn\": \"%s\", \"role\": \"%s\" }]", token.cn, expectedRole);
         when(config.get("authz_certs")).thenReturn(configEntry);

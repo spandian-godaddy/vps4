@@ -33,6 +33,13 @@ public class Vps4SsoModule extends AbstractModule {
                         "entitlements.api.certPath"))
                 .in(Singleton.class);
 
+        vps4SsoServiceBinder.addBinding(CertJwtApi.CDN)
+                .toProvider(getClientCertAuthServiceProvider(Vps4SsoService.class,
+                        "sso.url",
+                        "firewall.api.keyPath",
+                        "firewall.api.certPath"))
+                .in(Singleton.class);
+
         bind(Vps4SsoService.class)
                 .toProvider(getClientCertAuthServiceProvider(Vps4SsoService.class,
                 "sso.url",

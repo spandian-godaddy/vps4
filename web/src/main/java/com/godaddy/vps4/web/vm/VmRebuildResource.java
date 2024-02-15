@@ -164,7 +164,7 @@ public class VmRebuildResource {
         rebuildVmInfo.hostname = StringUtils.isBlank(request.hostname) ? vm.hostname : request.hostname;
         rebuildVmInfo.serverName = StringUtils.isBlank(request.serverName) ? vm.name : request.serverName;
         rebuildVmInfo.encryptedPassword = cryptography.encrypt(request.password);
-        rebuildVmInfo.encryptedCustomerJwt = cryptography.encryptIgnoreNull(getCustomerJwt());
+        rebuildVmInfo.customerId = credit.getCustomerId();
         rebuildVmInfo.rawFlavor = vm.spec.specName;
         rebuildVmInfo.sgid = projectService.getProject(vm.projectId).getVhfsSgid();
         rebuildVmInfo.username = StringUtils.isBlank(request.username) ? vmUserService.getPrimaryCustomer(vm.vmId).username : request.username;

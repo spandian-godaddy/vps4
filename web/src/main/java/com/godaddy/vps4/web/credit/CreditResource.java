@@ -20,6 +20,7 @@ import com.godaddy.vps4.credit.CreditHistory;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.ECommCreditService.ProductMetaField;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
+import com.godaddy.vps4.vm.DataCenterService;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.Vps4Api;
 import com.godaddy.vps4.web.Vps4NoShopperException;
@@ -43,14 +44,17 @@ public class CreditResource {
     private final GDUser user;
     private final CreditService creditService;
     private final VmMailRelayResource vmMailRelayResource;
+    private final DataCenterService dataCenterService;
     private VirtualMachineService vmService;
 
     @Inject
-    public CreditResource(GDUser user, CreditService creditService, VmMailRelayResource vmMailRelayResource, VirtualMachineService vmService) {
+    public CreditResource(GDUser user, CreditService creditService, VmMailRelayResource vmMailRelayResource, 
+                          VirtualMachineService vmService, DataCenterService dataCenterService) {
         this.user = user;
         this.creditService = creditService;
         this.vmMailRelayResource = vmMailRelayResource;
         this.vmService = vmService;
+        this.dataCenterService = dataCenterService;
     }
 
     @GET
@@ -62,7 +66,7 @@ public class CreditResource {
         if (credit == null || (user.isShopper() && !credit.getShopperId().equals(user.getShopperId()))) {
             throw new NotFoundException("Unknown Credit ID: " + orionGuid);
         }
-        return new Vps4Credit(credit);
+        return new Vps4Credit(credit, dataCenterService);
     }
 
     @GET
@@ -73,7 +77,7 @@ public class CreditResource {
         logger.debug("Getting credits for shopper {}", user.getShopperId());
 
         return creditService.getVirtualMachineCredits(user.getShopperId(), showClaimed).stream()
-                .map(Vps4Credit::new).collect(java.util.stream.Collectors.toList());
+                .map(credit -> new Vps4Credit(credit, dataCenterService)).collect(java.util.stream.Collectors.toList());
     }
 
     @RequiresRole(roles = {GDUser.Role.ADMIN})
@@ -86,7 +90,7 @@ public class CreditResource {
                 request.tier, request.managedLevel, request.monitoring, request.resellerId);
 
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(orionGuid);
-        return new Vps4Credit(credit);
+        return new Vps4Credit(credit, dataCenterService);
     }
     public static class CreateCreditRequest {
         public String shopperId;

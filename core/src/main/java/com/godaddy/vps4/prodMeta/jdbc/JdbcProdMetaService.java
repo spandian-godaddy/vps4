@@ -7,7 +7,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
-import java.util.EnumMap;
+import java.util.Map;
 import java.util.UUID;
 
 import com.godaddy.hfs.jdbc.Sql;
@@ -68,7 +68,7 @@ public class JdbcProdMetaService implements ProdMetaService {
     private ProdMeta mapProdMeta(ResultSet rs) throws SQLException {
         ProdMeta prodMeta = new ProdMeta();
         prodMeta.entitlementId = UUID.fromString(rs.getString("entitlement_id"));
-        prodMeta.dataCenter = dataCenterService.getDataCenter(rs.getInt("data_center"));
+        prodMeta.dataCenter = rs.getInt("data_center");
         prodMeta.productId = getUuidFromRS(rs, "product_id");
         prodMeta.provisionDate = getTimeStampFromRS(rs, "provision_date");
         prodMeta.fullyManagedEmailSent = rs.getBoolean("fully_managed_email_sent");
@@ -79,13 +79,13 @@ public class JdbcProdMetaService implements ProdMetaService {
     }
 
     @Override
-    public void updateProdMeta(UUID entitlementId, EnumMap<ProductMetaField, Object> paramsToUpdate) {
+    public void updateProdMeta(UUID entitlementId, Map<ProductMetaField, Object> paramsToUpdate) {
         if (!paramsToUpdate.isEmpty()) {
-            ArrayList<Object> values = new ArrayList<Object>();
+            ArrayList<Object> values = new ArrayList<>();
             StringBuilder nameSets = new StringBuilder();
             nameSets.append("UPDATE prod_meta vm SET ");
-            for (EnumMap.Entry<ProductMetaField, Object> pair : paramsToUpdate.entrySet()) {
-                if (values.size() > 0)
+            for (Map.Entry<ProductMetaField, Object> pair : paramsToUpdate.entrySet()) {
+                if (!values.isEmpty())
                     nameSets.append(", ");
                 nameSets.append(pair.getKey());
                 nameSets.append("=?");

@@ -13,7 +13,6 @@ import com.godaddy.vps4.orchestration.cdn.Vps4ModifyCdnSite;
 import com.godaddy.vps4.orchestration.cdn.Vps4RemoveCdnSite;
 import com.godaddy.vps4.orchestration.cdn.Vps4SubmitCdnCreation;
 import com.godaddy.vps4.orchestration.cdn.Vps4ValidateCdn;
-import com.godaddy.vps4.util.Cryptography;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VirtualMachine;
@@ -39,6 +38,7 @@ import javax.ws.rs.DELETE;
 import javax.ws.rs.core.MediaType;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static com.godaddy.vps4.web.util.RequestValidation.validateAndReturnEnumValue;
 import static com.godaddy.vps4.web.util.RequestValidation.validateNoConflictingActions;
@@ -59,7 +59,6 @@ public class CdnResource {
     private final GDUser user;
     private final CdnService cdnService;
     private final CdnDataService cdnDataService;
-    private final Cryptography cryptography;
 
     @Inject
     public CdnResource(GDUser user,
@@ -67,7 +66,6 @@ public class CdnResource {
                        CreditService creditService,
                        CdnService cdnService,
                        CdnDataService cdnDataService,
-                       Cryptography cryptography,
                        ActionService actionService,
                        CommandService commandService) {
         this.user = user;
@@ -75,16 +73,8 @@ public class CdnResource {
         this.creditService = creditService;
         this.cdnService = cdnService;
         this.cdnDataService = cdnDataService;
-        this.cryptography = cryptography;
         this.actionService = actionService;
         this.commandService = commandService;
-    }
-
-    private String getCustomerJwt() {
-        if (user.isShopper() && !user.isShopperInjected()) {
-            return user.getToken().getJwt().getParsedString();
-        }
-        return null;
     }
 
     private void validateCdnConflictingActions(UUID vmId){
@@ -92,10 +82,21 @@ public class CdnResource {
         ActionType.CREATE_CDN, ActionType.VALIDATE_CDN);
     }
 
-    private void validateCdnSizeLimit(UUID vmId, int cdnSizeLimit){
-        List<VmCdnSite> sites = cdnDataService.getActiveCdnSitesOfVm(vmId);
-        if(sites != null && sites.size() >= cdnSizeLimit) {
-            throw new Vps4Exception("SIZE_LIMIT_REACHED", "Vm has reached the maximum quota of allowed CDN sites");
+    private void validateCdnSizeLimit(List<VmCdnSite> sites, int cdnSizeLimit){
+        if (sites != null) {
+            if (sites.size() >= cdnSizeLimit) {
+                throw new Vps4Exception("SIZE_LIMIT_REACHED", "Vm has reached the maximum quota of allowed CDN sites");
+            }
+        }
+    }
+
+    private void validateCdnDomainDuplicates(List<VmCdnSite> sites, String domain){
+        if (sites != null) {
+            List<VmCdnSite> filteredDuplicates = sites.stream().filter(cdnSite ->
+                    domain.toLowerCase().equals(cdnSite.domain.toLowerCase())).collect(Collectors.toList());
+            if (filteredDuplicates != null && !filteredDuplicates.isEmpty()) {
+                throw new Vps4Exception("DUPLICATE_DOMAIN", "Vm has another active CDN site with the same domain name");
+            }
         }
     }
 
@@ -107,7 +108,7 @@ public class CdnResource {
     public List<CdnSite> getActiveCdnSites(@PathParam("vmId") UUID vmId) {
         VirtualMachine vm = vmResource.getVm(vmId);  // auth validation
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(vm.orionGuid);
-        return cdnService.getCdnSites(credit.getShopperId(), getCustomerJwt(), vmId);
+        return cdnService.getCdnSites(credit.getCustomerId(), vmId);
     }
 
     @GET
@@ -116,7 +117,7 @@ public class CdnResource {
         VirtualMachine vm = vmResource.getVm(vmId);  // auth validation
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(vm.orionGuid);
 
-        return cdnService.getCdnSiteDetail(credit.getShopperId(), getCustomerJwt(), siteId, vmId);
+        return cdnService.getCdnSiteDetail(credit.getCustomerId(), siteId, vmId);
     }
 
     @POST
@@ -125,15 +126,16 @@ public class CdnResource {
         VirtualMachine vm = vmResource.getVm(vmId);  // auth validation
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(vm.orionGuid);
 
-        validateCdnSizeLimit(vmId, credit.entitlementData.cdnWaf);
+        List<VmCdnSite> sites = cdnDataService.getActiveCdnSitesOfVm(vmId);
+        validateCdnSizeLimit(sites, credit.entitlementData.cdnWaf);
+        validateCdnDomainDuplicates(sites, request.domain);
         validateCdnConflictingActions(vmId);
 
         Vps4SubmitCdnCreation.Request submitCdnCreationReq = new Vps4SubmitCdnCreation.Request();
         submitCdnCreationReq.domain = request.domain;
         submitCdnCreationReq.ipAddress = request.ipAddress;
         submitCdnCreationReq.vmId = vmId;
-        submitCdnCreationReq.shopperId = credit.getShopperId();
-        submitCdnCreationReq.encryptedCustomerJwt = cryptography.encryptIgnoreNull(getCustomerJwt());
+        submitCdnCreationReq.customerId = credit.getCustomerId();
         submitCdnCreationReq.bypassWAF = request.bypassWAF;
         submitCdnCreationReq.cacheLevel = validateAndReturnEnumValue(CdnCacheLevel.class, request.cacheLevel);
 
@@ -152,8 +154,7 @@ public class CdnResource {
         Vps4ValidateCdn.Request validateCdnReq = new Vps4ValidateCdn.Request();
         validateCdnReq.siteId = siteId;
         validateCdnReq.vmId = vmId;
-        validateCdnReq.shopperId = credit.getShopperId();
-        validateCdnReq.encryptedCustomerJwt = cryptography.encryptIgnoreNull(getCustomerJwt());
+        validateCdnReq.customerId = credit.getCustomerId();
 
         return createActionAndExecute(actionService, commandService, vmId,
                 ActionType.VALIDATE_CDN, validateCdnReq, "Vps4ValidateCdn", user);
@@ -170,8 +171,7 @@ public class CdnResource {
         Vps4ClearCdnCache.Request request = new Vps4ClearCdnCache.Request();
         request.siteId = siteId;
         request.vmId = vmId;
-        request.shopperId = credit.getShopperId();
-        request.encryptedCustomerJwt = cryptography.encryptIgnoreNull(getCustomerJwt());
+        request.customerId = credit.getCustomerId();
 
         return createActionAndExecute(actionService, commandService, vmId,
                 ActionType.CLEAR_CDN_CACHE, request, "Vps4ClearCdnCache", user);
@@ -188,8 +188,7 @@ public class CdnResource {
         Vps4RemoveCdnSite.Request request = new Vps4RemoveCdnSite.Request();
         request.siteId = siteId;
         request.vmId = vmId;
-        request.shopperId = credit.getShopperId();
-        request.encryptedCustomerJwt = cryptography.encryptIgnoreNull(getCustomerJwt());
+        request.customerId = credit.getCustomerId();
 
         return createActionAndExecute(actionService, commandService, vmId,
                 ActionType.DELETE_CDN,  request, "Vps4RemoveCdnSite", user);
@@ -207,10 +206,10 @@ public class CdnResource {
         Vps4ModifyCdnSite.Request request = new Vps4ModifyCdnSite.Request();
         request.siteId = siteId;
         request.vmId = vmId;
-        request.shopperId = credit.getShopperId();
-        request.encryptedCustomerJwt = cryptography.encryptIgnoreNull(getCustomerJwt());
+        request.customerId = credit.getCustomerId();
         request.bypassWAF = vmUpdateCdnRequest.bypassWAF;
         request.cacheLevel = validateAndReturnEnumValue(CdnCacheLevel.class, vmUpdateCdnRequest.cacheLevel);
+        request.customerId = credit.getCustomerId();
 
         return createActionAndExecute(actionService, commandService, vmId,
                 ActionType.MODIFY_CDN,  request, "Vps4ModifyCdnSite", user);

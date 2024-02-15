@@ -175,14 +175,6 @@ public class ECommCreditServiceTest {
         creditService.getVirtualMachineCredit(orionGuid);
     }
 
-    @Test(expected = RuntimeException.class)
-    public void testGetCreditSqlExceptionThrown() {
-        markCreditClaimed();
-        when(ecommService.getAccount(orionGuid.toString())).thenReturn(account);
-        when(dcService.getDataCenter(anyInt())).thenThrow(new RuntimeException("Sql.exec exception"));
-        creditService.getVirtualMachineCredit(orionGuid);
-    }
-
     @Test
     public void testGetCreditMapsAccount() throws Exception {
         when(ecommService.getAccount(orionGuid.toString())).thenReturn(account);
@@ -421,13 +413,13 @@ public class ECommCreditServiceTest {
     public void testUpdateProductMetaSingleField() {
         when(ecommService.getAccount(orionGuid.toString())).thenReturn(account);
 
-        ProductMetaField field = ProductMetaField.PLAN_CHANGE_PENDING;
-        creditService.updateProductMeta(orionGuid, field, "true");
+        ProductMetaField field = ProductMetaField.DATA_CENTER;
+        creditService.updateProductMeta(orionGuid, field, "1");
 
         ArgumentCaptor<MetadataUpdate> argument = ArgumentCaptor.forClass(MetadataUpdate.class);
         verify(ecommService).updateProductMetadata(eq(orionGuid.toString()), argument.capture());
         assertNull(argument.getValue().from.get(field.toString()));
-        assertEquals("true", argument.getValue().to.get(field.toString()));
+        assertEquals("1", argument.getValue().to.get(field.toString()));
     }
 
     @Test
@@ -453,8 +445,8 @@ public class ECommCreditServiceTest {
         account.product_meta.put("NoLongerUsedField", "unimportant");
         when(ecommService.getAccount(orionGuid.toString())).thenReturn(account);
 
-        ProductMetaField field = ProductMetaField.PLAN_CHANGE_PENDING;
-        creditService.updateProductMeta(orionGuid, field, "true");
+        ProductMetaField field = ProductMetaField.DATA_CENTER;
+        creditService.updateProductMeta(orionGuid, field, "1");
         ArgumentCaptor<MetadataUpdate> argument = ArgumentCaptor.forClass(MetadataUpdate.class);
         verify(ecommService).updateProductMetadata(eq(orionGuid.toString()), argument.capture());
         Map<String,String> to = argument.getValue().to;
@@ -464,8 +456,8 @@ public class ECommCreditServiceTest {
 
     @Test
     public void testUpdateProductMetaRemovesBooleanFalseFields() {
-        ProductMetaField field = ProductMetaField.PLAN_CHANGE_PENDING;
-        account.product_meta.put(field.toString(), "true");
+        ProductMetaField field = ProductMetaField.DATA_CENTER;
+        account.product_meta.put(field.toString(), "1");
         when(ecommService.getAccount(orionGuid.toString())).thenReturn(account);
 
         creditService.updateProductMeta(orionGuid, field, "false");

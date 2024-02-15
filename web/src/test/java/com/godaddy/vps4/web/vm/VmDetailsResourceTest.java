@@ -32,6 +32,7 @@ import com.godaddy.vps4.scheduler.api.core.JobRequest;
 import com.godaddy.vps4.scheduler.api.core.SchedulerJobDetail;
 import com.godaddy.vps4.scheduler.api.web.SchedulerWebService;
 import com.godaddy.vps4.vm.DataCenter;
+import com.godaddy.vps4.vm.DataCenterService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import com.godaddy.vps4.vm.VirtualMachineService;
 import com.godaddy.vps4.web.security.GDUser;
@@ -46,6 +47,7 @@ public class VmDetailsResourceTest {
     private VmZombieResource vmZombieResource = mock(VmZombieResource.class);
     private NetworkService networkService = mock(NetworkService.class);
     private VirtualMachineService virtualMachineService = mock(VirtualMachineService.class);
+    private DataCenterService dataCenterService = mock(DataCenterService.class);
 
     private GDUser user = mock(GDUser.class);
 
@@ -57,7 +59,8 @@ public class VmDetailsResourceTest {
     private VmExtendedInfo vmExtendedInfoMock = new VmExtendedInfo();
 
     private VmDetailsResource vmDetailsResource = new VmDetailsResource(vmResource, creditService,
-            schedulerWebService, panoptaDataService, vmZombieResource, user, networkService, virtualMachineService);
+            schedulerWebService, panoptaDataService, vmZombieResource, user, networkService, virtualMachineService, 
+            dataCenterService);
 
 
     @Before
@@ -82,7 +85,7 @@ public class VmDetailsResourceTest {
         vmExtendedInfoMock.extended = extendedMock;
         when(vmResource.getVmExtendedInfoFromVmVertical(hfsVmId)).thenReturn(vmExtendedInfoMock);
 
-        credit = mock(VirtualMachineCredit.class);
+        credit = new VirtualMachineCredit();
         when(creditService.getVirtualMachineCredit(orionGuid)).thenReturn(credit);
 
         when(virtualMachineService.getImportedVm(vmId)).thenReturn(vmId);
@@ -126,17 +129,19 @@ public class VmDetailsResourceTest {
     @Test
     public void testGetVirtualMachineWithDetailsContainsDataCenter() {
         DataCenter dc = new DataCenter(5, "testDc");
-        when(credit.getDataCenter()).thenReturn(dc);
+        credit.prodMeta.dataCenter = dc.dataCenterId;
+        when(dataCenterService.getDataCenter(dc.dataCenterId)).thenReturn(dc);
+
         VirtualMachineWithDetails withDetails = vmDetailsResource.getVirtualMachineWithDetails(vmId);
+        
         assertEquals(dc, withDetails.dataCenter);
     }
 
     @Test
     public void testGetWithDetailsContainsShopperId() {
-        String shopperId = "testShopperId";
-        when(credit.getShopperId()).thenReturn(shopperId);
+        credit.shopperId = "testShopperId";
         VirtualMachineWithDetails withDetails = vmDetailsResource.getVirtualMachineWithDetails(vmId);
-        assertEquals(shopperId, withDetails.shopperId);
+        assertEquals(credit.shopperId, withDetails.shopperId);
     }
 
     @Test
@@ -215,7 +220,7 @@ public class VmDetailsResourceTest {
 
     @Test
     public void testGetWithDetailsContainsNullHvHostnameForDed4() {
-        when(credit.isDed4()).thenReturn(Boolean.TRUE);
+        credit.entitlementData.tier = 60;
         VirtualMachineWithDetails withDetails = vmDetailsResource.getVirtualMachineWithDetails(vmId);
         assertEquals(null, withDetails.hypervisorHostname);
     }
@@ -230,7 +235,7 @@ public class VmDetailsResourceTest {
     @Test
     public void testGetWithDetailsContainsHvHostname() {
         when(user.isEmployee()).thenReturn(Boolean.TRUE);
-        when(credit.isDed4()).thenReturn(Boolean.FALSE);
+        credit.entitlementData.tier = 10;
         VirtualMachineWithDetails withDetails = vmDetailsResource.getVirtualMachineWithDetails(vmId);
         assertEquals(vmExtendedInfoMock.extended.hypervisorHostname, withDetails.hypervisorHostname);
     }
@@ -238,7 +243,7 @@ public class VmDetailsResourceTest {
     @Test
     public void testGetWithDetailsContainsByNullHvHostnameDueToHfsException() {
         when(user.isEmployee()).thenReturn(Boolean.TRUE);
-        when(credit.isDed4()).thenReturn(Boolean.FALSE);
+        credit.entitlementData.tier = 10;
         when(vmResource.getVmExtendedInfoFromVmVertical(hfsVmId)).thenReturn(null);
         VirtualMachineWithDetails withDetails = vmDetailsResource.getVirtualMachineWithDetails(vmId);
         assertEquals(null, withDetails.hypervisorHostname);

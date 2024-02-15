@@ -22,6 +22,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.godaddy.hfs.mailrelay.MailRelay;
+import com.godaddy.vps4.cpanel.CPanelSession.Data;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.ECommCreditService.ProductMetaField;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
@@ -45,9 +46,10 @@ public class CreditResourceTest {
     private CreditService creditService = mock(CreditService.class);
     private VmMailRelayResource vmMailRelayResource = mock(VmMailRelayResource.class);
     private VirtualMachineService vmService = mock(VirtualMachineService.class);
+    private DataCenterService dataCenterService = mock(DataCenterService.class);
 
     private CreditResource getCreditResource() {
-        return new CreditResource(user, creditService, vmMailRelayResource, vmService);
+        return new CreditResource(user, creditService, vmMailRelayResource, vmService, dataCenterService);
     }
 
     private VirtualMachineCredit createVmCredit(AccountStatus accountStatus) {
