@@ -41,6 +41,7 @@ public class Vps4Credit {
         hasMonitoring = virtualMachineCredit.hasMonitoring();
         managed = virtualMachineCredit.isManaged();
         vmSuspended = false;
+        planChangePending = false;
     }
     
     public UUID orionGuid;
@@ -67,4 +68,5 @@ public class Vps4Credit {
     public boolean hasMonitoring;
     public boolean managed;
     public boolean vmSuspended;
+    public boolean planChangePending;
 }
