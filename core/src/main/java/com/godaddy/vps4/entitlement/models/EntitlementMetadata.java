@@ -1,7 +1,5 @@
 package com.godaddy.vps4.entitlement.models;
 
-import java.util.UUID;
-
 public class EntitlementMetadata {
     public String version;
     public int revision;

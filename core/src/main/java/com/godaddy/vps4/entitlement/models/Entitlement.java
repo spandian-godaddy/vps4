@@ -8,8 +8,14 @@ public class Entitlement {
     public String status;
     public UUID customerId;
     public UUID entitlementId;
-    public String provisioningTracker;
+    public String uri;
     public EntitlementMetadata metadata;
+    public Product product;
+    public String productKey;
+    public String[] suspendReasons;
+    public Current current;
+    public String provisioningTracker;
+    public Term term;
     public Entitlement() {
     }
 }
