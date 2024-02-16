@@ -148,8 +148,8 @@ public class SsoRequestAuthenticatorTest {
     }
 
     @Test
-    public void testC3GaoHtl() {
-        SsoToken token = mockJomaxToken(Collections.singletonList("C3-GAO-HTL"));
+    public void testHostingSupportLead() {
+        SsoToken token = mockJomaxToken(Collections.singletonList("HS_techleads"));
         when(tokenExtractor.extractToken(request)).thenReturn(token);
 
         GDUser user = authenticator.authenticate(request);
@@ -186,22 +186,10 @@ public class SsoRequestAuthenticatorTest {
         Assert.assertEquals(Arrays.asList(Role.HS_AGENT), user.roles());
     }
 
+
     @Test
     public void testMediaTempleCS() {
         SsoToken token = mockJomaxToken(Collections.singletonList("Media Temple - CS"));
-        when(tokenExtractor.extractToken(request)).thenReturn(token);
-
-        GDUser user = authenticator.authenticate(request);
-        Assert.assertEquals(null, user.getShopperId());
-        Assert.assertEquals(false, user.isShopper());
-        Assert.assertEquals(false, user.isAdmin());
-        Assert.assertEquals(true, user.isEmployee());
-        Assert.assertEquals(Arrays.asList(Role.HS_AGENT), user.roles());
-    }
-
-    @Test
-    public void testSucuriSuport() {
-        SsoToken token = mockJomaxToken(Collections.singletonList("C3-Sucuri-Support"));
         when(tokenExtractor.extractToken(request)).thenReturn(token);
 
         GDUser user = authenticator.authenticate(request);
