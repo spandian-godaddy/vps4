@@ -28,7 +28,7 @@ public class SsoRequestAuthenticator implements RequestAuthenticator<GDUser> {
 
     private final String VPS4_TEAM = "Dev-VPS4";
     private final String C3_HOSTING_SUPPORT = "C3-Hosting Support";
-    private final String C3_HOSTING_SUPPORT_LEAD = "HS_techleads";
+    private final String CA_GAO_HTL = "C3-GAO-HTL";
     private final String ORG_TECH_SERVICE_SYSADMIN= "org-technical-services-sysadmins";
     private final String LEGAL = "fs-Legal_IP_Claims";
     private final String HOSTING_OPERATIONS = "Hosting Ops";
@@ -41,6 +41,7 @@ public class SsoRequestAuthenticator implements RequestAuthenticator<GDUser> {
     private final String CSM = "CSM";
     private final String DEV_VERTIGO = "Dev-Vertigo";
     private final String VPS4_API_READONLY = "VPS4-API-ReadOnly";
+    private final String C3_SUCURI_SUPPORT = "C3-Sucuri-Support";
 
     private final SsoTokenExtractor tokenExtractor;
     private Config config;
@@ -134,7 +135,7 @@ public class SsoRequestAuthenticator implements RequestAuthenticator<GDUser> {
             groups.contains(DEV_VERTIGO)) {
             gdUser.isAdmin = true;
             userRoles.add(Role.ADMIN);
-        } if (groups.contains(C3_HOSTING_SUPPORT_LEAD) ||
+        } if (groups.contains(CA_GAO_HTL) ||
               groups.contains(ORG_TECH_SERVICE_SYSADMIN)) {
             userRoles.add(Role.HS_LEAD);
         } if (groups.contains(HOSTING_OPERATIONS) ||
@@ -144,7 +145,8 @@ public class SsoRequestAuthenticator implements RequestAuthenticator<GDUser> {
                 groups.contains(CSM)) {
             userRoles.add(Role.SUSPEND_AUTH);
         } if (groups.contains(C3_HOSTING_SUPPORT) ||
-                groups.contains(MEDIA_TEMPLE_CS)) {
+                groups.contains(MEDIA_TEMPLE_CS) ||
+                groups.contains(C3_SUCURI_SUPPORT)) {
             userRoles.add(Role.HS_AGENT);
         } if (groups.contains(CSR)) {
             userRoles.add(Role.C3_OTHER);
