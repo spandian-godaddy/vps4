@@ -6,7 +6,9 @@ import java.util.Map;
 import javax.inject.Inject;
 
 import com.godaddy.vps4.orchestration.panopta.UpdateManagedPanoptaTemplate;
+import com.godaddy.vps4.panopta.PanoptaDataService;
 import com.godaddy.vps4.panopta.PanoptaService;
+import com.godaddy.vps4.panopta.jdbc.PanoptaServerDetails;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,11 +31,13 @@ public class Vps4PlanChange implements Command<Vps4PlanChange.Request, Void> {
     private static final Logger logger = LoggerFactory.getLogger(Vps4PlanChange.class);
     private final VirtualMachineService virtualMachineService;
     private final PanoptaService panoptaService;
+    private final PanoptaDataService panoptaDataService;
 
     @Inject
-    public Vps4PlanChange(VirtualMachineService virtualMachineService, PanoptaService panoptaService) {
+    public Vps4PlanChange(VirtualMachineService virtualMachineService, PanoptaService panoptaService, PanoptaDataService panoptaDataService) {
         this.virtualMachineService = virtualMachineService;
         this.panoptaService = panoptaService;
+        this.panoptaDataService = panoptaDataService;
     }
 
     public static class Request extends VmActionRequest {
@@ -69,6 +73,9 @@ public class Vps4PlanChange implements Command<Vps4PlanChange.Request, Void> {
 
         if (req.vm.managedLevel != req.credit.getManagedLevel() && req.credit.getManagedLevel() == 2) {
             UpdateManagedPanoptaTemplate.Request request = new UpdateManagedPanoptaTemplate.Request();
+            PanoptaServerDetails panoptaServerDetails = panoptaDataService.getPanoptaServerDetails(req.vm.vmId);
+            request.serverId = panoptaServerDetails.getServerId();
+            request.partnerCustomerKey = panoptaServerDetails.getPartnerCustomerKey();
             request.vmId = req.vm.vmId;
             request.orionGuid = req.credit.getEntitlementId();
             request.partnerCustomerKey = panoptaService.getPartnerCustomerKey(req.credit.getShopperId());

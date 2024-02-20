@@ -1,5 +1,6 @@
 package com.godaddy.vps4.orchestration.vm;
 
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
@@ -13,24 +14,52 @@ import java.util.UUID;
 import java.util.function.Function;
 
 import com.godaddy.vps4.orchestration.panopta.UpdateManagedPanoptaTemplate;
+import com.godaddy.vps4.panopta.PanoptaDataService;
 import com.godaddy.vps4.panopta.PanoptaService;
+import com.godaddy.vps4.panopta.jdbc.PanoptaServerDetails;
 import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.DataCenterService;
+import com.godaddy.vps4.vm.VirtualMachineService;
+import com.godaddy.vps4.vm.VirtualMachine;
+
+import org.junit.Before;
 import org.junit.Test;
 
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.network.IpAddress;
 import com.godaddy.vps4.network.IpAddress.IpAddressType;
-import com.godaddy.vps4.vm.VirtualMachine;
-import com.godaddy.vps4.vm.VirtualMachineService;
 
 import gdg.hfs.orchestration.CommandContext;
+import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 
+@RunWith(MockitoJUnitRunner.class)
 public class Vps4PlanChangeTest {
-    VirtualMachineService virtualMachineService = mock(VirtualMachineService.class);
-    PanoptaService panoptaService = mock(PanoptaService.class);
-    CommandContext context = mock(CommandContext.class);
-    Vps4PlanChange command = new Vps4PlanChange(virtualMachineService, panoptaService);
+    @Mock VirtualMachineService virtualMachineService;
+    @Mock PanoptaService panoptaService;
+    @Mock PanoptaDataService panoptaDataService;
+    @Mock CommandContext context;
+    @Mock PanoptaServerDetails panoptaServerDetails;
+    Vps4PlanChange command;
+
+    @Captor private ArgumentCaptor<UpdateManagedPanoptaTemplate.Request> updateManagedPanoptaTemplateRequestCaptor;
+
+    @Before
+    public void setUp() {
+        panoptaServerDetails.setServerId(1234);
+        panoptaServerDetails.setPartnerCustomerKey("gdtest-1234");
+        when(panoptaDataService.getPanoptaServerDetails(any(UUID.class))).thenReturn(panoptaServerDetails);
+        command = new Vps4PlanChange(virtualMachineService, panoptaService, panoptaDataService);
+    }
+
+    @Test
+    public void testChangePlanCallsGetPanoptaServerDetails() {
+        runChangeManagedLevelToManagedTest();
+        verify(panoptaDataService, times(1)).getPanoptaServerDetails(any(UUID.class));
+    }
 
     @SuppressWarnings("unchecked")
     @Test
@@ -42,7 +71,10 @@ public class Vps4PlanChangeTest {
     @Test
     public void testChangePlanCallsUpdateManagedPanoptaTemplate() {
         runChangeManagedLevelToManagedTest();
-        verify(context, times(1)).execute(eq(UpdateManagedPanoptaTemplate.class), any(UpdateManagedPanoptaTemplate.Request.class));
+        verify(context, times(1)).execute(eq(UpdateManagedPanoptaTemplate.class), updateManagedPanoptaTemplateRequestCaptor.capture());
+        UpdateManagedPanoptaTemplate.Request result = updateManagedPanoptaTemplateRequestCaptor.getValue();
+        assertEquals(panoptaServerDetails.getPartnerCustomerKey(), result.partnerCustomerKey);
+        assertEquals(panoptaServerDetails.getServerId(), result.serverId);
     }
 
     @SuppressWarnings("unchecked")

@@ -36,21 +36,20 @@ public class UpdateManagedPanoptaTemplate implements Command<UpdateManagedPanopt
         String nonManagedTemplate = getNonManagedTemplateId(config, credit);
         String managedTemplate = getServerTemplateId(config, credit);
 
-        removeTemplate(request.vmId, request.partnerCustomerKey, request.serverId, nonManagedTemplate);
         applyTemplate(request.vmId, request.partnerCustomerKey, request.serverId, managedTemplate);
+        removeTemplate(request.vmId, request.partnerCustomerKey, request.serverId, nonManagedTemplate);
 
         return null;
     }
 
     private void removeTemplate(UUID vmId, String partnerCustomerKey, long serverId, String templateId) {
-        logger.info("Removing template from Panopta server for VM {}.", vmId);
+        logger.info("Removing template from Panopta server for VM {} for serverId {}.", vmId, serverId);
 
-        String template = "https://api2.panopta.com/v2/server_template/" + templateId;
-        panoptaService.removeTemplate(serverId, partnerCustomerKey, template, "delete");
+        panoptaService.removeTemplate(serverId, partnerCustomerKey, templateId, "delete");
     }
 
     private void applyTemplate(UUID vmId, String partnerCustomerKey, long serverId, String templateId) {
-        logger.info("Applying templates to Panopta server for VM {}.", vmId);
+        logger.info("Applying templates to Panopta server for VM {} for serverId {}.", vmId, serverId);
 
         String[] template = {"https://api2.panopta.com/v2/server_template/" + templateId};
         panoptaService.applyTemplates(serverId, partnerCustomerKey, template);

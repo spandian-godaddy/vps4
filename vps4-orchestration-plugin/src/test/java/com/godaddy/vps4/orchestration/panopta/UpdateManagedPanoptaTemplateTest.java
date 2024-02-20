@@ -70,7 +70,7 @@ public class UpdateManagedPanoptaTemplateTest {
                 templateCaptor.capture(),
                 eq("delete"));
         String result = templateCaptor.getValue();
-        assertEquals("https://api2.panopta.com/v2/server_template/test-1", result);
+        assertEquals("test-1", result);
     }
 
     @Test
