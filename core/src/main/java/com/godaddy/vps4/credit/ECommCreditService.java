@@ -1,8 +1,11 @@
 package com.godaddy.vps4.credit;
 
+import com.godaddy.vps4.entitlement.EntitlementsService;
+import com.godaddy.vps4.entitlement.models.Entitlement;
 import com.godaddy.vps4.vm.AccountStatus;
-import com.godaddy.vps4.vm.DataCenterService;
 import com.google.inject.Singleton;
+import java.text.ParseException;
+
 import gdg.hfs.vhfs.ecomm.Account;
 import gdg.hfs.vhfs.ecomm.ECommDataCache;
 import gdg.hfs.vhfs.ecomm.ECommService;
@@ -74,12 +77,22 @@ public class ECommCreditService implements CreditService {
     private static final Logger logger = LoggerFactory.getLogger(ECommCreditService.class);
 
     private final ECommService ecommService;
-    private final DataCenterService dataCenterService;
+    private final EntitlementsService entitlementsService;
 
     @Inject
-    public ECommCreditService(ECommService ecommService, DataCenterService dataCenterService) {
+    public ECommCreditService(ECommService ecommService, EntitlementsService entitlementsService) {
         this.ecommService = ecommService;
-        this.dataCenterService = dataCenterService;
+        this.entitlementsService = entitlementsService;
+    }
+
+    @Override
+    public VirtualMachineCredit getVpsCredit(UUID customerId, UUID entitlementId) {
+        Entitlement entitlement = entitlementsService.getEntitlement(customerId, entitlementId);
+        Account hfsAccount = getHfsEcommAccount(entitlementId);
+        if (hfsAccount == null || entitlement == null) {
+            return null;
+        }
+        return mapVpsCredit(hfsAccount, entitlement);
     }
 
     @Override
@@ -103,9 +116,31 @@ public class ECommCreditService implements CreditService {
         return null; // return null since we can't find the credit. Keeps the semantics of this method consistent
     }
 
+    private VirtualMachineCredit mapVpsCredit(Account hfsAccount, Entitlement entitlement) {
+        try {
+                VirtualMachineCredit credit = new VirtualMachineCredit.EntitlementBuilder()
+                    .withEntitlementId(entitlement.entitlementId)
+                    .withCustomerID(entitlement.customerId)
+                    .withEntitlementProduct(entitlement.product)
+                    .withProductMeta(hfsAccount.product_meta)
+                    .withAccountStatus(entitlement.status)
+                    .withResellerID(hfsAccount.reseller_id)
+                    .withShopperID(getShopperId(hfsAccount))
+                    .withExpireDate(entitlement.current.service.end)
+                    .build();
+                logger.debug("Credit: {}", credit);
+                return credit;
+            } catch(ParseException pex) {
+                String errorMsg = String.format("Error parsing expire date (%s) for VPS4 credit for account guid %s",
+                entitlement.current.service.end, entitlement.entitlementId);
+                logger.error(errorMsg);
+            }
+            return null;
+    }
+
     private VirtualMachineCredit mapVirtualMachineCredit(Account account) {
         try {
-            VirtualMachineCredit credit = new VirtualMachineCredit.Builder(dataCenterService)
+            VirtualMachineCredit credit = new VirtualMachineCredit.Builder()
                     .withPlanFeatures(account.plan_features)
                     .withProductMeta(account.product_meta)
                     .withAccountGuid(account.account_guid)

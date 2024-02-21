@@ -67,7 +67,7 @@ public class VmMailRelayResourceTest {
     private CommandState commandState = mock(CommandState.class);
     private VmResource vmResource = mock(VmResource.class);
     private IpAddress ipAddress = mock(IpAddress.class);
-    private VirtualMachineCredit vmCredit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+    private VirtualMachineCredit vmCredit = new VirtualMachineCredit.Builder()
         .withResellerID("1").build();
     private VirtualMachine testVm;
     private MailRelayQuotaPatch mailRelayQuotaPatch;
@@ -173,7 +173,7 @@ public class VmMailRelayResourceTest {
 
     @Test(expected = Vps4Exception.class)
     public void hsAgentBrandResellerCustomerQuotaOverLimitNotAllowed() {
-        vmCredit = new VirtualMachineCredit.Builder(mock(DataCenterService.class)).withResellerID("525848").build();
+        vmCredit = new VirtualMachineCredit.Builder().withResellerID("525848").build();
         when(creditService.getVirtualMachineCredit(eq(testVm.orionGuid))).thenReturn(vmCredit);
 
         mailRelayQuotaPatch.quota = 25001;
@@ -192,7 +192,7 @@ public class VmMailRelayResourceTest {
     @Test
     public void adminHasNoLimitsCheckForBrandResellerCustomer() {
         when(patchUser.roles()).thenReturn(Arrays.asList(GDUser.Role.ADMIN));
-        vmCredit = new VirtualMachineCredit.Builder(mock(DataCenterService.class)).withResellerID("525848").build();
+        vmCredit = new VirtualMachineCredit.Builder().withResellerID("525848").build();
         when(creditService.getVirtualMachineCredit(eq(testVm.orionGuid))).thenReturn(vmCredit);
 
         mailRelayQuotaPatch.quota = 25001;
@@ -211,7 +211,7 @@ public class VmMailRelayResourceTest {
     @Test
     public void hsTechLeadHasNoLimitsCheckForBrandResellerCustomer() {
         when(patchUser.roles()).thenReturn(Arrays.asList(GDUser.Role.HS_LEAD));
-        vmCredit = new VirtualMachineCredit.Builder(mock(DataCenterService.class)).withResellerID("525848").build();
+        vmCredit = new VirtualMachineCredit.Builder().withResellerID("525848").build();
         when(creditService.getVirtualMachineCredit(eq(testVm.orionGuid))).thenReturn(vmCredit);
 
         mailRelayQuotaPatch.quota = 25001;

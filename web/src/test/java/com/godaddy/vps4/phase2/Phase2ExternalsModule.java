@@ -60,7 +60,7 @@ public class Phase2ExternalsModule extends AbstractModule {
         planFeatures.put("operatingsystem", "linux");
         planFeatures.put("monitoring", String.valueOf(1));
 
-        VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+        VirtualMachineCredit credit = new VirtualMachineCredit.Builder()
                 .withAccountGuid(UUID.randomUUID().toString())
                 .withAccountStatus(accountStatus)
                 .withShopperID(GDUserMock.DEFAULT_SHOPPER)

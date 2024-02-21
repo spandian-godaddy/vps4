@@ -24,7 +24,7 @@ public class VirtualMachineCreditTest {
 
     @Test
     public void managedFalseForVpsWithManagedLevel0() {
-        VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+        VirtualMachineCredit credit = new VirtualMachineCredit.Builder()
                 .withPlanFeatures(planFeaturesFrom("tier", "10", "managed_level", "0"))
                 .build();
         assertFalse(credit.isManaged());
@@ -33,7 +33,7 @@ public class VirtualMachineCreditTest {
 
     @Test
     public void managedTrueForVpsWithManagedLevel1() {
-        VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+        VirtualMachineCredit credit = new VirtualMachineCredit.Builder()
                 .withPlanFeatures(planFeaturesFrom("tier", "30", "managed_level", "1"))
                 .build();
         assertTrue(credit.isManaged());
@@ -42,7 +42,7 @@ public class VirtualMachineCreditTest {
 
     @Test
     public void managedFalseForDed4WithManagedLevel1() {
-        VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+        VirtualMachineCredit credit = new VirtualMachineCredit.Builder()
                 .withPlanFeatures(planFeaturesFrom("tier", "60", "managed_level", "1"))
                 .build();
         assertFalse(credit.isManaged());
@@ -51,7 +51,7 @@ public class VirtualMachineCreditTest {
 
     @Test
     public void managedTrueForVpsWithManagedLevel2() {
-        VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+        VirtualMachineCredit credit = new VirtualMachineCredit.Builder()
                 .withPlanFeatures(planFeaturesFrom("tier", "47", "managed_level", "2"))
                 .build();
         assertTrue(credit.isManaged());
@@ -60,7 +60,7 @@ public class VirtualMachineCreditTest {
 
     @Test
     public void managedTrueForDed4WithManagedLevel2() {
-        VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+        VirtualMachineCredit credit = new VirtualMachineCredit.Builder()
                 .withPlanFeatures(planFeaturesFrom("tier", "60", "managed_level", "2"))
                 .build();
         assertTrue(credit.isManaged());
@@ -69,7 +69,7 @@ public class VirtualMachineCreditTest {
 
     @Test
     public void monitoringFalseForDed4WithManagedLevel1() {
-        VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+        VirtualMachineCredit credit = new VirtualMachineCredit.Builder()
                 .withPlanFeatures(planFeaturesFrom("tier", "60", "managed_level", "1"))
                 .build();
         assertFalse(credit.hasMonitoring());
@@ -78,7 +78,7 @@ public class VirtualMachineCreditTest {
     }
     @Test
     public void monitoringFalseForDed4WithManagedLevel0() {
-        VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+        VirtualMachineCredit credit = new VirtualMachineCredit.Builder()
                 .withPlanFeatures(planFeaturesFrom("tier", "60", "managed_level", "0"))
                 .build();
         assertFalse(credit.hasMonitoring());
@@ -88,12 +88,12 @@ public class VirtualMachineCreditTest {
 
     @Test
     public void getMonitoringHandlesBooleanValue() {
-        VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+        VirtualMachineCredit credit = new VirtualMachineCredit.Builder()
                 .withPlanFeatures(planFeaturesFrom("monitoring", "true")).build();
         assertTrue(credit.hasMonitoring());
         assertEquals(1, credit.getMonitoring());
 
-        credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+        credit = new VirtualMachineCredit.Builder()
                 .withPlanFeatures(planFeaturesFrom("monitoring", "false")).build();
         assertFalse(credit.hasMonitoring());
         assertEquals(0, credit.getMonitoring());
@@ -101,12 +101,12 @@ public class VirtualMachineCreditTest {
 
     @Test
     public void getMonitoringHandlesIntegerValue() {
-        VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+        VirtualMachineCredit credit = new VirtualMachineCredit.Builder()
                 .withPlanFeatures(planFeaturesFrom("monitoring", "1")).build();
         assertTrue(credit.hasMonitoring());
         assertEquals(1, credit.getMonitoring());
 
-        credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+        credit = new VirtualMachineCredit.Builder()
                 .withPlanFeatures(planFeaturesFrom("monitoring", "0")).build();
         assertFalse(credit.hasMonitoring());
         assertEquals(0, credit.getMonitoring());
@@ -115,11 +115,11 @@ public class VirtualMachineCreditTest {
     @Test
     // NES made a change to plan features changing operatingsystem to operating_system.  Need to support both going forward.
     public void handlesModifiedOperatingSystemPlanFeature() {
-        VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+        VirtualMachineCredit credit = new VirtualMachineCredit.Builder()
                 .withPlanFeatures(planFeaturesFrom("operating_system", "linux")).build();
         assertEquals("linux", credit.getOperatingSystem());
 
-        credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+        credit = new VirtualMachineCredit.Builder()
                 .withPlanFeatures(planFeaturesFrom("operatingsystem", "linux")).build();
         assertEquals("linux", credit.getOperatingSystem());
     }

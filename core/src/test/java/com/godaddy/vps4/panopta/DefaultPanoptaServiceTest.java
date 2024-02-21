@@ -188,7 +188,7 @@ public class DefaultPanoptaServiceTest {
     }
 
     private VirtualMachineCredit createDummyCredit() {
-        return new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+        return new VirtualMachineCredit.Builder()
                 .withAccountGuid(orionGuid.toString())
                 .withAccountStatus(AccountStatus.ACTIVE)
                 .withShopperID(shopperId)

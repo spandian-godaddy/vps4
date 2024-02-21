@@ -85,7 +85,7 @@ public class Vps4PlanChangeTest {
         Map<String, String> productMeta = new HashMap<>();
         productMeta.put("product_id", UUID.randomUUID().toString());
 
-        VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+        VirtualMachineCredit credit = new VirtualMachineCredit.Builder()
                 .withAccountGuid(UUID.randomUUID().toString())
                 .withAccountStatus(AccountStatus.ACTIVE)
                 .withShopperID("someShopper")

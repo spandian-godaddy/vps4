@@ -142,7 +142,7 @@ public class VmImportResourceTest {
             productMeta.put("provision_date", provisionDate.toString());
         }
 
-        VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+        VirtualMachineCredit credit = new VirtualMachineCredit.Builder()
                 .withAccountGuid(orionGuid.toString())
                 .withAccountStatus(accountStatus)
                 .withShopperID(user.getShopperId())

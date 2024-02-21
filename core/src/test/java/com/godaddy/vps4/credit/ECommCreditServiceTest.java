@@ -2,9 +2,13 @@ package com.godaddy.vps4.credit;
 
 import com.godaddy.vps4.credit.ECommCreditService.PlanFeatures;
 import com.godaddy.vps4.credit.ECommCreditService.ProductMetaField;
+import com.godaddy.vps4.entitlement.EntitlementsService;
+import com.godaddy.vps4.entitlement.models.Entitlement;
+import com.godaddy.vps4.entitlement.models.Product;
+import com.godaddy.vps4.entitlement.models.Service;
+import com.godaddy.vps4.entitlement.models.Current;
 import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.DataCenter;
-import com.godaddy.vps4.vm.DataCenterService;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import gdg.hfs.vhfs.ecomm.Account;
@@ -14,18 +18,24 @@ import gdg.hfs.vhfs.ecomm.MetadataUpdate;
 import gdg.hfs.vhfs.ecomm.Reinstatement;
 import gdg.hfs.vhfs.ecomm.SuspendReason;
 import gdg.hfs.vhfs.ecomm.Suspension;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.UUID;
 import java.util.Date;
 
@@ -34,7 +44,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.atLeastOnce;
@@ -45,14 +54,15 @@ import static org.mockito.Mockito.when;
 public class ECommCreditServiceTest {
 
     ECommService ecommService = mock(ECommService.class);
-    DataCenterService dcService = mock(DataCenterService.class);
-    CreditService creditService = new ECommCreditService(ecommService, dcService);
+    EntitlementsService entitlementsService = mock(EntitlementsService.class);
+    CreditService creditService = new ECommCreditService(ecommService, entitlementsService);
 
     Injector injector = Guice.createInjector(binder -> {
         binder.bind(ECommService.class).toInstance(ecommService);
     });
 
     private Account account;
+    private Entitlement entitlement;
     private UUID orionGuid;
 
     // Initial product meta data
@@ -64,6 +74,7 @@ public class ECommCreditServiceTest {
     @Before
     public void setUp() throws Exception {
         account = createTestAccount();
+        entitlement = createTestEntitlement();
     }
 
     private Account createTestAccount() {
@@ -88,6 +99,28 @@ public class ECommCreditServiceTest {
         return account;
     }
 
+    private Entitlement createTestEntitlement() {
+        Entitlement entitlement = new Entitlement();
+        entitlement.customerId = customerId;
+        entitlement.entitlementId = orionGuid;
+        entitlement.status = AccountStatus.ACTIVE.toString();
+        entitlement.current = new Current();
+        entitlement.current.service = new Service();
+        entitlement.current.service.end = new SimpleDateFormat("yyyy-MM-dd").format(new Date());
+        entitlement.product = new Product();
+        entitlement.product.uri = String.format("/customers/{}/products/{}", customerId, entitlement.entitlementId);
+        entitlement.product.productFamily = "server";
+        entitlement.product.productType = "virtualPrivateServerHostingV4";
+        entitlement.product.resourceType = "product";
+        entitlement.product.plan = "lm00_40";
+        entitlement.product.planTier = 40;
+        entitlement.product.controlPanelType = "cpanel";
+        entitlement.product.operatingSystem = "linux";
+        entitlement.product.managedLevel = 0;
+        entitlement.product.monitoring = false;
+        return entitlement;
+    }
+
     private void markCreditClaimed() {
         account.product_meta.put(ProductMetaField.PRODUCT_ID.toString(), vmId.toString());
         account.product_meta.put(ProductMetaField.DATA_CENTER.toString(), dcId);
@@ -102,11 +135,31 @@ public class ECommCreditServiceTest {
     }
 
     @Test
+    public void testGetVpsCreditCallsGetEntitlement() throws Exception {
+        when(entitlementsService.getEntitlement(customerId, orionGuid)).thenReturn(entitlement);
+        when(ecommService.getAccount(orionGuid.toString())).thenReturn(account);
+        creditService.getVpsCredit(customerId, orionGuid);
+        verify(ecommService).getAccount(orionGuid.toString());
+        verify(entitlementsService).getEntitlement(customerId, orionGuid);
+    }
+
+    @Test
     public void testGetCreditIncludesDataCenter() {
         DataCenter dc = new DataCenter(1, "phx3");
         account.product_meta.put("data_center", String.valueOf(dc.dataCenterId));
         when(ecommService.getAccount(orionGuid.toString())).thenReturn(account);
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(orionGuid);
+
+        assertEquals(orionGuid, credit.getEntitlementId());
+    }
+
+    @Test
+    public void testGetVpsCreditIncludesDataCenter() {
+        DataCenter dc = new DataCenter(1, "phx3");
+        account.product_meta.put("data_center", String.valueOf(dc.dataCenterId));
+        when(entitlementsService.getEntitlement(customerId, orionGuid)).thenReturn(entitlement);
+        when(ecommService.getAccount(orionGuid.toString())).thenReturn(account);
+        VirtualMachineCredit credit = creditService.getVpsCredit(customerId, orionGuid);
 
         assertEquals(orionGuid, credit.getEntitlementId());
     }
@@ -122,6 +175,17 @@ public class ECommCreditServiceTest {
     }
 
     @Test
+    public void testGetVpsCreditIncludesProductId() {
+        UUID vmId = UUID.randomUUID();
+        account.product_meta.put("product_id", vmId.toString());
+        when(entitlementsService.getEntitlement(customerId, orionGuid)).thenReturn(entitlement);
+        when(ecommService.getAccount(orionGuid.toString())).thenReturn(account);
+        VirtualMachineCredit credit = creditService.getVpsCredit(customerId, orionGuid);
+
+        assertEquals(vmId, credit.getProductId());
+    }
+
+    @Test
     public void testGetCreditIncludesExpireDate() {
         Date expireDate = new Date();
         account.expire_date = expireDate;
@@ -132,9 +196,34 @@ public class ECommCreditServiceTest {
     }
 
     @Test
+    public void testGetVpsCreditIncludesExpireDate() {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+        Date expireDate = new Date();
+        entitlement.current.service.end = sdf.format(expireDate).toString();
+        when(entitlementsService.getEntitlement(customerId, orionGuid)).thenReturn(entitlement);
+        when(ecommService.getAccount(orionGuid.toString())).thenReturn(account);
+        VirtualMachineCredit credit = creditService.getVpsCredit(customerId, orionGuid);
+
+        try {
+            assertEquals(sdf.parse(sdf.format(expireDate)).toInstant(), credit.getExpireDate());
+        } catch (ParseException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Test
     public void testGetCreditIncludesMssqlNull() {
         when(ecommService.getAccount(orionGuid.toString())).thenReturn(account);
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(orionGuid);
+        assertNull(credit.getMssql());
+    }
+
+    @Test
+    public void testGetVpsCreditIncludesMssqlNull() {
+        when(entitlementsService.getEntitlement(customerId, orionGuid)).thenReturn(entitlement);
+        when(ecommService.getAccount(orionGuid.toString())).thenReturn(account);
+        VirtualMachineCredit credit = creditService.getVpsCredit(customerId, orionGuid);
         assertNull(credit.getMssql());
     }
 
@@ -147,9 +236,26 @@ public class ECommCreditServiceTest {
     }
 
     @Test
+    public void testGetVpsCreditIncludesMssqlNotNull() {
+        entitlement.product.mssql = "web";
+        when(entitlementsService.getEntitlement(customerId, orionGuid)).thenReturn(entitlement);
+        when(ecommService.getAccount(orionGuid.toString())).thenReturn(account);
+        VirtualMachineCredit credit = creditService.getVpsCredit(customerId, orionGuid);
+        assertEquals("web", credit.getMssql());
+    }
+
+    @Test
     public void testGetCreditIncludesCdnWafNull() {
         when(ecommService.getAccount(orionGuid.toString())).thenReturn(account);
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(orionGuid);
+        assertEquals(0, credit.entitlementData.cdnWaf);
+    }
+
+    @Test
+    public void testGetVpsCreditIncludesCdnWafNull() {
+        when(entitlementsService.getEntitlement(customerId, orionGuid)).thenReturn(entitlement);
+        when(ecommService.getAccount(orionGuid.toString())).thenReturn(account);
+        VirtualMachineCredit credit = creditService.getVpsCredit(customerId, orionGuid);
         assertEquals(0, credit.entitlementData.cdnWaf);
     }
 
@@ -162,9 +268,26 @@ public class ECommCreditServiceTest {
     }
 
     @Test
+    public void testGetVpsCreditIncludesCdnWafNotNull() {
+        entitlement.product.cdnWaf = 3;
+        when(entitlementsService.getEntitlement(customerId, orionGuid)).thenReturn(entitlement);
+        when(ecommService.getAccount(orionGuid.toString())).thenReturn(account);
+        VirtualMachineCredit credit = creditService.getVpsCredit(customerId, orionGuid);
+        assertEquals(3, credit.entitlementData.cdnWaf);
+    }
+
+    @Test
     public void testGetCreditNoAccountFoundReturnsNull() {
         when(ecommService.getAccount(orionGuid.toString())).thenThrow(new WebApplicationException());
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(orionGuid);
+        assertNull(credit);
+    }
+
+    @Test
+    public void testGetVpsCreditNoAccountFoundReturnsNull() {
+        when(entitlementsService.getEntitlement(customerId, orionGuid)).thenReturn(entitlement);
+        when(ecommService.getAccount(orionGuid.toString())).thenThrow(new WebApplicationException());
+        VirtualMachineCredit credit = creditService.getVpsCredit(customerId, orionGuid);
         assertNull(credit);
     }
 
@@ -188,6 +311,20 @@ public class ECommCreditServiceTest {
         assertNull(credit.getProvisionDate());
         assertEquals(account.shopper_id, credit.getShopperId());
         assertEquals(Integer.parseInt(account.plan_features.get("pf_id")), credit.getPfid());
+    }
+
+    @Test
+    public void testGetVpsCreditMapsAccount() throws Exception {
+        when(entitlementsService.getEntitlement(customerId, orionGuid)).thenReturn(entitlement);
+        when(ecommService.getAccount(orionGuid.toString())).thenReturn(account);
+        VirtualMachineCredit credit = creditService.getVpsCredit(customerId, orionGuid);
+
+        assertEquals(orionGuid, credit.getEntitlementId());
+        assertEquals(entitlement.product.planTier.intValue(), credit.getTier());
+        assertEquals(entitlement.product.managedLevel.intValue(), credit.getManagedLevel());
+        assertEquals(entitlement.product.operatingSystem, credit.getOperatingSystem());
+        assertEquals(entitlement.product.controlPanelType, credit.getControlPanel());
+        assertNull(credit.getProvisionDate());
     }
 
     @Test

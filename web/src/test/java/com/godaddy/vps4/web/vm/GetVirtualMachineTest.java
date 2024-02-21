@@ -60,7 +60,7 @@ public class GetVirtualMachineTest {
         Vps4UserService userService = getMockedUserService();
         VmService vmService = getMockedVmService();
         VirtualMachineService virtualMachineService = getMockedVirtualMachineService();
-        CreditService creditService = getMockedCreditService(dcService);
+        CreditService creditService = getMockedCreditService();
         Config config = getMockedConfig();
         Cryptography cryptography = mock(Cryptography.class);
         DataCenterService dataCenterService = mock(DataCenterService.class);
@@ -84,12 +84,12 @@ public class GetVirtualMachineTest {
         return config;
     }
 
-    private CreditService getMockedCreditService(DataCenterService dataCenterService) {
+    private CreditService getMockedCreditService() {
         Map<String, String> productMeta = new HashMap<>();
         productMeta.put("product_id", vmId.toString());
         productMeta.put("data_center", String.valueOf(dc.dataCenterId));
 
-        VirtualMachineCredit credit = new VirtualMachineCredit.Builder(dataCenterService)
+        VirtualMachineCredit credit = new VirtualMachineCredit.Builder()
                 .withAccountGuid(vm.orionGuid.toString())
                 .withShopperID(user.getShopperId())
                 .withAccountStatus(AccountStatus.ACTIVE)

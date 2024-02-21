@@ -142,12 +142,12 @@ public class VmNotificationResourceTest {
         planFeaturesDed.put(ECommCreditService.PlanFeatures.MANAGED_LEVEL.toString(), "1");
         planFeatures.put(ECommCreditService.PlanFeatures.TIER.toString(), "20");
         planFeatures.put(ECommCreditService.PlanFeatures.MANAGED_LEVEL.toString(), "1");
-        dedCredit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+        dedCredit = new VirtualMachineCredit.Builder()
                 .withAccountGuid(UUID.randomUUID().toString())
                 .withPlanFeatures(planFeaturesDed)
                 .withResellerID("1")
                 .build();
-        credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+        credit = new VirtualMachineCredit.Builder()
                 .withAccountGuid(UUID.randomUUID().toString())
                 .withPlanFeatures(planFeatures)
                 .withResellerID("1")

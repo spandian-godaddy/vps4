@@ -74,7 +74,7 @@ public class VmDomainMonitoringResourceTest {
     private VirtualMachineCredit createMockCredit() {
         Map<String, String> managedPlanFeatures = new HashMap<>();
         managedPlanFeatures.put(ECommCreditService.PlanFeatures.MANAGED_LEVEL.toString(), "2");
-        return new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+        return new VirtualMachineCredit.Builder()
                 .withAccountGuid(orionGuid.toString())
                 .withAccountStatus(AccountStatus.ACTIVE)
                 .withPlanFeatures(managedPlanFeatures)
@@ -235,7 +235,7 @@ public class VmDomainMonitoringResourceTest {
         Map<String, String> selfManagedPlanFeatures = new HashMap<>();
         selfManagedPlanFeatures.put(ECommCreditService.PlanFeatures.MANAGED_LEVEL.toString(), "0");
 
-        VirtualMachineCredit selfManagedVmCredit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+        VirtualMachineCredit selfManagedVmCredit = new VirtualMachineCredit.Builder()
                 .withAccountGuid(orionGuid.toString())
                 .withAccountStatus(AccountStatus.ACTIVE)
                 .withPlanFeatures(selfManagedPlanFeatures)

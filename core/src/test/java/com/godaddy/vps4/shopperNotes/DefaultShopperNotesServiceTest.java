@@ -56,7 +56,7 @@ public class DefaultShopperNotesServiceTest {
     }
 
     private void setUpVmCredit() {
-        credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+        credit = new VirtualMachineCredit.Builder()
                 .withAccountGuid(vm.orionGuid.toString())
                 .withShopperID(shopperId)
                 .withResellerID(resellerId)

@@ -4,7 +4,6 @@ import static com.godaddy.vps4.credit.ECommCreditService.PlanFeatures;
 import static com.godaddy.vps4.credit.ECommCreditService.ProductMetaField;
 import static com.godaddy.vps4.credit.VirtualMachineCredit.Builder;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
@@ -61,62 +60,62 @@ public class BuilderTest {
     @Test
     public void withAccountGuid() {
         UUID orionGuid = UUID.randomUUID();
-        VirtualMachineCredit credit = new Builder(dataCenterService)
+        VirtualMachineCredit credit = new Builder()
             .withAccountGuid(orionGuid.toString()).build();
         assertEquals(orionGuid, credit.getEntitlementId());
     }
 
     @Test
     public void withoutAccountGuid() {
-        VirtualMachineCredit credit = new Builder(dataCenterService).build();
+        VirtualMachineCredit credit = new Builder().build();
         assertNull(credit.getEntitlementId());
     }
 
     @Test
     public void withShopperID() {
         String shopperId = "testShopper";
-        VirtualMachineCredit credit = new Builder(dataCenterService)
+        VirtualMachineCredit credit = new Builder()
             .withShopperID(shopperId).build();
         assertEquals(shopperId, credit.getShopperId());
     }
 
     @Test
     public void withoutShopperID() {
-        VirtualMachineCredit credit = new Builder(dataCenterService).build();
+        VirtualMachineCredit credit = new Builder().build();
         assertNull(credit.getShopperId());
     }
 
     @Test
     public void withResellerID() {
         String resellerId = "123";
-        VirtualMachineCredit credit = new Builder(dataCenterService)
+        VirtualMachineCredit credit = new Builder()
                 .withResellerID(resellerId).build();
         assertEquals(resellerId, credit.getResellerId());
     }
 
     @Test
     public void withoutResellerID() {
-        VirtualMachineCredit credit = new Builder(dataCenterService).build();
+        VirtualMachineCredit credit = new Builder().build();
         assertNull(credit.getResellerId());
     }
 
     @Test
     public void havingAccountStatus() {
         AccountStatus status = AccountStatus.ACTIVE;
-        VirtualMachineCredit credit = new Builder(dataCenterService)
+        VirtualMachineCredit credit = new Builder()
             .withAccountStatus(status).build();
         assertEquals(AccountStatus.ACTIVE, credit.getAccountStatus());
     }
 
     @Test
     public void withoutAccountStatus() {
-        VirtualMachineCredit credit = new Builder(dataCenterService).build();
+        VirtualMachineCredit credit = new Builder().build();
         assertNull(credit.getAccountStatus());
     }
 
     @Test
     public void planFeatures() {
-        VirtualMachineCredit credit = new Builder(dataCenterService)
+        VirtualMachineCredit credit = new Builder()
             .withPlanFeatures(planFeatures).build();
         assertEquals(tier, credit.getTier());
         assertEquals(managedLevel, credit.getManagedLevel());
@@ -127,7 +126,7 @@ public class BuilderTest {
 
     @Test
     public void withProductMeta() {
-        VirtualMachineCredit credit = new Builder(dataCenterService)
+        VirtualMachineCredit credit = new Builder()
                 .withProductMeta(productMeta).build();
         assertEquals(dc.dataCenterId, credit.prodMeta.dataCenter);
         assertEquals(provisionDate, credit.getProvisionDate());

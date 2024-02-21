@@ -127,7 +127,7 @@ public class VmResourceProvisionTest {
     }
 
     private VirtualMachineCredit createVmCredit() {
-        return new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+        return new VirtualMachineCredit.Builder()
             .withAccountGuid(orionGuid.toString())
             .withAccountStatus(accountStatus)
             .withShopperID(GDUserMock.DEFAULT_SHOPPER)

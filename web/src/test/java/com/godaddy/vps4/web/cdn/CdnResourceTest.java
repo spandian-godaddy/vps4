@@ -104,7 +104,7 @@ public class CdnResourceTest {
 
         customerId = UUID.randomUUID();
 
-        credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+        credit = new VirtualMachineCredit.Builder()
                 .withAccountStatus(AccountStatus.ACTIVE)
                 .withShopperID(user.getShopperId())
                 .withCustomerID(customerId.toString())

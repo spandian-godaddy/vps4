@@ -85,7 +85,7 @@ public class OrphanResourceTest {
         productMeta.put("product_id", vm.vmId.toString());
         DataCenterService dataCenterService = mock(DataCenterService.class);
         when(dataCenterService.getDataCenter(1)).thenReturn(new DataCenter(1, "test"));
-        VirtualMachineCredit virtualMachineCredit = new VirtualMachineCredit.Builder(dataCenterService)
+        VirtualMachineCredit virtualMachineCredit = new VirtualMachineCredit.Builder()
             .withProductMeta(productMeta)
             .build();
         Vps4Credit vps4Credit = new Vps4Credit(virtualMachineCredit, dataCenterService);

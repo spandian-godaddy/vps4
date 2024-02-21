@@ -48,7 +48,7 @@ public class CreditResource {
     private VirtualMachineService vmService;
 
     @Inject
-    public CreditResource(GDUser user, CreditService creditService, VmMailRelayResource vmMailRelayResource, 
+    public CreditResource(GDUser user, CreditService creditService, VmMailRelayResource vmMailRelayResource,
                           VirtualMachineService vmService, DataCenterService dataCenterService) {
         this.user = user;
         this.creditService = creditService;
@@ -65,6 +65,18 @@ public class CreditResource {
         VirtualMachineCredit credit = creditService.getVirtualMachineCredit(orionGuid);
         if (credit == null || (user.isShopper() && !credit.getShopperId().equals(user.getShopperId()))) {
             throw new NotFoundException("Unknown Credit ID: " + orionGuid);
+        }
+        return new Vps4Credit(credit, dataCenterService);
+    }
+
+    @GET
+    @RequiresRole(roles = {GDUser.Role.ADMIN, GDUser.Role.CUSTOMER, GDUser.Role.VPS4_API_READONLY,
+            GDUser.Role.SUSPEND_AUTH})
+    @Path("/{customerId}/entitlements/{entitlementId}")
+    public Vps4Credit getVpsCredit(@PathParam("customerId") UUID customerId, @PathParam("entitlementId") UUID entitlementId) {
+        VirtualMachineCredit credit = creditService.getVpsCredit(customerId, entitlementId);
+        if (credit == null || (user.isShopper() && !credit.getShopperId().equals(user.getShopperId()))) {
+            throw new NotFoundException("Unknown Credit ID: " + entitlementId);
         }
         return new Vps4Credit(credit, dataCenterService);
     }

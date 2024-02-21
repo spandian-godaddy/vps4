@@ -126,7 +126,7 @@ public class Vps4AccountMessageHandlerTest {
             productMeta.put(ProductMetaField.DATA_CENTER.toString(), DEFAULT_DATACENTER);
         }
 
-        vmCredit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+        vmCredit = new VirtualMachineCredit.Builder()
                 .withAccountGuid(orionGuid.toString())
                 .withAccountStatus(accountStatus)
                 .withShopperID("TestShopper")
@@ -297,7 +297,7 @@ public class Vps4AccountMessageHandlerTest {
 
     @Test
     public void testFullyManagedEmailAlreadySent() throws MessageHandlerException {
-        VirtualMachineCredit vmCredit = new VirtualMachineCredit.Builder(dcService).build();
+        VirtualMachineCredit vmCredit = new VirtualMachineCredit.Builder().build();
 
         when(creditServiceMock.getVirtualMachineCredit(orionGuid)).thenReturn(vmCredit);
         when(messagingServiceMock.sendFullyManagedEmail("TestShopper", "cpanel")).thenReturn("messageId");
@@ -486,7 +486,7 @@ public class Vps4AccountMessageHandlerTest {
 
     @Test
     public void handleAccountRemovalNoopIfVmPresentInDifferentDC() throws MessageHandlerException {
-        VirtualMachineCredit vmCredit = new VirtualMachineCredit.Builder(dcService).build();
+        VirtualMachineCredit vmCredit = new VirtualMachineCredit.Builder().build();
         when(creditServiceMock.getVirtualMachineCredit(orionGuid)).thenReturn(vmCredit);
 
         callHandleMessage(createTestKafkaMessage("removed"));

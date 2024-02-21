@@ -89,7 +89,7 @@ public class VmSuspendReinstateResourceTest {
     }
 
     private VirtualMachineCredit createCredit(AccountStatus accountStatus) {
-        return new VirtualMachineCredit.Builder(dataCenterService)
+        return new VirtualMachineCredit.Builder()
                 .withAccountGuid(orionGuid.toString())
                 .withAccountStatus(accountStatus)
                 .withShopperID(user.getShopperId())

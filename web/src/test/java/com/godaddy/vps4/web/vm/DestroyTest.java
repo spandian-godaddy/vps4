@@ -144,7 +144,7 @@ public class DestroyTest {
         vm.spec = spec;
         when(virtualMachineService.getVirtualMachine(any(UUID.class))).thenReturn(vm);
 
-        VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+        VirtualMachineCredit credit = new VirtualMachineCredit.Builder()
             .withAccountStatus(AccountStatus.ACTIVE)
             .withShopperID("validUserShopperId")
             .build();

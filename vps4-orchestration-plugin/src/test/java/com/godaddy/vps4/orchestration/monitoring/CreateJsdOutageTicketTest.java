@@ -80,7 +80,7 @@ public class CreateJsdOutageTicketTest {
 
         planFeatures.put(ECommCreditService.PlanFeatures.TIER.toString(), String.valueOf(tier));
         planFeatures.put(ECommCreditService.PlanFeatures.MANAGED_LEVEL.toString(),  String.valueOf(managedLevel));
-        return new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+        return new VirtualMachineCredit.Builder()
                 .withAccountGuid(orionGuid.toString())
                 .withAccountStatus(AccountStatus.ACTIVE)
                 .withPlanFeatures(planFeatures)

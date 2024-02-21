@@ -91,14 +91,14 @@ public class VmShopperMergeResourceTest {
         newVps4User = new Vps4User(1, user.getShopperId(), UUID.randomUUID(), "1");
         testProject = new Project(321L, "testProject", "testProjectSgid", null, null, 123L);
         testUpdatedProject = new Project(321L, "testProject", "testProjectSgid", null, null, newVps4User.getId());
-        shopperCredit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+        shopperCredit = new VirtualMachineCredit.Builder()
                 .withAccountGuid(orionGuid.toString())
                 .withAccountStatus(AccountStatus.ACTIVE)
                 .withShopperID(GDUserMock.DEFAULT_SHOPPER)
                 .withResellerID(resellerId)
                 .withCustomerID(UUID.randomUUID().toString())
                 .build();
-        notShopperCredit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+        notShopperCredit = new VirtualMachineCredit.Builder()
                 .withAccountGuid(orionGuid.toString())
                 .withAccountStatus(AccountStatus.ACTIVE)
                 .withShopperID("shopper2")

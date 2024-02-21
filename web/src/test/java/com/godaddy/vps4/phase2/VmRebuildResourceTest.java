@@ -214,7 +214,7 @@ public class VmRebuildResourceTest {
         planFeatures.put("tier", String.valueOf(140));
         planFeatures.put("control_panel_type", "myh");
         planFeatures.put("operating_system", "linux");
-        VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+        VirtualMachineCredit credit = new VirtualMachineCredit.Builder()
                 .withAccountGuid(ourDedicated.orionGuid.toString())
                 .withPlanFeatures(planFeatures)
                 .build();
@@ -244,7 +244,7 @@ public class VmRebuildResourceTest {
         planFeatures.put("tier", String.valueOf(140));
         planFeatures.put("control_panel_type", "myh");
         planFeatures.put("operating_system", "linux");
-        VirtualMachineCredit credit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+        VirtualMachineCredit credit = new VirtualMachineCredit.Builder()
                 .withAccountGuid(ourDedicated.orionGuid.toString())
                 .withPlanFeatures(planFeatures)
                 .withShopperID(us.getShopperId())

@@ -22,7 +22,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.godaddy.hfs.mailrelay.MailRelay;
-import com.godaddy.vps4.cpanel.CPanelSession.Data;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.ECommCreditService.ProductMetaField;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
@@ -42,7 +41,9 @@ public class CreditResourceTest {
 
     private GDUser user;
     private UUID orionGuid = UUID.randomUUID();
+    private UUID customerId = UUID.randomUUID();
     private VirtualMachineCredit vmCredit;
+    private VirtualMachineCredit vpsCredit;
     private CreditService creditService = mock(CreditService.class);
     private VmMailRelayResource vmMailRelayResource = mock(VmMailRelayResource.class);
     private VirtualMachineService vmService = mock(VirtualMachineService.class);
@@ -53,9 +54,18 @@ public class CreditResourceTest {
     }
 
     private VirtualMachineCredit createVmCredit(AccountStatus accountStatus) {
-        return new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+        return new VirtualMachineCredit.Builder()
                 .withAccountGuid(orionGuid.toString())
                 .withAccountStatus(accountStatus)
+                .withShopperID(user.getShopperId())
+                .build();
+    }
+
+    private VirtualMachineCredit createVpsCredit(AccountStatus accountStatus) {
+        return new VirtualMachineCredit.EntitlementBuilder()
+                .withEntitlementId(orionGuid)
+                .withCustomerID(customerId)
+                .withAccountStatus(accountStatus.toString())
                 .withShopperID(user.getShopperId())
                 .build();
     }
@@ -65,6 +75,8 @@ public class CreditResourceTest {
         user = GDUserMock.createShopper();
         vmCredit = createVmCredit(AccountStatus.ACTIVE);
         when(creditService.getVirtualMachineCredit(orionGuid)).thenReturn(vmCredit);
+        vpsCredit = createVpsCredit(AccountStatus.ACTIVE);
+        when(creditService.getVpsCredit(customerId, orionGuid)).thenReturn(vpsCredit);
         when(creditService.getVirtualMachineCredits("validUserShopperId", false)).thenReturn(Collections.singletonList(vmCredit));
     }
 
@@ -72,6 +84,13 @@ public class CreditResourceTest {
     public void testShopperGetCredit() {
         Vps4Credit credit = getCreditResource().getCredit(orionGuid);
         Assert.assertEquals(orionGuid, credit.orionGuid);
+    }
+
+    @Test
+    public void testShopperGetVpsCredit() {
+        Vps4Credit credit = getCreditResource().getVpsCredit(customerId, orionGuid);
+        Assert.assertEquals(orionGuid, credit.orionGuid);
+        Assert.assertEquals(customerId, credit.customerId);
     }
 
     @Test
@@ -83,10 +102,26 @@ public class CreditResourceTest {
     }
 
     @Test
+    public void testEmployeeGetVpsCredit() {
+        user = GDUserMock.createEmployee();
+        Vps4Credit credit = getCreditResource().getVpsCredit(customerId, orionGuid);
+        Assert.assertEquals(orionGuid, credit.orionGuid);
+        Assert.assertEquals(customerId, credit.customerId);
+    }
+
+    @Test
     public void testAdminGetCredit() {
         user = GDUserMock.createAdmin();
         Vps4Credit credit = getCreditResource().getCredit(orionGuid);
         Assert.assertEquals(orionGuid, credit.orionGuid);
+    }
+
+    @Test
+    public void testAdminGetVpsCredit() {
+        user = GDUserMock.createAdmin();
+        Vps4Credit credit = getCreditResource().getVpsCredit(customerId, orionGuid);
+        Assert.assertEquals(orionGuid, credit.orionGuid);
+        Assert.assertEquals(customerId, credit.customerId);
     }
 
     @Test(expected=NotFoundException.class)

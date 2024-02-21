@@ -54,7 +54,7 @@ public class VmAlertResourceTest {
     private VirtualMachineCredit setupTestCredit(String managedLevel) {
         planFeatures.put(ECommCreditService.PlanFeatures.MANAGED_LEVEL.toString(), managedLevel);
 
-        VirtualMachineCredit testCredit = new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+        VirtualMachineCredit testCredit = new VirtualMachineCredit.Builder()
                 .withAccountGuid(UUID.randomUUID().toString())
                 .withPlanFeatures(planFeatures)
                 .build();

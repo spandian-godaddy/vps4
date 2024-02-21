@@ -148,7 +148,7 @@ public class Vps4ProcessAccountCancellationTest {
         if (productId != null)
             productMeta.put("product_id", productId.toString());
 
-        return new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+        return new VirtualMachineCredit.Builder()
                 .withAccountGuid(orionGuid.toString())
                 .withProductMeta(productMeta)
                 .withShopperID("fakeShopperId")

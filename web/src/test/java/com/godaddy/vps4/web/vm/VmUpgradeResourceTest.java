@@ -88,7 +88,7 @@ public class VmUpgradeResourceTest {
         Map<String, String> planFeatures = new HashMap<>();
         planFeatures.put("tier", String.valueOf(40));
 
-        return new VirtualMachineCredit.Builder(mock(DataCenterService.class))
+        return new VirtualMachineCredit.Builder()
             .withAccountGuid(UUID.randomUUID().toString())
             .withAccountStatus(AccountStatus.ACTIVE)
             .withShopperID(user.getShopperId())

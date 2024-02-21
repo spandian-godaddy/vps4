@@ -4,13 +4,15 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.godaddy.vps4.credit.ECommCreditService.PlanFeatures;
 import com.godaddy.vps4.credit.ECommCreditService.ProductMetaField;
+import com.godaddy.vps4.entitlement.models.Product;
 import com.godaddy.vps4.prodMeta.model.ProdMeta;
 import com.godaddy.vps4.vm.AccountStatus;
-import com.godaddy.vps4.vm.DataCenter;
-import com.godaddy.vps4.vm.DataCenterService;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.TimeZone;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Date;
@@ -151,6 +153,10 @@ public class VirtualMachineCredit {
         return mssql;
     }
 
+    public int getCdnWaf() {
+        return entitlementData.cdnWaf;
+    }
+
     public static class Builder {
         private Map<String, String> planFeatures;
         private Map<String, String> productMeta;
@@ -158,12 +164,10 @@ public class VirtualMachineCredit {
         private UUID accountGuid;
         private String resellerId;
         private AccountStatus accountStatus;
-        private final DataCenterService dataCenterService;
         private UUID customerId;
         private Instant expireDate;
 
-        public Builder(DataCenterService dataCenterService) {
-            this.dataCenterService = dataCenterService;
+        public Builder() {
         }
 
         public VirtualMachineCredit build() {
@@ -265,6 +269,117 @@ public class VirtualMachineCredit {
 
         private int parseMonitoring(String value) {
             return (Arrays.asList("true","1").contains(value)) ? 1 : 0;
+        }
+    }
+
+    public static class EntitlementBuilder {
+        private Product entitlementProduct;
+        private Map<String, String> productMeta;
+        private String shopperId;
+        private UUID accountGuid;
+        private String resellerId;
+        private AccountStatus accountStatus;
+        private UUID customerId;
+        private Instant expireDate;
+
+        public EntitlementBuilder() {
+        }
+
+        public VirtualMachineCredit build() {
+            VirtualMachineCredit credit = new VirtualMachineCredit();
+            credit.entitlementData.entitlementId = this.accountGuid;
+
+            if (entitlementProduct != null) {
+                credit.entitlementData.tier = entitlementProduct.planTier;
+                credit.entitlementData.managedLevel = entitlementProduct.managedLevel;
+                credit.entitlementData.monitoring = entitlementProduct.monitoring ? 1 : 0;
+                credit.entitlementData.operatingSystem = entitlementProduct.operatingSystem;
+                credit.entitlementData.controlPanel = entitlementProduct.controlPanelType;
+                credit.mssql = entitlementProduct.mssql;
+                credit.entitlementData.cdnWaf = entitlementProduct.cdnWaf != null ? entitlementProduct.cdnWaf : 0;
+            }
+
+            if (productMeta != null) {
+                credit.prodMeta.provisionDate = getDateFromProductMeta(ProductMetaField.PROVISION_DATE.toString());
+                credit.prodMeta.purchasedAt = getDateFromProductMeta(ProductMetaField.PURCHASED_AT.toString());
+                credit.prodMeta.fullyManagedEmailSent = getFlagFromProductMeta(ProductMetaField.FULLY_MANAGED_EMAIL_SENT.toString());
+                credit.prodMeta.dataCenter = getDataCenter();
+                credit.prodMeta.productId = getProductId();
+            }
+
+            credit.shopperId = this.shopperId;
+            credit.entitlementData.accountStatus = this.accountStatus;
+            credit.resellerId = this.resellerId;
+            credit.entitlementData.customerId = this.customerId;
+            credit.entitlementData.expireDate = this.expireDate;
+            return credit;
+        }
+
+        public EntitlementBuilder withEntitlementId(UUID entitlementId) {
+            this.accountGuid = entitlementId;
+            return this;
+        }
+
+        public EntitlementBuilder withEntitlementProduct(Product entitlementProduct) {
+            this.entitlementProduct = entitlementProduct;
+            return this;
+        }
+
+        public EntitlementBuilder withProductMeta(Map<String, String> productMeta) {
+            this.productMeta = productMeta;
+            return this;
+        }
+
+        public EntitlementBuilder withResellerID(String resellerId) {
+            this.resellerId = resellerId;
+            return this;
+        }
+
+        public EntitlementBuilder withShopperID(String shopperId) {
+            this.shopperId = shopperId;
+            return this;
+        }
+
+        public EntitlementBuilder withAccountStatus(String accountStatus) {
+            this.accountStatus = AccountStatus.valueOf(accountStatus.toUpperCase());
+            return this;
+        }
+
+        public EntitlementBuilder withCustomerID(UUID customerId) {
+            this.customerId = customerId;
+            return this;
+        }
+
+        private Instant parseStringDate(String date) throws ParseException {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+            sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+            return sdf.parse(date).toInstant();
+        }
+
+        public EntitlementBuilder withExpireDate(String expireDate) throws ParseException {
+            this.expireDate = parseStringDate(expireDate);
+            return this;
+        }
+
+        private int getDataCenter() {
+            return productMeta.containsKey(ProductMetaField.DATA_CENTER.toString()) ?
+                    Integer.parseInt(productMeta.get(ProductMetaField.DATA_CENTER.toString())) : 0;
+        }
+
+        private UUID getProductId() {
+            return productMeta.containsKey(ProductMetaField.PRODUCT_ID.toString())
+                    ? UUID.fromString(productMeta.get(ProductMetaField.PRODUCT_ID.toString()))
+                    : null;
+        }
+
+        private Instant getDateFromProductMeta(String metaFieldName) {
+            String date = productMeta.get(metaFieldName);
+            return (date != null) ? Instant.parse(date) : null;
+        }
+
+        private boolean getFlagFromProductMeta(String productMetaFieldName) {
+            return productMeta.containsKey(productMetaFieldName) &&
+                    Boolean.parseBoolean(productMeta.get(productMetaFieldName));
         }
     }
 }
