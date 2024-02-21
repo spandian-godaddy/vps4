@@ -5,6 +5,7 @@ import java.util.List;
 
 import javax.inject.Singleton;
 
+import com.godaddy.vps4.shopper.ShopperModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -138,6 +139,7 @@ public class Vps4Injector {
         modules.add(new JsdModule());
         modules.add(new Vps4SsoModule());
         modules.add(new CdnModule());
+        modules.add(new ShopperModule());
         modules.add(new VmMoveModule());
         modules.add(new PackageModule());
         modules.add(new IntentModule());

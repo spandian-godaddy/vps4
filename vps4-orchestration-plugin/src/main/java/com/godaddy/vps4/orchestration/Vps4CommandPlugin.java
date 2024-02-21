@@ -24,6 +24,7 @@ import com.godaddy.vps4.panopta.PanoptaModule;
 import com.godaddy.vps4.reseller.ResellerModule;
 import com.godaddy.vps4.scheduler.api.client.SchedulerServiceClientModule;
 import com.godaddy.vps4.security.SecurityModule;
+import com.godaddy.vps4.shopper.ShopperModule;
 import com.godaddy.vps4.shopperNotes.ShopperNotesModule;
 import com.godaddy.vps4.snapshot.SnapshotModule;
 import com.godaddy.vps4.sso.Vps4SsoModule;
@@ -87,6 +88,7 @@ public class Vps4CommandPlugin implements CommandPlugin {
             new EntitlementsModule(),
             new IntentModule(),
             new CdnModule(),
+            new ShopperModule(),
             new CdnDataModule()
         );
 
