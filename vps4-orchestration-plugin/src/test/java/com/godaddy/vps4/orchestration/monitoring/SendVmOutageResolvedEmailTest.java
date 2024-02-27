@@ -20,6 +20,7 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import com.google.common.collect.Sets;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -75,24 +76,24 @@ public class SendVmOutageResolvedEmailTest {
         vmOutage.reason = fakeReason;
         vmOutage.domainMonitoringMetadata = new ArrayList<>();
 
-        setupEnabledAlerts();
+        setupEnabledAlerts(null);
 
         command = new SendVmOutageResolvedEmail(messagingService, vmAlertService);
     }
 
-    private void setupEnabledAlerts() {
+    private void setupEnabledAlerts(VmMetric disabledMetric) {
         enabledAlerts = Arrays.stream(VmMetric.values()).map(metric -> {
             VmMetricAlert alert = new VmMetricAlert();
             alert.metric = metric;
             alert.status = VmMetricAlert.Status.ENABLED;
             return alert;
-        }).collect(Collectors.toList());
+        }).filter(a -> a.metric != disabledMetric).collect(Collectors.toList());
         when(vmAlertService.getVmMetricAlertList(fakeVmId)).thenReturn(enabledAlerts);
     }
 
     @Test
     public void verifyUptimeOutageResolvedEmailIsSent() {
-        request.vmOutage.metrics = Collections.singleton(VmMetric.PING);
+        request.vmOutage.metrics = Sets.newHashSet(VmMetric.PING);
         command.execute(context, request);
 
         verify(context, times(1))
@@ -106,7 +107,7 @@ public class SendVmOutageResolvedEmailTest {
 
     @Test
     public void verifyAgentResourceOutageResolvedEmailIsSent() {
-        request.vmOutage.metrics = Collections.singleton(VmMetric.CPU);
+        request.vmOutage.metrics = Sets.newHashSet(VmMetric.CPU);
         command.execute(context, request);
 
         verify(context, times(1))
@@ -121,7 +122,7 @@ public class SendVmOutageResolvedEmailTest {
 
     @Test
     public void verifyNetworkServicesRestoredEmailIsSent() {
-        request.vmOutage.metrics = Collections.singleton(VmMetric.FTP);
+        request.vmOutage.metrics = Sets.newHashSet(VmMetric.FTP);
         String fakeResourceName = VmMetric.FTP.name();
         when(messagingService
                      .sendServiceOutageResolvedEmail(eq(fakeShopperId), eq(fakeAccountName), eq(fakeIpAddress), eq(fakeOrionGuid),
@@ -137,7 +138,7 @@ public class SendVmOutageResolvedEmailTest {
 
     @Test
     public void verifyServicesRestoredEmailIsSentHTTP() {
-        request.vmOutage.metrics = Collections.singleton(VmMetric.HTTP_DOMAIN);
+        request.vmOutage.metrics = Sets.newHashSet(VmMetric.HTTP_DOMAIN);
         request.vmOutage.domainMonitoringMetadata = Arrays.asList(new VmOutage.DomainMonitoringMetadata(
                 "domainfake.here", Arrays.asList("Unable to resolve host name domainfake.here"), VmMetric.HTTP_DOMAIN
         ));
@@ -159,7 +160,7 @@ public class SendVmOutageResolvedEmailTest {
 
     @Test
     public void verifyServicesRestoredEmailIsSentHTTPS() {
-        request.vmOutage.metrics = Collections.singleton(VmMetric.HTTPS_DOMAIN);
+        request.vmOutage.metrics = Sets.newHashSet(VmMetric.HTTPS_DOMAIN);
         request.vmOutage.domainMonitoringMetadata = Arrays.asList(new VmOutage.DomainMonitoringMetadata(
                 "domainfake.here", Arrays.asList("SSL error: certificate verify failed"), VmMetric.HTTPS_DOMAIN
         ));
@@ -181,7 +182,7 @@ public class SendVmOutageResolvedEmailTest {
 
     @Test
     public void sendsOutageForResolvedEmailMultipleReasons() {
-        request.vmOutage.metrics = Collections.singleton(VmMetric.HTTPS_DOMAIN);
+        request.vmOutage.metrics = Sets.newHashSet(VmMetric.HTTPS_DOMAIN);
         request.vmOutage.domainMonitoringMetadata = Arrays.asList(new VmOutage.DomainMonitoringMetadata(
                 "domainfake.here",
                 Arrays.asList("SSL certificate is expiring", "SSL error: certificate verify failed"),
@@ -205,7 +206,7 @@ public class SendVmOutageResolvedEmailTest {
 
     @Test
     public void doesNotSendOutageResolvedEmailForSSLWarning() {
-        request.vmOutage.metrics = Collections.singleton(VmMetric.HTTPS_DOMAIN);
+        request.vmOutage.metrics = Sets.newHashSet(VmMetric.HTTPS_DOMAIN);
         request.vmOutage.domainMonitoringMetadata = Arrays.asList(new VmOutage.DomainMonitoringMetadata(
                 "domainfake.here", Arrays.asList("SSL certificate is expiring"), VmMetric.HTTPS_DOMAIN
         ));
@@ -222,15 +223,40 @@ public class SendVmOutageResolvedEmailTest {
                         eq(String.class));
     }
 
-
     @Test
     public void doesNotSendEmailIfAlertMetricIsDisabled() {
-        request.vmOutage.metrics = Collections.singleton(VmMetric.PING);
+        setupEnabledAlerts(VmMetric.PING);
+
+        request.vmOutage.metrics = Sets.newHashSet(VmMetric.PING);
         command.execute(context, request);
 
         verify(context, never())
-                .execute(eq("SendVmOutageResolvedEmail-" + fakeShopperId), any(Function.class),
+                .execute(eq("SendVmOutageResolvedEmail-PING"), any(Function.class),
                          eq(String.class));
+    }
+
+    @Test
+    public void doesNotSendEmailIfHTTPSDomainMetricIsDisabled() {
+        setupEnabledAlerts(VmMetric.HTTPS_DOMAIN);
+
+        request.vmOutage.metrics = Sets.newHashSet(VmMetric.HTTPS_DOMAIN);
+        command.execute(context, request);
+
+        verify(context, never())
+                .execute(eq("SendVmOutageResolvedEmail-HTTPS"), any(Function.class),
+                        eq(String.class));
+    }
+
+    @Test
+    public void doesNotSendEmailIfHTTPDomainMetricIsDisabled() {
+        setupEnabledAlerts(VmMetric.HTTP_DOMAIN);
+
+        request.vmOutage.metrics = Sets.newHashSet(VmMetric.HTTP_DOMAIN);
+        command.execute(context, request);
+
+        verify(context, never())
+                .execute(eq("SendVmOutageResolvedEmail-HTTP"), any(Function.class),
+                        eq(String.class));
     }
 
     @Test

@@ -117,8 +117,10 @@ public class VmAlertResourceTest {
 
         List<VmMetricAlert> returnedList = resource.getMetricAlertList(vmId);
 
-        assertEquals(1, returnedList.size());
+        assertEquals(3, returnedList.size());
         assertEquals(VmMetric.FTP, returnedList.get(0).metric);
+        assertEquals(VmMetric.HTTPS_DOMAIN, returnedList.get(1).metric);
+        assertEquals(VmMetric.HTTP_DOMAIN, returnedList.get(2).metric);
     }
 
     @Test

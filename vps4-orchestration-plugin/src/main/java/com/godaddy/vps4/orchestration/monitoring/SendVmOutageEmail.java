@@ -2,6 +2,7 @@ package com.godaddy.vps4.orchestration.monitoring;
 
 import java.time.Instant;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Matcher;
@@ -42,9 +43,14 @@ public class SendVmOutageEmail implements Command<VmOutageEmailRequest, Void> {
 
     @Override
     public Void execute(CommandContext context, VmOutageEmailRequest req) {
-        req.vmOutage.metrics.retainAll(getEnabledMetrics(req.vmId));
+        Set<VmMetric> enabledMetrics = getEnabledMetrics(req.vmId);
+        req.vmOutage.metrics.retainAll(enabledMetrics);
+        List<VmOutage.DomainMonitoringMetadata> filteredDomainMonitoringMetadata = req.vmOutage.domainMonitoringMetadata
+                        .stream()
+                        .filter(d -> enabledMetrics.contains(d.metric))
+                        .collect(Collectors.toList());
         executeForMetrics(context, req);
-        for (VmOutage.DomainMonitoringMetadata domainMetric : req.vmOutage.domainMonitoringMetadata) {
+        for (VmOutage.DomainMonitoringMetadata domainMetric : filteredDomainMonitoringMetadata) {
             executeForHttpAndHttps(context, req, domainMetric);
         }
         return null;

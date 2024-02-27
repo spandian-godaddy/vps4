@@ -73,17 +73,17 @@ public class SendVmOutageCreatedEmailTest {
         vmOutage.domainMonitoringMetadata = new ArrayList<>();
         vmOutage.metrics = new HashSet<>();
 
-        setupEnabledAlerts();
+        setupEnabledAlerts(null);
         command = new SendVmOutageCreatedEmail(messagingService, vmAlertService);
     }
 
-    private void setupEnabledAlerts() {
+    private void setupEnabledAlerts(VmMetric disabledMetric) {
         enabledAlerts = Arrays.stream(VmMetric.values()).map(metric -> {
             VmMetricAlert alert = new VmMetricAlert();
             alert.metric = metric;
             alert.status = VmMetricAlert.Status.ENABLED;
             return alert;
-        }).collect(Collectors.toList());
+        }).filter(a -> a.metric != disabledMetric).collect(Collectors.toList());
         when(vmAlertService.getVmMetricAlertList(fakeVmId)).thenReturn(enabledAlerts);
     }
 
@@ -207,11 +207,35 @@ public class SendVmOutageCreatedEmailTest {
 
     @Test
     public void doesNotSendEmailIfAlertMetricIsDisabled() {
+        setupEnabledAlerts(VmMetric.PING);
+
         request.vmOutage.metrics = Sets.newHashSet(VmMetric.PING);
         command.execute(context, request);
 
         verify(context, never())
-                .execute(eq("SendVmOutageCreatedEmail-" + fakeShopperId), any(Function.class), eq(String.class));
+                .execute(eq("SendVmOutageCreatedEmail-PING"), any(Function.class), eq(String.class));
+    }
+
+    @Test
+    public void doesNotSendEmailIfHTTPSDomainMetricIsDisabled() {
+        setupEnabledAlerts(VmMetric.HTTPS_DOMAIN);
+
+        request.vmOutage.metrics = Sets.newHashSet(VmMetric.HTTPS_DOMAIN);
+        command.execute(context, request);
+
+        verify(context, never())
+                .execute(eq("SendVmOutageCreatedEmail-HTTPS"), any(Function.class), eq(String.class));
+    }
+
+    @Test
+    public void doesNotSendEmailIfHTTPDomainMetricIsDisabled() {
+        setupEnabledAlerts(VmMetric.HTTP_DOMAIN);
+
+        request.vmOutage.metrics = Sets.newHashSet(VmMetric.HTTP_DOMAIN);
+        command.execute(context, request);
+
+        verify(context, never())
+                .execute(eq("SendVmOutageCreatedEmail-HTTP"), any(Function.class), eq(String.class));
     }
 
     @Test
