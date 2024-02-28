@@ -18,6 +18,7 @@ import org.junit.Test;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.ECommCreditService.ProductMetaField;
 import com.godaddy.vps4.prodMeta.ProdMetaService;
+import com.godaddy.vps4.prodMeta.ExternalDc.CrossDcProdMetaClientService;
 import com.godaddy.vps4.prodMeta.model.ProdMeta;
 import com.godaddy.vps4.vm.DataCenter;
 import com.godaddy.vps4.vm.DataCenterService;
@@ -27,13 +28,15 @@ public class CreditProdMetaResourceTest {
     private ProdMetaService prodMetaService;
     private CreditService creditService;
     private DataCenterService dataCenterService;
+    private CrossDcProdMetaClientService crossDcProdMetaClientService;
 
     @Before
     public void setUp() {
         prodMetaService = mock(ProdMetaService.class);
         creditService = mock(CreditService.class);
         dataCenterService = mock(DataCenterService.class);
-        creditProdMetaResource = new CreditProdMetaResource(prodMetaService, creditService, dataCenterService);
+        crossDcProdMetaClientService = mock(CrossDcProdMetaClientService.class);
+        creditProdMetaResource = new CreditProdMetaResource(prodMetaService, creditService, dataCenterService, crossDcProdMetaClientService);
     }
 
     @Test
@@ -131,5 +134,18 @@ public class CreditProdMetaResourceTest {
         creditProdMetaResource.deleteProdMeta(entitlementId);
 
         verify(prodMetaService, times(1)).deleteProdMeta(entitlementId);
+    }
+
+    @Test
+    public void testGetProdMetaCrossDc() {
+        UUID entitlementId = UUID.randomUUID();
+        ProdMeta expectedProdMeta = new ProdMeta();
+        expectedProdMeta.entitlementId = entitlementId;
+        when(crossDcProdMetaClientService.getProdMeta(entitlementId)).thenReturn(expectedProdMeta);
+
+        ProdMeta actualProdMeta = creditProdMetaResource.getProdMetaCrossDc(entitlementId);
+
+        assertEquals(expectedProdMeta, actualProdMeta);
+        verify(crossDcProdMetaClientService, times(1)).getProdMeta(entitlementId);
     }
 }

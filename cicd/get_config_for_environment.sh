@@ -10,7 +10,9 @@ echo 'getting all configuration for '$ENV'.'
 chmod +x ./get_config_from_aws.sh;
 #base config
 ./get_config_from_aws.sh $ACCESS_KEY_ID $SECRET_ACCESS_KEY $ROLE 'config.properties' 'base';
-#prod_iad2 config
+./get_config_from_aws.sh $ACCESS_KEY_ID $SECRET_ACCESS_KEY $ROLE 'vps4.api.crt' 'base';
+./get_config_from_aws.sh $ACCESS_KEY_ID $SECRET_ACCESS_KEY $ROLE 'vps4.api.key' 'base';
+#environment config
 ./get_config_from_aws.sh $ACCESS_KEY_ID $SECRET_ACCESS_KEY $ROLE 'config.properties' $ENV;
 ./get_config_from_aws.sh $ACCESS_KEY_ID $SECRET_ACCESS_KEY $ROLE 'hfs.api.crt' $ENV;
 ./get_config_from_aws.sh $ACCESS_KEY_ID $SECRET_ACCESS_KEY $ROLE 'hfs.api.key' $ENV;
@@ -29,6 +31,8 @@ chmod +x ./get_config_from_aws.sh;
 ./get_config_from_aws.sh $ACCESS_KEY_ID $SECRET_ACCESS_KEY $ROLE 'vps4_end_web_consumerclient.key' $ENV;
 ./get_config_from_aws.sh $ACCESS_KEY_ID $SECRET_ACCESS_KEY $ROLE 'vps4_end_web_schedulerclient.crt' $ENV;
 ./get_config_from_aws.sh $ACCESS_KEY_ID $SECRET_ACCESS_KEY $ROLE 'vps4_end_web_schedulerclient.key' $ENV;
+./get_config_from_aws.sh $ACCESS_KEY_ID $SECRET_ACCESS_KEY $ROLE 'vps4.api.crt' $ENV;
+./get_config_from_aws.sh $ACCESS_KEY_ID $SECRET_ACCESS_KEY $ROLE 'vps4.api.key' $ENV;
 #base scheduler config
 ./get_config_from_aws.sh $ACCESS_KEY_ID $SECRET_ACCESS_KEY $ROLE 'config.properties' 'base' 'scheduler';
 #dev scheduler config

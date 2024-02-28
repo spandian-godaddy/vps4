@@ -38,6 +38,7 @@ import com.godaddy.vps4.oh.OhModule;
 import com.godaddy.vps4.panopta.PanoptaModule;
 import com.godaddy.vps4.plan.PlanModule;
 import com.godaddy.vps4.plesk.PleskModule;
+import com.godaddy.vps4.prodMeta.ExternalDc.CrossDcProdMetaServiceModule;
 import com.godaddy.vps4.productPackage.PackageModule;
 import com.godaddy.vps4.reseller.ResellerModule;
 import com.godaddy.vps4.scheduler.api.client.SchedulerServiceClientModule;
@@ -143,6 +144,7 @@ public class Vps4Injector {
         modules.add(new VmMoveModule());
         modules.add(new PackageModule());
         modules.add(new IntentModule());
+        modules.add(new CrossDcProdMetaServiceModule());
         modules.add(binder -> {
             binder.bind(ObjectMapper.class).toProvider(ObjectMapperProvider.class);
         });

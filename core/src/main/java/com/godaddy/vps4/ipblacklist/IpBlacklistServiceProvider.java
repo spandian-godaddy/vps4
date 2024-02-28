@@ -1,10 +1,7 @@
 package com.godaddy.vps4.ipblacklist;
-
 import java.util.List;
-
 import javax.inject.Inject;
 import javax.ws.rs.client.ClientRequestFilter;
-
 import com.godaddy.vps4.client.HttpServiceProvider;
 import com.google.inject.Provider;
 
@@ -24,5 +21,4 @@ public class IpBlacklistServiceProvider<T> extends HttpServiceProvider<T> implem
         requestFilters.add(ipBlacklistRequestFilter);
         return requestFilters;
     }
-
 }

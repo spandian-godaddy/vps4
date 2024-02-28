@@ -14,6 +14,7 @@ import javax.ws.rs.core.MediaType;
 import com.godaddy.vps4.PATCH;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.prodMeta.ProdMetaService;
+import com.godaddy.vps4.prodMeta.ExternalDc.CrossDcProdMetaClientService;
 import com.godaddy.vps4.prodMeta.model.ProdMeta;
 import com.godaddy.vps4.vm.DataCenterService;
 import com.godaddy.vps4.web.Vps4Api;
@@ -34,17 +35,20 @@ public class CreditProdMetaResource {
     private final ProdMetaService prodMetaService;
     private final CreditService creditService;
     private final DataCenterService dataCenterService;
+    private final CrossDcProdMetaClientService crossDcProdMetaClientService;
 
     @Inject
-    public CreditProdMetaResource(ProdMetaService prodMetaService, CreditService creditService, DataCenterService dataCenterService) {
+    public CreditProdMetaResource(ProdMetaService prodMetaService, CreditService creditService, DataCenterService dataCenterService, 
+                                  CrossDcProdMetaClientService crossDcProdMetaClientService) {
         this.prodMetaService = prodMetaService;
         this.creditService = creditService;
         this.dataCenterService = dataCenterService;
+        this.crossDcProdMetaClientService = crossDcProdMetaClientService;
     }
 
     @GET
-    @Path("/{orionGuid}/prodMeta")
-    public ProdMeta getProdMeta(@PathParam("orionGuid") UUID entitlementId) {
+    @Path("/{entitlementId}/prodMeta")
+    public ProdMeta getProdMeta(@PathParam("entitlementId") UUID entitlementId) {
         ProdMeta prodMeta = prodMetaService.getProdMeta(entitlementId);
         if (prodMeta == null) {
             prodMeta = new ProdMeta(creditService.getProductMeta(entitlementId), dataCenterService);
@@ -54,15 +58,15 @@ public class CreditProdMetaResource {
     }
 
     @POST
-    @Path("/{orionGuid}/prodMeta")
-    public ProdMeta setProdMeta(@PathParam("orionGuid") UUID entitlementId) {
+    @Path("/{entitlementId}/prodMeta")
+    public ProdMeta setProdMeta(@PathParam("entitlementId") UUID entitlementId) {
         prodMetaService.insertProdMeta(entitlementId);
         return prodMetaService.getProdMeta(entitlementId);
     }
 
     @PATCH
-    @Path("/{orionGuid}/prodMeta")
-    public ProdMeta updateProdMeta(@PathParam("orionGuid") UUID entitlementId, ProdMeta prodMeta) {
+    @Path("/{entitlementId}/prodMeta")
+    public ProdMeta updateProdMeta(@PathParam("entitlementId") UUID entitlementId, ProdMeta prodMeta) {
         ProdMeta currentProdMeta = prodMetaService.getProdMeta(entitlementId);
         if (currentProdMeta == null) {
             setProdMeta(entitlementId);
@@ -72,8 +76,14 @@ public class CreditProdMetaResource {
     }
 
     @DELETE
-    @Path("/{orionGuid}/prodMeta")
-    public void deleteProdMeta(@PathParam("orionGuid") UUID entitlementId) {
+    @Path("/{entitlementId}/prodMeta")
+    public void deleteProdMeta(@PathParam("entitlementId") UUID entitlementId) {
         prodMetaService.deleteProdMeta(entitlementId);
+    }
+
+    @GET
+    @Path("/{entitlementId}/prodMeta/getCrossDc")
+    public ProdMeta getProdMetaCrossDc(@PathParam("entitlementId") UUID entitlementId) {
+        return crossDcProdMetaClientService.getProdMeta(entitlementId);
     }
 }

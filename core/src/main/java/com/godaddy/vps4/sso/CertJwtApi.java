@@ -5,5 +5,6 @@ public enum CertJwtApi {
     MESSAGING,
     ENTITLEMENTS,
     CDN,
+    VPS4,
     SHOPPER
 }
