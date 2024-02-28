@@ -76,7 +76,8 @@ public enum ActionType {
     MODIFY_CDN(67),
     CLEAR_CDN_CACHE(68),
     CREATE_CDN(69),
-    VALIDATE_CDN(70);
+    VALIDATE_CDN(70),
+    UPDATE_NYDUS(71);
 
     private final int typeId;
 

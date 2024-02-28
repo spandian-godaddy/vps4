@@ -27,7 +27,7 @@ import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VmUserService;
 
 import gdg.hfs.orchestration.CommandContext;
-import gdg.hfs.vhfs.sysadmin.SysAdminAction;
+import com.godaddy.hfs.sysadmin.SysAdminAction;
 
 public class Vps4RemoveSupportUserTest {
 

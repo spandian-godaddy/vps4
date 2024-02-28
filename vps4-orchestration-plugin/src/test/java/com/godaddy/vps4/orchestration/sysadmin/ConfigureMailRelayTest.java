@@ -16,9 +16,9 @@ import com.google.inject.Injector;
 
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.GuiceCommandProvider;
-import gdg.hfs.vhfs.sysadmin.SysAdminAction;
-import gdg.hfs.vhfs.sysadmin.SysAdminAction.Status;
-import gdg.hfs.vhfs.sysadmin.SysAdminService;
+import com.godaddy.hfs.sysadmin.SysAdminAction;
+import com.godaddy.hfs.sysadmin.SysAdminAction.Status;
+import com.godaddy.hfs.sysadmin.SysAdminService;
 
 public class ConfigureMailRelayTest {
 

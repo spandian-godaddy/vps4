@@ -14,8 +14,8 @@ import com.godaddy.vps4.vm.VmUserService;
 
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
-import gdg.hfs.vhfs.sysadmin.SysAdminAction;
-import gdg.hfs.vhfs.sysadmin.SysAdminService;
+import com.godaddy.hfs.sysadmin.SysAdminService;
+import com.godaddy.hfs.sysadmin.SysAdminAction;
 
 @CommandMetadata(
     name = "Vps4ToggleAdmin",

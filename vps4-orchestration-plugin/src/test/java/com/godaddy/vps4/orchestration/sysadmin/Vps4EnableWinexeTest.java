@@ -23,8 +23,8 @@ import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VirtualMachine;
 
 import gdg.hfs.orchestration.CommandContext;
-import gdg.hfs.vhfs.sysadmin.SysAdminAction;
-import gdg.hfs.vhfs.sysadmin.SysAdminService;
+import com.godaddy.hfs.sysadmin.SysAdminAction;
+import com.godaddy.hfs.sysadmin.SysAdminService;
 
 @RunWith(MockitoJUnitRunner.class)
 public class Vps4EnableWinexeTest {

@@ -24,9 +24,9 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 
 import gdg.hfs.orchestration.CommandContext;
-import gdg.hfs.vhfs.sysadmin.ChangePasswordRequestBody;
-import gdg.hfs.vhfs.sysadmin.SysAdminAction;
-import gdg.hfs.vhfs.sysadmin.SysAdminService;
+import com.godaddy.hfs.sysadmin.ChangePasswordRequestBody;
+import com.godaddy.hfs.sysadmin.SysAdminAction;
+import com.godaddy.hfs.sysadmin.SysAdminService;
 
 
 public class SetPasswordTest {

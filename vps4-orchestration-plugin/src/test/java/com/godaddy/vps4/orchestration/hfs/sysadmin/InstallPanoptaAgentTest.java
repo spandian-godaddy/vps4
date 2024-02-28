@@ -18,8 +18,8 @@ import org.mockito.Captor;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import gdg.hfs.orchestration.CommandContext;
-import gdg.hfs.vhfs.sysadmin.SysAdminAction;
-import gdg.hfs.vhfs.sysadmin.SysAdminService;
+import com.godaddy.hfs.sysadmin.SysAdminAction;
+import com.godaddy.hfs.sysadmin.SysAdminService;
 
 @RunWith(MockitoJUnitRunner.class)
 public class InstallPanoptaAgentTest {

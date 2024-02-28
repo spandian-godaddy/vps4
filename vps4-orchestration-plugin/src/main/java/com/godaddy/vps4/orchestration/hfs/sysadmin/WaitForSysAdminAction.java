@@ -10,8 +10,8 @@ import com.godaddy.vps4.orchestration.scheduler.Utils;
 
 import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
-import gdg.hfs.vhfs.sysadmin.SysAdminAction;
-import gdg.hfs.vhfs.sysadmin.SysAdminService;
+import com.godaddy.hfs.sysadmin.SysAdminAction;
+import com.godaddy.hfs.sysadmin.SysAdminService;
 
 public class WaitForSysAdminAction implements Command<SysAdminAction, SysAdminAction> {
 

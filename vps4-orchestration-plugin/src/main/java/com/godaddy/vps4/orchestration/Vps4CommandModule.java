@@ -35,6 +35,7 @@ import com.godaddy.vps4.orchestration.monitoring.Vps4NewVmOutage;
 import com.godaddy.vps4.orchestration.monitoring.SendVmOutageCreatedEmail;
 import com.godaddy.vps4.orchestration.monitoring.CreateJsdOutageTicket;
 import com.godaddy.vps4.orchestration.network.RemoveIpFromBlacklist;
+import com.godaddy.vps4.orchestration.nydus.UpgradeNydus;
 import com.godaddy.vps4.orchestration.panopta.AddAdditionalFqdnPanopta;
 import com.godaddy.vps4.orchestration.panopta.ApplyPanoptaTemplates;
 import com.godaddy.vps4.orchestration.panopta.PausePanoptaMonitoring;
@@ -194,5 +195,6 @@ public class Vps4CommandModule extends AbstractModule {
         bind(WaitForCdnCreationJob.class);
         bind(Vps4ValidateCdn.class);
         bind(WaitForCdnValidationStatusJob.class);
+        bind(UpgradeNydus.class);
     }
 }

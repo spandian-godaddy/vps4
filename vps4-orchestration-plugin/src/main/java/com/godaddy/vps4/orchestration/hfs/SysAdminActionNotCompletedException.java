@@ -1,6 +1,6 @@
 package com.godaddy.vps4.orchestration.hfs;
 
-import gdg.hfs.vhfs.sysadmin.SysAdminAction;
+import com.godaddy.hfs.sysadmin.SysAdminAction;
 
 public class SysAdminActionNotCompletedException extends RuntimeException {
 

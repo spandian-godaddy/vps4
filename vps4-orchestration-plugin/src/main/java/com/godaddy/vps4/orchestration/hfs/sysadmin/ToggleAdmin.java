@@ -9,8 +9,8 @@ import com.godaddy.vps4.orchestration.hfs.sysadmin.ToggleAdmin.Request;
 
 import gdg.hfs.orchestration.Command;
 import gdg.hfs.orchestration.CommandContext;
-import gdg.hfs.vhfs.sysadmin.SysAdminAction;
-import gdg.hfs.vhfs.sysadmin.SysAdminService;
+import com.godaddy.hfs.sysadmin.SysAdminService;
+import com.godaddy.hfs.sysadmin.SysAdminAction;
 
 public class ToggleAdmin implements Command<Request, Void> {
 

@@ -6,6 +6,7 @@ import com.godaddy.hfs.cpanel.CPanelService;
 import com.godaddy.hfs.dns.HfsDnsService;
 import com.godaddy.hfs.mailrelay.MailRelayService;
 import com.godaddy.hfs.plesk.PleskService;
+import com.godaddy.hfs.sysadmin.SysAdminService;
 import com.godaddy.hfs.vm.VmService;
 import com.godaddy.vps4.sso.CertJwtApi;
 import com.google.inject.AbstractModule;
@@ -14,7 +15,6 @@ import com.google.inject.Singleton;
 import gdg.hfs.vhfs.ecomm.ECommService;
 import gdg.hfs.vhfs.network.NetworkServiceV2;
 import gdg.hfs.vhfs.snapshot.SnapshotService;
-import gdg.hfs.vhfs.sysadmin.SysAdminService;
 
 public class HfsClientModule extends AbstractModule {
     @Override

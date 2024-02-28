@@ -36,6 +36,7 @@ import com.godaddy.vps4.orchestration.hfs.vm.StartVm;
 import com.godaddy.vps4.orchestration.hfs.vm.StopVm;
 import com.godaddy.vps4.orchestration.hfs.vm.ResizeOHVm;
 import com.godaddy.vps4.orchestration.hfs.vm.WaitForVmAction;
+import com.godaddy.vps4.orchestration.nydus.UpgradeNydus;
 import com.godaddy.vps4.orchestration.snapshot.WaitForSnapshotAction;
 import com.godaddy.vps4.orchestration.sysadmin.ConfigureMailRelay;
 import com.godaddy.vps4.orchestration.vm.WaitForAndRecordVmAction;
@@ -78,6 +79,7 @@ public class HfsCommandModule extends AbstractModule {
         bind(ConfigureMailRelay.class);
         bind(AddUser.class);
         bind(RemoveUser.class);
+        bind(UpgradeNydus.class);
 
         // CPanel
         bind(ConfigureCpanel.class);

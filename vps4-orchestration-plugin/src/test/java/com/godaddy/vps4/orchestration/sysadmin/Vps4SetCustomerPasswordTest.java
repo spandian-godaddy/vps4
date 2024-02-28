@@ -27,10 +27,10 @@ import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.Image.ControlPanel;
 
 import gdg.hfs.orchestration.CommandContext;
-import gdg.hfs.vhfs.sysadmin.ChangePasswordRequestBody;
-import gdg.hfs.vhfs.sysadmin.SysAdminAction;
-import gdg.hfs.vhfs.sysadmin.SysAdminAction.Status;
-import gdg.hfs.vhfs.sysadmin.SysAdminService;
+import com.godaddy.hfs.sysadmin.ChangePasswordRequestBody;
+import com.godaddy.hfs.sysadmin.SysAdminAction;
+import com.godaddy.hfs.sysadmin.SysAdminAction.Status;
+import com.godaddy.hfs.sysadmin.SysAdminService;
 
 
 public class Vps4SetCustomerPasswordTest {

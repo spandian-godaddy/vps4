@@ -1,15 +1,13 @@
 package com.godaddy.vps4.orchestration.sysadmin;
 
-import com.godaddy.vps4.orchestration.hfs.plesk.UpdateAdminPassword;
 import com.godaddy.vps4.orchestration.hfs.sysadmin.SetPassword;
 import com.godaddy.vps4.util.Cryptography;
 import com.godaddy.vps4.vm.ActionService;
-import com.godaddy.vps4.vm.Image.ControlPanel;
 import gdg.hfs.orchestration.CommandContext;
-import gdg.hfs.vhfs.sysadmin.ChangePasswordRequestBody;
-import gdg.hfs.vhfs.sysadmin.SysAdminAction;
-import gdg.hfs.vhfs.sysadmin.SysAdminAction.Status;
-import gdg.hfs.vhfs.sysadmin.SysAdminService;
+import com.godaddy.hfs.sysadmin.ChangePasswordRequestBody;
+import com.godaddy.hfs.sysadmin.SysAdminAction;
+import com.godaddy.hfs.sysadmin.SysAdminAction.Status;
+import com.godaddy.hfs.sysadmin.SysAdminService;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -19,12 +17,9 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import java.util.Arrays;
-import java.util.UUID;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
