@@ -2,6 +2,7 @@ package com.godaddy.vps4.orchestration.hfs.plesk;
 
 import javax.inject.Inject;
 
+import com.godaddy.hfs.plesk.PleskAdminPassRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,9 +30,8 @@ public class UpdateAdminPassword implements Command<UpdateAdminPassword.Request,
         logger.info("sending HFS request to update Plesk admin password for vmId {}", request.vmId);
 
         String password = cryptography.decrypt(request.encryptedPassword);
-        PleskAction hfsAction = context.execute("adminPassUpdateHFS", ctx -> {
-            return pleskService.adminPassUpdate(request.vmId, password);
-        }, PleskAction.class);
+        PleskAction hfsAction = context.execute("adminPassUpdateHFS",
+                ctx -> pleskService.adminPassUpdate(new PleskAdminPassRequest(request.vmId, password)), PleskAction.class);
 
         context.execute(WaitForPleskAction.class, hfsAction);
 

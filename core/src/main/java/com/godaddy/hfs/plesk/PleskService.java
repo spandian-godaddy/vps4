@@ -20,10 +20,7 @@ public interface PleskService {
 
     @POST
     @Path("/imageConfig")
-    PleskAction imageConfig(@QueryParam("serverId") long var1,
-                            @QueryParam("pleskUser") String var3,
-                            @QueryParam("pleskPass") String var4,
-                            @QueryParam("pleskLicenseType") String var5);
+    PleskAction imageConfig(PleskImageConfigRequest request);
 
     @POST
     @Path("/licenseRelease")
@@ -39,7 +36,7 @@ public interface PleskService {
 
     @POST
     @Path("/adminPassUpdate")
-    PleskAction adminPassUpdate(@QueryParam("serverId") long serverId, @QueryParam("pleskAdminPass") String pleskAdminPass);
+    PleskAction adminPassUpdate(PleskAdminPassRequest request);
 
     @POST
     @Path("/access")

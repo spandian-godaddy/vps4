@@ -3,6 +3,7 @@ package com.godaddy.vps4.orchestration.hfs.plesk;
 import javax.inject.Inject;
 
 import com.godaddy.hfs.plesk.PleskAction;
+import com.godaddy.hfs.plesk.PleskImageConfigRequest;
 import com.godaddy.hfs.plesk.PleskService;
 import com.godaddy.vps4.vm.PleskLicenseType;
 import org.slf4j.Logger;
@@ -33,12 +34,10 @@ public class ConfigurePlesk implements Command<ConfigurePlesk.ConfigurePleskRequ
 
         String password = cryptography.decrypt(request.encryptedPassword);
 
-        PleskAction hfsAction = context.execute("RequestFromHFS", ctx -> {
-            return pleskService.imageConfig(request.vmId,
+        PleskAction hfsAction = context.execute("RequestFromHFS", ctx -> pleskService.imageConfig(new PleskImageConfigRequest(request.vmId,
                                             request.username,
                                             password,
-                                            getHfsPleskLicenseTypeString(request.licenseType));
-        }, PleskAction.class);
+                                            getHfsPleskLicenseTypeString(request.licenseType))), PleskAction.class);
 
         context.execute(WaitForPleskAction.class, hfsAction);
 

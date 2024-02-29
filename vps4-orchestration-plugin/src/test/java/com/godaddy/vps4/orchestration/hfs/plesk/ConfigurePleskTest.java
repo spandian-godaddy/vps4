@@ -1,5 +1,6 @@
 package com.godaddy.vps4.orchestration.hfs.plesk;
 
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -9,6 +10,7 @@ import static org.mockito.Mockito.when;
 
 import com.godaddy.hfs.plesk.PleskAction;
 import com.godaddy.hfs.plesk.PleskAction.Status;
+import com.godaddy.hfs.plesk.PleskImageConfigRequest;
 import com.godaddy.hfs.plesk.PleskService;
 import com.godaddy.vps4.vm.PleskLicenseType;
 import org.junit.After;
@@ -23,7 +25,12 @@ import com.google.inject.Injector;
 
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.GuiceCommandProvider;
+import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.runners.MockitoJUnitRunner;
 
+@RunWith(MockitoJUnitRunner.class)
 public class ConfigurePleskTest {
 
     PleskService pleskService;
@@ -31,6 +38,9 @@ public class ConfigurePleskTest {
     CommandContext context;
     Cryptography cryptography;
     Injector injector;
+
+    @Captor
+    private ArgumentCaptor<PleskImageConfigRequest> pleskImageConfigCaptor;
 
     @Before
     public void setup() throws Exception {
@@ -66,12 +76,18 @@ public class ConfigurePleskTest {
         pleskAction.actionId = 555;
         pleskAction.status = Status.COMPLETE;
 
-        when(pleskService.imageConfig(request.vmId, request.username, password, "web_host")).thenReturn(pleskAction);
+        when(pleskService.imageConfig(any())).thenReturn(pleskAction);
         when(pleskService.getAction(pleskAction.actionId)).thenReturn(pleskAction);
 
         command.execute(context, request);
 
-        verify(pleskService, times(1)).imageConfig(request.vmId, request.username, password, "web_host");
+        verify(pleskService, times(1)).imageConfig(pleskImageConfigCaptor.capture());
+
+        PleskImageConfigRequest req = pleskImageConfigCaptor.getValue();
+        assertEquals(request.vmId, req.serverId);
+        assertEquals(request.username, req.pleskUser);
+        assertEquals(password, req.pleskPass);
+        assertEquals("web_host", req.pleskLicenseType);
     }
 
     @Test
@@ -84,12 +100,18 @@ public class ConfigurePleskTest {
         pleskAction.actionId = 555;
         pleskAction.status = Status.COMPLETE;
 
-        when(pleskService.imageConfig(request.vmId, request.username, password, "web_host")).thenReturn(pleskAction);
+        when(pleskService.imageConfig(any())).thenReturn(pleskAction);
         when(pleskService.getAction(pleskAction.actionId)).thenReturn(pleskAction);
 
         command.execute(context, request);
 
-        verify(pleskService, times(1)).imageConfig(request.vmId, request.username, password, "web_host");
+        verify(pleskService, times(1)).imageConfig(pleskImageConfigCaptor.capture());
+
+        PleskImageConfigRequest req = pleskImageConfigCaptor.getValue();
+        assertEquals(request.vmId, req.serverId);
+        assertEquals(request.username, req.pleskUser);
+        assertEquals(password, req.pleskPass);
+        assertEquals("web_host", req.pleskLicenseType);
     }
 
     @Test
@@ -102,12 +124,19 @@ public class ConfigurePleskTest {
         pleskAction.actionId = 555;
         pleskAction.status = Status.COMPLETE;
 
-        when(pleskService.imageConfig(request.vmId, request.username, password, "web_pro")).thenReturn(pleskAction);
+        when(pleskService.imageConfig(any())).thenReturn(pleskAction);
         when(pleskService.getAction(pleskAction.actionId)).thenReturn(pleskAction);
 
         command.execute(context, request);
 
-        verify(pleskService, times(1)).imageConfig(request.vmId, request.username, password, "web_pro");
+        verify(pleskService, times(1)).imageConfig(pleskImageConfigCaptor.capture());
+
+        PleskImageConfigRequest req = pleskImageConfigCaptor.getValue();
+        assertEquals(request.vmId, req.serverId);
+        assertEquals(request.username, req.pleskUser);
+        assertEquals(password, req.pleskPass);
+        assertEquals("web_pro", req.pleskLicenseType);
+
     }
 
     @Test(expected = RuntimeException.class)
@@ -115,7 +144,7 @@ public class ConfigurePleskTest {
         ConfigurePleskRequest request = new ConfigurePleskRequest(777L, "fake-user", "super-secret-password".getBytes(), PleskLicenseType.PLESK);
 
         // if HFS throws an exception on pleskService, the command should fail
-        when(pleskService.imageConfig(request.vmId, request.username, anyString(), "web_host")).thenThrow(new RuntimeException("Faked an HFS failure"));
+        when(pleskService.imageConfig(any())).thenThrow(new RuntimeException("Faked an HFS failure"));
 
         command.execute(context, request);
     }
