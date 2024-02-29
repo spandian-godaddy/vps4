@@ -98,7 +98,7 @@ public class Vps4WinexeClient extends Vps4RemoteAccessClient {
 
     @Override
     public boolean hasPanoptaAgent() {
-        return testWithRetries("tasklist /FI \"SERVICES eq PanoptaAgent\" /FO CSV",
+        return testWithRetries("tasklist /FI \"SERVICES eq FortiMonitorAgent\" /FO CSV",
                                (result) -> result.contains("Aggregator.Agent.exe"));
     }
 
