@@ -239,23 +239,48 @@ public class SendVmOutageResolvedEmailTest {
     public void doesNotSendEmailIfHTTPSDomainMetricIsDisabled() {
         setupEnabledAlerts(VmMetric.HTTPS_DOMAIN);
 
-        request.vmOutage.metrics = Sets.newHashSet(VmMetric.HTTPS_DOMAIN);
+        request.vmOutage.metrics = Sets.newHashSet(VmMetric.HTTPS_DOMAIN, VmMetric.HTTP_DOMAIN);
+        request.vmOutage.domainMonitoringMetadata =
+                Arrays.asList(new VmOutage.DomainMonitoringMetadata(
+                        "domainfake.here",
+                        Collections.singletonList("Unable to resolve host name domainfake.here"),
+                        VmMetric.HTTP_DOMAIN
+                ), new VmOutage.DomainMonitoringMetadata(
+                        "domainfake2.here",
+                        Collections.singletonList("Unable to resolve host name domainfake2.here"),
+                        VmMetric.HTTPS_DOMAIN));
+
         command.execute(context, request);
 
         verify(context, never())
-                .execute(eq("SendVmOutageResolvedEmail-HTTPS"), any(Function.class),
+                .execute(eq("SendVmOutageResolvedEmail-HTTPS_DOMAIN"), any(Function.class),
+                        eq(String.class));
+        verify(context, never())
+                .execute(eq("SendVmOutageResolvedEmail-HTTP_DOMAIN"), any(Function.class),
                         eq(String.class));
     }
 
     @Test
-    public void doesNotSendEmailIfHTTPDomainMetricIsDisabled() {
+    public void sendsEmailIfHTTPSDomainMetricIsNotDisabled() {
         setupEnabledAlerts(VmMetric.HTTP_DOMAIN);
 
-        request.vmOutage.metrics = Sets.newHashSet(VmMetric.HTTP_DOMAIN);
+        request.vmOutage.metrics = Sets.newHashSet(VmMetric.HTTPS_DOMAIN, VmMetric.HTTP_DOMAIN);
+        request.vmOutage.domainMonitoringMetadata =
+                Arrays.asList(new VmOutage.DomainMonitoringMetadata(
+                        "domainfake.here",
+                        Collections.singletonList("Unable to resolve host name domainfake.here"),
+                        VmMetric.HTTP_DOMAIN
+                ), new VmOutage.DomainMonitoringMetadata(
+                        "domainfake2.here",
+                        Collections.singletonList("Unable to resolve host name domainfake2.here"),
+                        VmMetric.HTTPS_DOMAIN));
         command.execute(context, request);
 
-        verify(context, never())
-                .execute(eq("SendVmOutageResolvedEmail-HTTP"), any(Function.class),
+        verify(context, times(1))
+                .execute(eq("SendVmOutageResolvedEmail-HTTPS_DOMAIN"), any(Function.class),
+                        eq(String.class));
+        verify(context, times(1))
+                .execute(eq("SendVmOutageResolvedEmail-HTTP_DOMAIN"), any(Function.class),
                         eq(String.class));
     }
 

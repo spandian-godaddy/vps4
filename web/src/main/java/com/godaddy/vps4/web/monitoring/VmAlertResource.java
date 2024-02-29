@@ -54,6 +54,9 @@ public class VmAlertResource {
         VirtualMachineCredit virtualMachineCredit = creditService.getVirtualMachineCredit(vm.orionGuid);
         List<VmMetricAlert> list = vmAlertService.getVmMetricAlertList(vmId);
 
+        // consolidate HTTP_DOMAIN and HTTPS_DOMAIN into one HTTPS_DOMAIN check
+        list = list.stream().filter(m -> m.metric != VmMetric.HTTP_DOMAIN).collect(Collectors.toList());
+
         if (vm.image.operatingSystem == Image.OperatingSystem.WINDOWS) {
             list = list.stream().filter(m -> m.metric != VmMetric.SSH).collect(Collectors.toList());
         }

@@ -45,13 +45,13 @@ public class SendVmOutageEmail implements Command<VmOutageEmailRequest, Void> {
     public Void execute(CommandContext context, VmOutageEmailRequest req) {
         Set<VmMetric> enabledMetrics = getEnabledMetrics(req.vmId);
         req.vmOutage.metrics.retainAll(enabledMetrics);
-        List<VmOutage.DomainMonitoringMetadata> filteredDomainMonitoringMetadata = req.vmOutage.domainMonitoringMetadata
-                        .stream()
-                        .filter(d -> enabledMetrics.contains(d.metric))
-                        .collect(Collectors.toList());
         executeForMetrics(context, req);
-        for (VmOutage.DomainMonitoringMetadata domainMetric : filteredDomainMonitoringMetadata) {
-            executeForHttpAndHttps(context, req, domainMetric);
+
+        // consolidate HTTP_DOMAIN and HTTPS_DOMAIN into one HTTPS_DOMAIN check
+        if (enabledMetrics.contains(VmMetric.HTTPS_DOMAIN)) {
+            for (VmOutage.DomainMonitoringMetadata domainMetric : req.vmOutage.domainMonitoringMetadata) {
+                executeForHttpAndHttps(context, req, domainMetric);
+            }
         }
         return null;
     }

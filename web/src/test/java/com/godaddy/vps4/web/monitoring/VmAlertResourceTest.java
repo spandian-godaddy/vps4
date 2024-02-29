@@ -105,7 +105,7 @@ public class VmAlertResourceTest {
     }
 
     @Test
-    public void getAlertListWithAdditionalFQDNs() { // Prevent returning HTTP(S)_DOMAINs checks from additional domains
+    public void getAlertListWithAdditionalFQDNs() { // Prevent returning HTTP_DOMAINs checks from additional domains
         setupTestVm(testVm, Image.OperatingSystem.LINUX);
 
         VirtualMachineCredit testSelfManagedCredit = setupTestCredit("0");
@@ -117,10 +117,9 @@ public class VmAlertResourceTest {
 
         List<VmMetricAlert> returnedList = resource.getMetricAlertList(vmId);
 
-        assertEquals(3, returnedList.size());
+        assertEquals(2, returnedList.size());
         assertEquals(VmMetric.FTP, returnedList.get(0).metric);
         assertEquals(VmMetric.HTTPS_DOMAIN, returnedList.get(1).metric);
-        assertEquals(VmMetric.HTTP_DOMAIN, returnedList.get(2).metric);
     }
 
     @Test
