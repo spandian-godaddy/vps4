@@ -1,5 +1,7 @@
 package com.godaddy.vps4.entitlement.models;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+
 public class Product {
     public String uri;
     public String productFamily;
