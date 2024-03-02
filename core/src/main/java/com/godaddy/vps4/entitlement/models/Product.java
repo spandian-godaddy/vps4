@@ -19,7 +19,7 @@ public class Product {
     public String operatingSystem;
     public String plan;
     public String mssql;
-    public Integer cdnWaf;
+    @JsonAlias({"cdnwaf"}) public Integer cdnWaf;
     public Product() {
     }
 }
