@@ -42,6 +42,7 @@ public class SsoRequestAuthenticator implements RequestAuthenticator<GDUser> {
     private final String DEV_VERTIGO = "Dev-Vertigo";
     private final String VPS4_API_READONLY = "VPS4-API-ReadOnly";
     private final String C3_SUCURI_SUPPORT = "C3-Sucuri-Support";
+    private final String VZ_CLOUD = "VZ-CLOUD";
 
     private final SsoTokenExtractor tokenExtractor;
     private Config config;
@@ -150,7 +151,8 @@ public class SsoRequestAuthenticator implements RequestAuthenticator<GDUser> {
             userRoles.add(Role.HS_AGENT);
         } if (groups.contains(CSR)) {
             userRoles.add(Role.C3_OTHER);
-        } if (groups.contains(MIGRATION_TOOL)) {
+        } if (groups.contains(MIGRATION_TOOL) ||
+                groups.contains(VZ_CLOUD)) {
             userRoles.add(Role.IMPORT);
         } if (groups.contains(VPS4_API_READONLY)) {
             userRoles.add(Role.VPS4_API_READONLY);

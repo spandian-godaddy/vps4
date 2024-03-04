@@ -328,6 +328,19 @@ public class SsoRequestAuthenticatorTest {
     }
 
     @Test
+    public void testVzCloudRole() {
+        SsoToken token = mockJomaxToken(Collections.singletonList("VZ-CLOUD"));
+        when(tokenExtractor.extractToken(request)).thenReturn(token);
+
+        GDUser user = authenticator.authenticate(request);
+        Assert.assertEquals(null, user.getShopperId());
+        Assert.assertEquals(false, user.isShopper());
+        Assert.assertEquals(false, user.isAdmin());
+        Assert.assertEquals(true, user.isEmployee());
+        Assert.assertEquals(Arrays.asList(Role.IMPORT), user.roles());
+    }
+
+    @Test
     public void testVertigoMigrations() {
         SsoToken token = mockJomaxToken(Collections.singletonList("Dev-Vertigo"));
         when(tokenExtractor.extractToken(request)).thenReturn(token);
