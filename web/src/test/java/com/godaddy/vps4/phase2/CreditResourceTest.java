@@ -41,9 +41,7 @@ public class CreditResourceTest {
 
     private GDUser user;
     private UUID orionGuid = UUID.randomUUID();
-    private UUID customerId = UUID.randomUUID();
     private VirtualMachineCredit vmCredit;
-    private VirtualMachineCredit vpsCredit;
     private CreditService creditService = mock(CreditService.class);
     private VmMailRelayResource vmMailRelayResource = mock(VmMailRelayResource.class);
     private VirtualMachineService vmService = mock(VirtualMachineService.class);
@@ -61,22 +59,11 @@ public class CreditResourceTest {
                 .build();
     }
 
-    private VirtualMachineCredit createVpsCredit(AccountStatus accountStatus) {
-        return new VirtualMachineCredit.EntitlementBuilder()
-                .withEntitlementId(orionGuid)
-                .withCustomerID(customerId)
-                .withAccountStatus(accountStatus.toString())
-                .withShopperID(user.getShopperId())
-                .build();
-    }
-
     @Before
     public void setupTest() {
         user = GDUserMock.createShopper();
         vmCredit = createVmCredit(AccountStatus.ACTIVE);
         when(creditService.getVirtualMachineCredit(orionGuid)).thenReturn(vmCredit);
-        vpsCredit = createVpsCredit(AccountStatus.ACTIVE);
-        when(creditService.getVpsCredit(customerId, orionGuid)).thenReturn(vpsCredit);
         when(creditService.getVirtualMachineCredits("validUserShopperId", false)).thenReturn(Collections.singletonList(vmCredit));
     }
 
@@ -84,13 +71,6 @@ public class CreditResourceTest {
     public void testShopperGetCredit() {
         Vps4Credit credit = getCreditResource().getCredit(orionGuid);
         Assert.assertEquals(orionGuid, credit.orionGuid);
-    }
-
-    @Test
-    public void testShopperGetVpsCredit() {
-        Vps4Credit credit = getCreditResource().getVpsCredit(customerId, orionGuid);
-        Assert.assertEquals(orionGuid, credit.orionGuid);
-        Assert.assertEquals(customerId, credit.customerId);
     }
 
     @Test
@@ -102,26 +82,10 @@ public class CreditResourceTest {
     }
 
     @Test
-    public void testEmployeeGetVpsCredit() {
-        user = GDUserMock.createEmployee();
-        Vps4Credit credit = getCreditResource().getVpsCredit(customerId, orionGuid);
-        Assert.assertEquals(orionGuid, credit.orionGuid);
-        Assert.assertEquals(customerId, credit.customerId);
-    }
-
-    @Test
     public void testAdminGetCredit() {
         user = GDUserMock.createAdmin();
         Vps4Credit credit = getCreditResource().getCredit(orionGuid);
         Assert.assertEquals(orionGuid, credit.orionGuid);
-    }
-
-    @Test
-    public void testAdminGetVpsCredit() {
-        user = GDUserMock.createAdmin();
-        Vps4Credit credit = getCreditResource().getVpsCredit(customerId, orionGuid);
-        Assert.assertEquals(orionGuid, credit.orionGuid);
-        Assert.assertEquals(customerId, credit.customerId);
     }
 
     @Test(expected=NotFoundException.class)
