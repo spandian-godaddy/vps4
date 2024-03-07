@@ -5,5 +5,6 @@ import com.godaddy.vps4.shopper.model.Shopper;
 import java.net.UnknownHostException;
 
 public interface ShopperService {
-     Shopper getCustomer(String customerId) throws UnknownHostException;
+     Shopper getShopperByCustomerId(String customerId) throws UnknownHostException;
+     Shopper getShopper(String shopperId) throws UnknownHostException;
 }

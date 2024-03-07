@@ -16,7 +16,12 @@ public class DefaultShopperService implements ShopperService {
     }
 
     @Override
-    public Shopper getCustomer(String customerId) throws UnknownHostException {
-        return shopperApiService.getCustomer(customerId, InetAddress.getLocalHost().getHostAddress());
+    public Shopper getShopperByCustomerId(String customerId) throws UnknownHostException {
+        return shopperApiService.getShopperByCustomerId(customerId, InetAddress.getLocalHost().getHostAddress());
+    }
+
+    @Override
+    public Shopper getShopper(String shopperId) throws UnknownHostException {
+        return shopperApiService.getShopper(shopperId, InetAddress.getLocalHost().getHostAddress());
     }
 }

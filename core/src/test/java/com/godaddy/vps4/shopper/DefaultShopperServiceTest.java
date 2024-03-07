@@ -24,23 +24,27 @@ public class DefaultShopperServiceTest {
     private ShopperService service;
     UUID godaddyCustomerId = UUID.randomUUID();
     UUID brandCustomerId = UUID.randomUUID();
+    String gdShopperId = "912348";
+    String brandShopperId = "123456";
 
-    Shopper godaddyShopper = new Shopper(godaddyCustomerId, "fakeShopperId", null, "1");
-    Shopper brandResellerShopper = new Shopper(brandCustomerId, "fakeShopperId", "123456", "232323");
+    Shopper godaddyShopper = new Shopper(godaddyCustomerId, gdShopperId, null, "1");
+    Shopper brandResellerShopper = new Shopper(brandCustomerId, brandShopperId, "123456", "232323");
 
 
     @Before
     public void setupTest() {
         service = new DefaultShopperService(shopperApiService);
 
-        when(shopperApiService.getCustomer(eq(godaddyCustomerId.toString()),anyString())).thenReturn(godaddyShopper);
-        when(shopperApiService.getCustomer(eq(brandCustomerId.toString()),anyString())).thenReturn(brandResellerShopper);
+        when(shopperApiService.getShopperByCustomerId(eq(godaddyCustomerId.toString()),anyString())).thenReturn(godaddyShopper);
+        when(shopperApiService.getShopperByCustomerId(eq(brandCustomerId.toString()),anyString())).thenReturn(brandResellerShopper);
+        when(shopperApiService.getShopper(eq(godaddyShopper.getShopperId()),anyString())).thenReturn(godaddyShopper);
+        when(shopperApiService.getShopper(eq(brandResellerShopper.getShopperId()),anyString())).thenReturn(brandResellerShopper);
     }
 
     @Test
-    public void testGetGoDaddyShopper() throws UnknownHostException {
-        Shopper response = service.getCustomer(godaddyCustomerId.toString());
-        verify(shopperApiService, times(1)).getCustomer(eq(godaddyCustomerId.toString()), anyString());
+    public void testGetGoDaddyShopperByCustomerId() throws UnknownHostException {
+        Shopper response = service.getShopperByCustomerId(godaddyCustomerId.toString());
+        verify(shopperApiService, times(1)).getShopperByCustomerId(eq(godaddyCustomerId.toString()), anyString());
 
         assertEquals(godaddyCustomerId, response.getCustomerId());
         assertEquals(godaddyShopper.getShopperId(), response.getShopperId());
@@ -49,12 +53,34 @@ public class DefaultShopperServiceTest {
     }
 
     @Test
-    public void testGetBrandShopper() throws UnknownHostException {
-        Shopper response = service.getCustomer(brandCustomerId.toString());
-        verify(shopperApiService, times(1)).getCustomer(eq(brandCustomerId.toString()), anyString());
+    public void testGetGoDaddyShopper() throws UnknownHostException {
+        Shopper response = service.getShopper(gdShopperId);
+        verify(shopperApiService, times(1)).getShopper(eq(gdShopperId), anyString());
+
+        assertEquals(godaddyCustomerId, response.getCustomerId());
+        assertEquals(gdShopperId, response.getShopperId());
+        assertNull(response.getParentShopperId());
+        assertEquals(godaddyShopper.getPrivateLabelId(), response.getPrivateLabelId());
+    }
+
+    @Test
+    public void testGetBrandShopperByCustomerId() throws UnknownHostException {
+        Shopper response = service.getShopperByCustomerId(brandCustomerId.toString());
+        verify(shopperApiService, times(1)).getShopperByCustomerId(eq(brandCustomerId.toString()), anyString());
 
         assertEquals(brandCustomerId, response.getCustomerId());
         assertEquals(brandResellerShopper.getShopperId(), response.getShopperId());
+        assertEquals(brandResellerShopper.getParentShopperId(), response.getParentShopperId());
+        assertEquals(brandResellerShopper.getPrivateLabelId(), response.getPrivateLabelId());
+    }
+
+    @Test
+    public void testGetBrandShopper() throws UnknownHostException {
+        Shopper response = service.getShopper(brandShopperId);
+        verify(shopperApiService, times(1)).getShopper(eq(brandShopperId), anyString());
+
+        assertEquals(brandCustomerId, response.getCustomerId());
+        assertEquals(brandShopperId, response.getShopperId());
         assertEquals(brandResellerShopper.getParentShopperId(), response.getParentShopperId());
         assertEquals(brandResellerShopper.getPrivateLabelId(), response.getPrivateLabelId());
     }

@@ -10,11 +10,15 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 
-@Path("/v1/customers")
+@Path("/v1")
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 public interface ShopperApiService {
     @GET
-    @Path("/{customerId}/shopper")
-    Shopper getCustomer(@PathParam("customerId") String customerId, @QueryParam("auditClientIp") String auditClientIp);
+    @Path("/customers/{customerId}/shopper")
+    Shopper getShopperByCustomerId(@PathParam("customerId") String customerId, @QueryParam("auditClientIp") String auditClientIp);
+
+    @GET
+    @Path("/shoppers/{shopperId}")
+    Shopper getShopper(@PathParam("shopperId") String shopperId, @QueryParam("auditClientIp") String auditClientIp);
 }
