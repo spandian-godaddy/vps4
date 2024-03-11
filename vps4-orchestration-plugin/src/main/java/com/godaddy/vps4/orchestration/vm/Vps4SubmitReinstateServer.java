@@ -3,6 +3,7 @@ package com.godaddy.vps4.orchestration.vm;
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.ECommCreditService;
 import com.godaddy.vps4.orchestration.ActionCommand;
+import com.godaddy.vps4.shopperNotes.ShopperNotesService;
 import com.godaddy.vps4.vm.ActionService;
 import gdg.hfs.orchestration.CommandContext;
 import gdg.hfs.orchestration.CommandMetadata;
@@ -23,13 +24,24 @@ public class Vps4SubmitReinstateServer extends ActionCommand<Vps4SubmitReinstate
 
     final ActionService actionService;
     final CreditService creditService;
+    final ShopperNotesService shopperNotesService;
     private final Logger logger = LoggerFactory.getLogger(Vps4SubmitReinstateServer.class);
 
     @Inject
-    public Vps4SubmitReinstateServer(ActionService actionService, CreditService creditService) {
+    public Vps4SubmitReinstateServer(ActionService actionService, CreditService creditService, ShopperNotesService shopperNotesService) {
         super(actionService);
         this.actionService = actionService;
         this.creditService = creditService;
+        this.shopperNotesService = shopperNotesService;
+    }
+
+    private void writeShopperNote(Vps4SubmitReinstateServer.Request request) {
+        try {
+            String shopperNote = String.format("Server was reinstated by %s with reason %s. VM ID: %s. Credit ID: %s.",
+                    request.gdUsername, request.reason, request.virtualMachine.vmId,
+                    request.virtualMachine.orionGuid);
+            shopperNotesService.processShopperMessage(request.virtualMachine.vmId, shopperNote);
+        } catch (Exception ignored) {}
     }
 
     @Override
@@ -42,10 +54,12 @@ public class Vps4SubmitReinstateServer extends ActionCommand<Vps4SubmitReinstate
         } else  {
             creditService.submitReinstate(request.virtualMachine.orionGuid, request.reason);
         }
+        writeShopperNote(request);
         return null;
     }
 
     public static class Request extends VmActionRequest {
         public ECommCreditService.SuspensionReason reason;
+        public String gdUsername;
     }
 }

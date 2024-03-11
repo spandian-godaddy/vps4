@@ -2,6 +2,7 @@ package com.godaddy.vps4.orchestration.vm;
 
 import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.ECommCreditService;
+import com.godaddy.vps4.shopperNotes.ShopperNotesService;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.VirtualMachine;
 import gdg.hfs.orchestration.CommandContext;
@@ -15,10 +16,11 @@ import static org.mockito.Mockito.*;
 public class Vps4SubmitReinstateServerTest {
     ActionService actionService = mock(ActionService.class);
     CreditService creditService = mock(CreditService.class);
+    ShopperNotesService shopperNotesService = mock(ShopperNotesService.class);
     CommandContext context = mock(CommandContext.class);
     VirtualMachine vm;
 
-    Vps4SubmitReinstateServer command = new Vps4SubmitReinstateServer(actionService, creditService);
+    Vps4SubmitReinstateServer command = new Vps4SubmitReinstateServer(actionService, creditService, shopperNotesService);
 
     @Before
     public void setup() {
@@ -38,6 +40,21 @@ public class Vps4SubmitReinstateServerTest {
                 ECommCreditService.SuspensionReason.LEGAL);
     }
 
+    @Test
+    public void testSubmitSuspendSendsShopperNote() throws Exception {
+        Vps4SubmitReinstateServer.Request request = new Vps4SubmitReinstateServer.Request();
+        request.virtualMachine = vm;
+        request.reason = ECommCreditService.SuspensionReason.LEGAL;
+        request.gdUsername = "gdUser";
+
+        String shopperNote = String.format("Server was reinstated by %s with reason %s. VM ID: %s. Credit ID: %s.",
+                request.gdUsername, request.reason, request.virtualMachine.vmId,
+                request.virtualMachine.orionGuid);
+
+        command.executeWithAction(context, request);
+        verify(shopperNotesService, times(1)).processShopperMessage(vm.vmId,
+                shopperNote);
+    }
 
     @Test
     public void testSubmitSuspendForBothPolicyAndLegal() throws Exception {

@@ -19,6 +19,7 @@ import com.godaddy.vps4.credit.CreditService;
 import com.godaddy.vps4.credit.ECommCreditService;
 import com.godaddy.vps4.credit.VirtualMachineCredit;
 import com.godaddy.vps4.orchestration.vm.VmActionRequest;
+import com.godaddy.vps4.orchestration.vm.Vps4SubmitReinstateServer;
 import com.godaddy.vps4.orchestration.vm.Vps4SubmitSuspendServer;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
@@ -101,6 +102,7 @@ public class VmSuspendReinstateResource {
         VirtualMachine vm = virtualMachineService.getVirtualMachine(vmId);
         validateVmExists(vmId, vm, user);
         request.virtualMachine = vm;
+        request.gdUsername = user.getUsername();
         getAndValidateCredit(vm);
 
         return createActionAndExecute(actionService, commandService, vm.vmId, ActionType.SUBMIT_SUSPEND, request,
@@ -116,12 +118,13 @@ public class VmSuspendReinstateResource {
     @RequiresRole(roles = {GDUser.Role.ADMIN, GDUser.Role.HS_LEAD, GDUser.Role.SUSPEND_AUTH})
     public VmAction reinstateVm(@PathParam("vmId") UUID vmId,
                                 @ApiParam(value = "Available reasons are FRAUD, LEGAL, POLICY.", required = true) @QueryParam("reason") String reason) {
-        Vps4SubmitSuspendServer.Request request = new Vps4SubmitSuspendServer.Request();
+        Vps4SubmitReinstateServer.Request request = new Vps4SubmitReinstateServer.Request();
         request.reason = validateAndReturnEnumValue(ECommCreditService.SuspensionReason.class, reason);
 
         VirtualMachine vm = virtualMachineService.getVirtualMachine(vmId);
         validateVmExists(vmId, vm, user);
         request.virtualMachine = vm;
+        request.gdUsername = user.getUsername();
         getAndValidateCredit(vm);
 
         return createActionAndExecute(actionService, commandService, vm.vmId, ActionType.SUBMIT_REINSTATE, request,
