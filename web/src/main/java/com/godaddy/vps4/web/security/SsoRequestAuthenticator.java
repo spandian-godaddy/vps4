@@ -45,7 +45,7 @@ public class SsoRequestAuthenticator implements RequestAuthenticator<GDUser> {
     private final String VZ_CLOUD = "VZ-CLOUD";
 
     private final SsoTokenExtractor tokenExtractor;
-    private Config config;
+    private final Config config;
 
     @Inject
     public SsoRequestAuthenticator(SsoTokenExtractor tokenExtractor, Config config) {
@@ -169,8 +169,8 @@ public class SsoRequestAuthenticator implements RequestAuthenticator<GDUser> {
 
         try {
             ObjectMapper mapper = new ObjectMapper();
-            List<AuthzSsoCert> authzCerts = new ArrayList<AuthzSsoCert>(Arrays.asList(mapper.readValue(authzCertsConfig, 
-                AuthzSsoCert[].class)));
+            List<AuthzSsoCert> authzCerts = new ArrayList<>(Arrays.asList(mapper.readValue(authzCertsConfig,
+                                                                                           AuthzSsoCert[].class)));
             
             AuthzSsoCert ssoCertConfig = authzCerts.stream()
                 .filter(c -> c.cn.equals(certCn))

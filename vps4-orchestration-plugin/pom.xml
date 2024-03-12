@@ -63,7 +63,8 @@
                     <release>${parsedVersion.buildNumber}</release>
                     <packager>rpm</packager>
                     <requires>
-                        <require>hfs-engine == 1.3.0</require>
+                        <!--must match orchestration-version property, minus the build number-->
+                        <require>hfs-engine == 1.4.0</require>
                     </requires>
                     <changelogFile>src/changelog</changelogFile>
                     <defineStatements>

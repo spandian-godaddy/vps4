@@ -10,6 +10,7 @@
 **/bin/
 **/config.properties
 **/coverage/
+**/hs_err_pid*.log
 **/node_modules/
 **/package-lock.json
 **/target/

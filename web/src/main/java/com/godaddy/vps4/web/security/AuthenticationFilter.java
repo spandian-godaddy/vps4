@@ -39,9 +39,7 @@ public class AuthenticationFilter implements Filter {
     }
 
     @Override
-    public void init(FilterConfig filterConfig) {
-
-    }
+    public void init(FilterConfig filterConfig) {}
 
     @Override
     @SuppressWarnings("unchecked")

@@ -34,7 +34,6 @@ import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;
 import com.godaddy.hfs.config.Config;
 
-
 abstract public class HttpServiceProvider<T> {
 
     private static final Logger logger = LoggerFactory.getLogger(HttpServiceProvider.class);

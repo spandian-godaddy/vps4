@@ -1,4 +1,3 @@
-
 # Getting Started developing on VPS4
 
 ## Access Rights
@@ -98,6 +97,12 @@
 | /local/messaging.api.key       | messaging.api.key       | dev         | core/src/main/resources/com/godaddy/vps4/config/local/messaging.api.key       |
 | /local/entitlements.api.crt    | entitlements.api.crt    | dev         | core/src/main/resources/com/godaddy/vps4/config/local/entitlements.api.crt    |
 | /local/entitlements.api.key    | entitlements.api.key    | dev         | core/src/main/resources/com/godaddy/vps4/config/local/entitlements.api.key    |
+| /local/firewall.api.crt        | firewall.api.crt        | dev         | core/src/main/resources/com/godaddy/vps4/config/local/firewall.api.crt        |
+| /local/firewall.api.key        | firewall.api.key        | dev         | core/src/main/resources/com/godaddy/vps4/config/local/firewall.api.key        |
+| /local/vps4.shopper.crt        | vps4.shopper.crt        | dev         | core/src/main/resources/com/godaddy/vps4/config/local/vps4.shopper.crt        |
+| /local/vps4.shopper.key        | vps4.shopper.key        | dev         | core/src/main/resources/com/godaddy/vps4/config/local/vps4.shopper.key        |
+| /local/vps4.api.crt            | vps4.api.crt            | dev         | core/src/main/resources/com/godaddy/vps4/config/local/vps4.api.crt            |
+| /local/vps4.api.key            | vps4.api.key            | dev         | core/src/main/resources/com/godaddy/vps4/config/local/vps4.api.key            |
 | /local/password_encryption.key | password_encryption.key | dev         | core/src/main/resources/com/godaddy/vps4/config/local/password_encryption.key |
 
 ## Database Configuration

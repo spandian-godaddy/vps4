@@ -10,6 +10,7 @@ import com.godaddy.vps4.orchestration.ActionRequest;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.VmAction;
+import com.godaddy.vps4.web.Vps4Exception;
 import com.godaddy.vps4.web.security.GDUser;
 
 import gdg.hfs.orchestration.CommandService;
@@ -27,7 +28,11 @@ public class VmHelper {
         request.setActionId(actionId);
 
         CommandState command = Commands.execute(commandService, actionService, commandName, request);
-        logger.info("managing vm {} with command {}:{}", vmId, actionType, command.commandId);
+        if (command == null) {
+            logger.error("Failed to create command for VM {}", vmId);
+        } else {
+            logger.info("Managing VM {} with command {}: {}", vmId, actionType, command.commandId);
+        }
         return new VmAction(actionService.getAction(actionId), user.isEmployee());
     }
 }
