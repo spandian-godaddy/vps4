@@ -43,7 +43,7 @@ import com.godaddy.vps4.phase3.tests.StopStartVmTest;
 import com.godaddy.vps4.phase3.virtualmachine.VirtualMachinePool;
 
 public class RunSomeTests {
-
+    private static final int DELETE_VM_TIMEOUT_SECONDS = 300;
     private static final Logger logger = LoggerFactory.getLogger(RunSomeTests.class);
 
     public static void main(String[] args) throws Exception{
@@ -176,13 +176,13 @@ public class RunSomeTests {
     private static void deleteAnyExistingVms(Vps4ApiClient vps4ApiClient) {
         List<UUID> vmsToDelete = vps4ApiClient.getListOfExistingVmIds();
         if (!vmsToDelete.isEmpty()) {
-            System.out.println(String.format("Found %d existing VMs, deleting before running tests", vmsToDelete.size()));
+            System.out.printf("Found %d existing VMs, deleting before running tests%n", vmsToDelete.size());
             List<CompletableFuture<Void>> futures = new ArrayList<>();
             for (UUID vmId : vmsToDelete) {
                 futures.add(CompletableFuture.runAsync(() -> deleteVm(vps4ApiClient, vmId)));
             }
             try {
-                CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()])).get();
+                CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).get();
             }
             catch (Exception e) {
                 e.printStackTrace();
@@ -194,7 +194,8 @@ public class RunSomeTests {
 
     private static void deleteVm(Vps4ApiClient vps4ApiClient, UUID vmId) {
         System.out.println("Deleting VM " + vmId);
-        vps4ApiClient.deleteVm(vmId);
+        long actionId = vps4ApiClient.deleteVm(vmId);
+        vps4ApiClient.pollForVmActionComplete(vmId, actionId, DELETE_VM_TIMEOUT_SECONDS);
     }
 
     private static Set<String> parseCliImages(CommandLine cmd, Vps4ApiClient vps4ApiClient) {

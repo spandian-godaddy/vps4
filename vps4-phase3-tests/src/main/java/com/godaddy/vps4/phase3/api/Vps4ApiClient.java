@@ -99,7 +99,7 @@ public class Vps4ApiClient {
         return new Vps4JsonResponse<JSONObject>(result.statusCode, jsonResponse);
     }
 
-    public String getVmPrimaryIp(UUID vmId){
+    public String getVmPrimaryIp(UUID vmId) {
         Vps4JsonResponse<JSONObject> getVmResponse = sendGetObject("api/vms/" + vmId);
         assertStatusCode200(getVmResponse);
         JSONObject vm = getVmResponse.jsonResponse;
@@ -312,15 +312,14 @@ public class Vps4ApiClient {
         }
     }
 
-    public Vps4JsonResponse<JSONObject> deleteVm(UUID vmId) {
-        String url = baseUrl  + "api/vms/"+ vmId.toString();
-
+    public long deleteVm(UUID vmId) {
         HttpClient client = getHttpClient();
-        HttpDelete request = new HttpDelete(url);
+        HttpDelete request = new HttpDelete(baseUrl  + "api/vms/" + vmId);
 
         Result result = callApi(client, request);
         JSONObject jsonResponse = convertToJSONObject(result.result.toString());
-        return new Vps4JsonResponse<JSONObject>(result.statusCode, jsonResponse);
+        Vps4JsonResponse<JSONObject> response = new Vps4JsonResponse<>(result.statusCode, jsonResponse);
+        return (long) response.jsonResponse.get("id");
     }
 
 
