@@ -43,7 +43,6 @@ public class DefaultCdnService implements CdnService {
     public List<CdnSite> getCdnSites(UUID customerId, UUID vmId) {
         List<CdnSite> returnedSites = new ArrayList<>();
         List<VmCdnSite> vmCdnSiteList = cdnDataService.getActiveCdnSitesOfVm(vmId);
-        logger.info("customerId {}", customerId);
         List<CdnSite> cdnSites =  cdnClientService.getCdnSites(customerId);
         List<String> vmCdnSiteIds = vmCdnSiteList.stream().map(site -> site.siteId.toLowerCase()).collect(Collectors.toList());
         if (cdnSites != null ) {
