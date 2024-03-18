@@ -85,6 +85,7 @@ import com.godaddy.vps4.orchestration.vm.Vps4StopVm;
 import com.godaddy.vps4.orchestration.vm.Vps4SubmitReinstateServer;
 import com.godaddy.vps4.orchestration.vm.Vps4SubmitSuspendServer;
 import com.godaddy.vps4.orchestration.vm.Vps4SyncVmStatus;
+import com.godaddy.vps4.orchestration.vm.Vps4SyncOsStatus;
 import com.godaddy.vps4.orchestration.vm.Vps4TestCommand;
 import com.godaddy.vps4.orchestration.vm.Vps4UnclaimCredit;
 import com.godaddy.vps4.orchestration.vm.Vps4UpgradeOHVm;
@@ -163,6 +164,7 @@ public class Vps4CommandModule extends AbstractModule {
         bind(WaitForPanoptaAgentSync.class);
         bind(Vps4RequestConsole.class);
         bind(Vps4SyncVmStatus.class);
+        bind(Vps4SyncOsStatus.class);
         bind(RemoveIpFromBlacklist.class);
         bind(Vps4EnableWinexe.class);
         bind(Vps4SubmitSuspendServer.class);

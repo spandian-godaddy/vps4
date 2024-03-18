@@ -19,6 +19,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import java.util.UUID;
 
@@ -50,18 +51,39 @@ public class VmSyncStatusResource {
     }
 
     @POST
-    @Path("{vmId}/syncVmStatus")
+    @Path("{vmId}/sync")
     @ApiOperation(value = "sync Vm status with HFS",
             notes = "sync Vm status with HFS")
-    public VmAction syncVmStatus(@PathParam("vmId") UUID vmId) {
+    public VmAction sync(@PathParam("vmId") UUID vmId, @QueryParam("syncType") SyncType syncType) {
         VirtualMachine vm = vmResource.getVm(vmId);
 
+        if (syncType == SyncType.OS_INFO) {
+            return syncOsStatus(vm);
+        } else {
+            return syncVmStatus(vm);
+        }
+    }
+
+    private VmAction syncVmStatus(VirtualMachine vm) {
         logger.info("triggering HFS sync with OpenStack/OH vm with hfs id {}", vm.hfsVmId);
         VmActionRequest syncRequest = new VmActionRequest();
         syncRequest.virtualMachine = vm;
 
-        return createActionAndExecute(actionService, commandService, vmId,
-                    ActionType.SYNC_STATUS, syncRequest, "Vps4SyncVmStatus", user);
+        return createActionAndExecute(actionService, commandService, vm.vmId,
+                ActionType.SYNC_STATUS, syncRequest, "Vps4SyncVmStatus", user);
     }
 
+    private VmAction syncOsStatus(VirtualMachine vm) {
+        logger.info("Triggering OS sync for VM {} with HFS vmId {}", vm.vmId, vm.hfsVmId);
+        VmActionRequest syncRequest = new VmActionRequest();
+        syncRequest.virtualMachine = vm;
+
+        return createActionAndExecute(actionService, commandService, vm.vmId,
+                ActionType.SYNC_OS, syncRequest, "Vps4SyncOsStatus", user);
+    }
+
+    public enum SyncType {
+        STATUS,
+        OS_INFO
+    }
 }

@@ -122,6 +122,7 @@ public class GetVirtualMachineTest {
                 null,
                 0,
                 UUID.randomUUID(),
+                null,
                 null);
         vmOtherDc = new VirtualMachine(vmIdOtherDc,
                 3L,
@@ -138,6 +139,7 @@ public class GetVirtualMachineTest {
                 null,
                 0,
                 UUID.randomUUID(),
+                null,
                 null);
 
         when(virtualMachineService.getVirtualMachine(vmId)).thenReturn(vm);

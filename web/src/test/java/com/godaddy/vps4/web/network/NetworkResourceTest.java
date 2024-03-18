@@ -85,7 +85,8 @@ public class NetworkResourceTest {
                                 null,
                                 0,
                                 UUID.randomUUID(),
-                                dataCenter);
+                                dataCenter,
+                                null);
 
         Project project = new Project(123, "unitTestProject", "vps4-unittest-123", Instant.now(), null, 321);
         when(projectService.getProject(vm.projectId)).thenReturn(project);
@@ -141,7 +142,8 @@ public class NetworkResourceTest {
                                 null,
                                 0,
                                 UUID.randomUUID(),
-                                dataCenter);
+                                dataCenter,
+                                null);
         when(vmResource.getVm(vmId)).thenReturn(vm);
 
         Action action = mock(Action.class);
@@ -191,7 +193,8 @@ public class NetworkResourceTest {
                                 null,
                                 0,
                                 UUID.randomUUID(),
-                                dataCenter);
+                                dataCenter,
+                    null);
         when(vmResource.getVm(vmId)).thenReturn(vm);
 
         Action action = mock(Action.class);
@@ -221,7 +224,8 @@ public class NetworkResourceTest {
                                 null,
                                 0,
                                 UUID.randomUUID(),
-                                dataCenter);
+                                dataCenter,
+                    null);
         when(vmResource.getVm(vmId)).thenReturn(vm);
 
         Action action = mock(Action.class);
@@ -262,7 +266,8 @@ public class NetworkResourceTest {
                                                null,
                                                0,
                                                UUID.randomUUID(),
-                                               dataCenter);
+                                               dataCenter,
+                                   null);
         when(vmResource.getVm(vmId)).thenReturn(vm);
         resource.addIpAddress(vmId, 4);
     }
@@ -289,7 +294,8 @@ public class NetworkResourceTest {
                                                null,
                                                0,
                                                UUID.randomUUID(),
-                                               dataCenter);
+                                               dataCenter,
+                                   null);
         when(vmResource.getVm(vmId)).thenReturn(vm);
         resource.addIpAddress(vmId, 4);
     }
@@ -336,7 +342,8 @@ public class NetworkResourceTest {
                                                null,
                                                0,
                                                UUID.randomUUID(),
-                                               dataCenter);
+                                               dataCenter,
+                                   null);
         when(vmResource.getVm(vmId)).thenReturn(vm);
         resource.addIpAddress(vmId, 4);
     }

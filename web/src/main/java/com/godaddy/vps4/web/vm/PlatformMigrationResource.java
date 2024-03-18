@@ -207,7 +207,8 @@ public class PlatformMigrationResource {
                 toSpec.specId,
                 toImage.imageId,
                 dataCenterId,
-                moveOutInfo.hostname);
+                moveOutInfo.hostname,
+                toImage.imageName);
         return virtualMachineService.insertVirtualMachine(parameters);
     }
 

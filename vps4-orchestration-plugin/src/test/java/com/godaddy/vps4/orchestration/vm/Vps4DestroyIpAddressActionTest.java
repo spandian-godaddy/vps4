@@ -64,6 +64,7 @@ public class Vps4DestroyIpAddressActionTest {
                                                            "fake.hostname.com",
                                                            0,
                                                            UUID.randomUUID(),
+                                                           null,
                                                            null);
         request.addressId = 123;
         request.vmId = virtualMachine.vmId;

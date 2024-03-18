@@ -76,4 +76,5 @@ public interface VirtualMachineService {
     void setMonitoringPlanFeature(UUID vmId, boolean monitoring);
 
     boolean getMonitoringPlanFeature (UUID orionGuid);
+    void setCurrentOs(UUID vmId, String os);
 }

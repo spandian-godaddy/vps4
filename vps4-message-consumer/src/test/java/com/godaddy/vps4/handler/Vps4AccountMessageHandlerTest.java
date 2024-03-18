@@ -106,6 +106,7 @@ public class Vps4AccountMessageHandlerTest {
                                 null,
                                 0,
                                 UUID.randomUUID(),
+                                null,
                                 null);
         when(vmServiceMock.getVirtualMachine(vm.vmId)).thenReturn(vm);
 

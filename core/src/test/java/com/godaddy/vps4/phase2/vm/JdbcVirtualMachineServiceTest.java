@@ -495,6 +495,7 @@ public class JdbcVirtualMachineServiceTest {
                                                    10,
                                                    1,
                                                    1,
+                                                   null,
                                                    null);
         VirtualMachine testVm2 = virtualMachineService.importVirtualMachine(parameters);
         UUID importedVm = virtualMachineService.getImportedVm(testVm2.vmId);
@@ -529,5 +530,17 @@ public class JdbcVirtualMachineServiceTest {
 
         assertEquals(1, vms.size());
         assertEquals(platform, vm.spec.serverType.platform.name());
+    }
+
+    @Test
+    public void testSetCurrentOs() {
+        VirtualMachine vm = SqlTestData.insertTestVm(orionGuid, dataSource, vps4User.getId());
+        virtualMachines.add(vm);
+
+        assertEquals(virtualMachineService.getVirtualMachine(vm.vmId).currentOs, "CentOS 7");
+
+        virtualMachineService.setCurrentOs(vm.vmId, "almalinux-8");
+
+        assertEquals(virtualMachineService.getVirtualMachine(vm.vmId).currentOs, "almalinux-8");
     }
 }

@@ -12,6 +12,7 @@ import com.godaddy.vps4.security.Vps4UserService;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionType;
 import com.godaddy.vps4.vm.ImageService;
+import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.ServerSpec;
 import com.godaddy.vps4.vm.ServerType;
 import com.godaddy.vps4.vm.VirtualMachine;
@@ -121,6 +122,7 @@ public class VmImportResource {
         ServerSpec serverSpec = virtualMachineService.getSpec(virtualMachineCredit.getTier(), platformId);
 
         long imageId = getOrInsertImage(importVmRequest);
+        Image image = imageService.getImage(imageId);
 
         Vps4User vps4User = vps4UserService.getOrCreateUserForShopper(importVmRequest.shopperId, virtualMachineCredit.getResellerId(),
                 virtualMachineCredit.getCustomerId());
@@ -136,7 +138,8 @@ public class VmImportResource {
                                                                                        serverSpec.specId,
                                                                                        imageId,
                                                                                        dataCenterId,
-                                                                                       null);
+                                                                                       null,
+                                                                                       image.imageName);
 
         VirtualMachine virtualMachine = virtualMachineService.importVirtualMachine(parameters);
 

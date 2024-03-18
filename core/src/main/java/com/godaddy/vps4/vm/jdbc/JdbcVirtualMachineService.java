@@ -37,7 +37,8 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     private final DataSource dataSource;
 
     private String selectVirtualMachineQuery = "SELECT DISTINCT vm.vm_id, vm.hfs_vm_id, vm.orion_guid, vm.project_id, vm.name as \"vm_name\", "
-            + "vm.hostname, vm.account_status_id, vm.backup_job_id, vm.valid_on as \"vm_valid_on\", vm.canceled as \"vm_canceled\", vm.valid_until as \"vm_valid_until\", vm.nydus_warning_ack, vm.managed_level, "
+            + "vm.hostname, vm.account_status_id, vm.backup_job_id, vm.valid_on as \"vm_valid_on\", vm.canceled as \"vm_canceled\", "
+            + "vm.valid_until as \"vm_valid_until\", vm.nydus_warning_ack, vm.managed_level, vm.current_os, "
             + "vms.spec_id, vms.spec_name, vms.tier, vms.cpu_core_count, vms.memory_mib, vms.disk_gib, vms.valid_on as \"spec_valid_on\", "
             + "vms.valid_until as \"spec_valid_until\", vms.name as \"spec_vps4_name\", vms.ip_address_count, st.server_type, st.server_type_id, st.platform, "
             + "image.name, image.hfs_name, image.image_id, image.control_panel_id, image.os_type_id, "
@@ -133,7 +134,8 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
                                   rs.getString("hostname"),
                                   rs.getInt("managed_level"),
                                   backupJobId != null ? java.util.UUID.fromString(backupJobId) : null,
-                                  dataCenter);
+                                  dataCenter,
+                                  rs.getString("current_os"));
     }
 
     protected IpAddress mapIpAddress(ResultSet rs) throws SQLException {
@@ -472,5 +474,10 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
         Sql.with(dataSource).exec("INSERT INTO monitoring_pf (vm_id, monitoring) VALUES (?, ?) " +
                                           " ON CONFLICT (vm_id) DO UPDATE SET monitoring = ? ",
                                   null, vmId, monitoring, monitoring);
+    }
+
+    @Override
+    public void setCurrentOs(UUID vmId, String os) {
+        Sql.with(dataSource).exec("UPDATE virtual_machine vm SET current_os = ? WHERE vm_id = ?", null, os, vmId);
     }
 }

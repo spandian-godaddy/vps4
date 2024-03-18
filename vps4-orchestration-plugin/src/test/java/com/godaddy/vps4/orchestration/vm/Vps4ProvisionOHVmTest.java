@@ -135,6 +135,7 @@ public class Vps4ProvisionOHVmTest {
                                      "fake.host.name",
                                      0,
                                      UUID.randomUUID(),
+                                     null,
                                      null);
 
         this.vmInfo = new ProvisionVmInfo();

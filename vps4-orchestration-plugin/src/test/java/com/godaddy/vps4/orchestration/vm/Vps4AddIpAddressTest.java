@@ -75,6 +75,7 @@ public class Vps4AddIpAddressTest {
                 "fake.hostname.com",
                 0,
                 UUID.randomUUID(),
+                null,
                 null);
         request.vmId = virtualMachine.vmId;
         request.zone = "vps4-phx3";

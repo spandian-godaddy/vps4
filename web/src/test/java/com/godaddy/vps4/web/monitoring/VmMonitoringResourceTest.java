@@ -82,6 +82,7 @@ public class VmMonitoringResourceTest {
                                 null,
                                 0,
                                 UUID.randomUUID(),
+                                null,
                                 null);
         graphs = new ArrayList<>();
         graphs.add(createMockGraph(VmMetric.CPU));

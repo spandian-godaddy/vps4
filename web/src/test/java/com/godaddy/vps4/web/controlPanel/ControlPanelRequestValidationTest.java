@@ -41,6 +41,7 @@ public class ControlPanelRequestValidationTest {
                 "omg.host.name",    // hostname
                 0,                   // managed level
                 UUID.randomUUID(),
+                null,
                 null
         );
     }

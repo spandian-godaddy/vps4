@@ -97,7 +97,8 @@ public class CdnResourceTest {
                 null,
                 0,
                 UUID.randomUUID(),
-                dataCenter);
+                dataCenter,
+                null);
 
         Map<String, String> planFeatures = new HashMap<>();
         planFeatures.put("cdnwaf", String.valueOf(5));

@@ -27,6 +27,7 @@ public class VirtualMachine {
     public int managedLevel;
     public UUID backupJobId;
     public DataCenter dataCenter;
+    public String currentOs;
 
     public VirtualMachine() {
     }
@@ -46,7 +47,8 @@ public class VirtualMachine {
             String hostname,
             int managedLevel,
             UUID backupJobId,
-            DataCenter dataCenter) {
+            DataCenter dataCenter,
+            String currentOs) {
         this.vmId = vmId;
         this.hfsVmId = hfsVmId;
         this.orionGuid = orionGuid;
@@ -63,6 +65,7 @@ public class VirtualMachine {
         this.managedLevel = managedLevel;
         this.backupJobId = backupJobId;
         this.dataCenter = dataCenter;
+        this.currentOs = currentOs;
     }
 
     public VirtualMachine(VirtualMachine virtualMachine) {
@@ -82,6 +85,7 @@ public class VirtualMachine {
         managedLevel = virtualMachine.managedLevel;
         backupJobId = virtualMachine.backupJobId;
         dataCenter = virtualMachine.dataCenter;
+        currentOs = virtualMachine.currentOs;
     }
 
     @JsonIgnore

@@ -14,8 +14,8 @@ import com.godaddy.vps4.vm.AccountStatus;
 import com.godaddy.vps4.vm.ActionService;
 import com.godaddy.vps4.vm.ActionStatus;
 import com.godaddy.vps4.vm.ActionType;
-import com.godaddy.vps4.vm.DataCenterService;
 import com.godaddy.vps4.vm.ImageService;
+import com.godaddy.vps4.vm.Image;
 import com.godaddy.vps4.vm.ServerSpec;
 import com.godaddy.vps4.vm.ServerType;
 import com.godaddy.vps4.vm.VirtualMachine;
@@ -38,10 +38,7 @@ import com.godaddy.vps4.vm.InsertVirtualMachineParameters;
 import static com.godaddy.vps4.web.vm.VmImportResource.ImportVmIpAddress;
 import static com.godaddy.vps4.web.vm.VmImportResource.ImportVmRequest;
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyObject;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
+import static org.mockito.Matchers.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -63,6 +60,7 @@ public class VmImportResourceTest {
     VmImportResource vmImportResource;
     private GDUser user;
     private ImportVmRequest importVmRequest;
+    private Image image;
     private ServerSpec spec;
     private Vps4User vps4User;
     private Project project;
@@ -106,6 +104,10 @@ public class VmImportResourceTest {
                                                 vmActionResource,
                                                 vmUserService,
                                                 config);
+
+        image = new Image();
+        image.imageName = "mock-image";
+        when(imageService.getImage(anyInt())).thenReturn(image);
 
         spec = new ServerSpec();
         when(virtualMachineService.getSpec(credit.getTier(), ServerType.Platform.OPTIMIZED_HOSTING.getplatformId())).thenReturn(spec);
@@ -177,6 +179,7 @@ public class VmImportResourceTest {
         assertEquals(spec.specId, parameters.specId);
         assertEquals(imageId, parameters.imageId);
         assertEquals(1, parameters.dataCenterId);
+        assertEquals(image.imageName, parameters.currentOs);
     }
 
 

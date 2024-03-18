@@ -90,6 +90,12 @@ public class VmSyncStatusResourceTest {
 
         when(actionService.createAction(eq(testVm.vmId), eq(ActionType.SYNC_STATUS), any(String.class), any(String.class))).thenReturn(a.id);
         when(actionService.getAction(a.id)).thenReturn(a);
+
+        Action b = new Action(actionId, testVm.vmId, ActionType.SYNC_OS, null, null, null,
+                ActionStatus.NEW, Instant.now(), Instant.now(), null, UUID.randomUUID(), "validUserShopperId");
+
+        when(actionService.createAction(eq(testVm.vmId), eq(ActionType.SYNC_OS), any(String.class), any(String.class))).thenReturn(b.id);
+        when(actionService.getAction(b.id)).thenReturn(b);
     }
 
     private VmSyncStatusResource getVmSyncStatusResource() {
@@ -97,8 +103,8 @@ public class VmSyncStatusResourceTest {
     }
 
     @Test
-    public void testSyncVmCreatesCommand() {
-        getVmSyncStatusResource().syncVmStatus(testVm.vmId);
+    public void testSyncStatusCreatesCommand() {
+        getVmSyncStatusResource().sync(testVm.vmId, VmSyncStatusResource.SyncType.STATUS);
 
         verify(commandService, times(1)).executeCommand(commandGroupSpecArgumentCaptor.capture());
         CommandGroupSpec commandGroupSpec = commandGroupSpecArgumentCaptor.getValue();
@@ -108,17 +114,43 @@ public class VmSyncStatusResourceTest {
     }
 
     @Test
-    public void testSyncVmCreatesAction() {
-        getVmSyncStatusResource().syncVmStatus(testVm.vmId);
+    public void testSyncStatusCreatesAction() {
+        getVmSyncStatusResource().sync(testVm.vmId, VmSyncStatusResource.SyncType.STATUS);
 
         verify(actionService, times(1)).createAction(Matchers.eq(testVm.vmId),
                 Matchers.eq(ActionType.SYNC_STATUS), anyObject(), anyString());
     }
 
     @Test
-    public void syncVmActionIsReturned() {
+    public void syncStatusActionIsReturned() {
         VmAction actualReturnValue =
-                getVmSyncStatusResource().syncVmStatus(testVm.vmId);
+                getVmSyncStatusResource().sync(testVm.vmId, VmSyncStatusResource.SyncType.STATUS);
+
+        assertEquals(actionId, actualReturnValue.id);
+    }
+
+    @Test
+    public void testSyncOsInfoCreatesCommand() {
+        getVmSyncStatusResource().sync(testVm.vmId, VmSyncStatusResource.SyncType.OS_INFO);
+
+        verify(commandService, times(1)).executeCommand(commandGroupSpecArgumentCaptor.capture());
+        CommandGroupSpec commandGroupSpec = commandGroupSpecArgumentCaptor.getValue();
+        CommandSpec commandSpec = commandGroupSpec.commands.get(0);
+        Assert.assertEquals("Vps4SyncOsStatus", commandSpec.command);
+    }
+
+    @Test
+    public void testSyncOsInfoCreatesAction() {
+        getVmSyncStatusResource().sync(testVm.vmId, VmSyncStatusResource.SyncType.OS_INFO);
+
+        verify(actionService, times(1)).createAction(Matchers.eq(testVm.vmId),
+                Matchers.eq(ActionType.SYNC_OS), anyObject(), anyString());
+    }
+
+    @Test
+    public void syncOsInfoActionIsReturned() {
+        VmAction actualReturnValue =
+                getVmSyncStatusResource().sync(testVm.vmId, VmSyncStatusResource.SyncType.OS_INFO);
 
         assertEquals(actionId, actualReturnValue.id);
     }

@@ -128,6 +128,7 @@ public class Vps4ProvisionDedicatedTest {
                                      "fake.host.name",
                                      0,
                                      UUID.randomUUID(),
+                                     null,
                                      null);
 
         this.vmInfo = new ProvisionVmInfo();

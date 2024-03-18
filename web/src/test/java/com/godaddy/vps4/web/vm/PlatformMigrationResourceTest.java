@@ -95,6 +95,7 @@ public class PlatformMigrationResourceTest {
         vm.image = mock(Image.class);
         vm.image.serverType = mock(ServerType.class);
         vm.image.serverType.platform = ServerType.Platform.OPENSTACK;
+        vm.image.imageName = "mock-image";
         vm.hostname = "fake-hostname";
         vm.projectId = 12345L;
         vm.primaryIpAddress = mock(IpAddress.class);
@@ -243,6 +244,7 @@ public class PlatformMigrationResourceTest {
         assertEquals(vm.image.imageId, params.imageId);
         assertEquals(1, params.dataCenterId);
         assertEquals(moveOutInfo.hostname, params.hostname);
+        assertEquals(vm.image.imageName, params.currentOs);
     }
 
     @Test public void moveInInsertsIpAddresses() {

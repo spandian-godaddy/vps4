@@ -124,4 +124,8 @@ public interface VmService {
     @POST
     @Path("/{vmId}/sync")
     VmAction sync(@PathParam("vmId") long vmId);
+
+    @POST
+    @Path("/{vmId}/sync")
+    VmAction syncOs(@PathParam("vmId") long vmId, @QueryParam("type") String type);
 }
