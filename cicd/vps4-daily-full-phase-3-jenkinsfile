@@ -12,7 +12,7 @@ pipeline {
         ADMIN_CREDS = credentials('jenkins-admin-creds')
     }
     stages {
-        stage("Daily full phase3 tests in test or stage") {
+        stage("Daily full phase3 tests in test") {
             steps {
                 load("/home/jenkins/vps4_latest_version.properties")
                 echo "vps4 version: ${VPS4_VERSION}"
@@ -22,9 +22,9 @@ pipeline {
                         def TEST_STATUS = sh (
                                 script: 'set -o pipefail; '
                                         + "java -ea -jar '/opt/vps4/phase3_tests/vps4-phase3-tests-${VPS4_VERSION}.jar' "
-                                        + "--api-url 'https://vps4.api.${API_ENV}-godaddy.com/' "
+                                        + "--api-url 'https://vps4.api.test-godaddy.com/' "
                                         + '--shopper "${SHOPPER_CREDS_USR}" --password "${SHOPPER_CREDS_PSW}" '
-                                        + "--sso-url 'https://sso.${API_ENV}-godaddy.com/v1/api/token' "
+                                        + "--sso-url 'https://sso.test-godaddy.com/v1/api/token' "
                                         + '--admin "${ADMIN_CREDS_USR}" --admin-pass "${ADMIN_CREDS_PSW}" '
                                         + "--max-vms 28 --pool-size ${VM_COUNT} --vm-timeout 7200 "
                                         + "${env.ALL_OH_IMAGES.toBoolean() ? '--all-oh-images' : ''} "
