@@ -56,7 +56,7 @@ public class SqlTestData {
         long userId = userService.getUser(TEST_SHOPPER_ID).getId();
 
         ProvisionVirtualMachineParameters params = new ProvisionVirtualMachineParameters(
-                userId, 1, TEST_SGID, orionGuid, TEST_VM_NAME, tier, 1, imageName);
+                userId, 1, TEST_SGID, orionGuid, TEST_VM_NAME, tier, imageName);
         VirtualMachine virtualMachine = virtualMachineService.provisionVirtualMachine(params);
         virtualMachineService.addHfsVmIdToVirtualMachine(virtualMachine.vmId, hfsVmId);
         return virtualMachineService.getVirtualMachine(virtualMachine.vmId);
@@ -146,6 +146,7 @@ public class SqlTestData {
         Sql.with(dataSource).exec("DELETE FROM vm_user u WHERE " + test_vmUser_name_condition, null);
         Sql.with(dataSource).exec("DELETE FROM vm_user u WHERE u.name = 'fake_user' ", null);
         Sql.with(dataSource).exec("DELETE FROM vm_user u WHERE " + test_vmCustomer_name_condition, null);
+        Sql.with(dataSource).exec("DELETE FROM managed_server ms USING virtual_machine v WHERE ms.vm_id = v.vm_id AND " + test_vm_condition, null);
         Sql.with(dataSource).exec(
                 "DELETE FROM virtual_machine v USING project p WHERE v.project_id = p.project_id AND " + test_sgid_condition,
                 null);

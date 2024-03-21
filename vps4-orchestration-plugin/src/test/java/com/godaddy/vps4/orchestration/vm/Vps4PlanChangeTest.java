@@ -63,9 +63,9 @@ public class Vps4PlanChangeTest {
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testChangePlanCallsUpdateVmManagedLevel() {
+    public void testChangePlanCallsInsertVmManagedData() {
         runChangeManagedLevelToManagedTest();
-        verify(context, times(1)).execute(eq("UpdateVmManagedLevel"), any(Function.class), eq(Void.class));
+        verify(context, times(1)).execute(eq("InsertVmManagedData"), any(Function.class), eq(Void.class));
     }
 
     @Test
@@ -106,6 +106,7 @@ public class Vps4PlanChangeTest {
                                                null,
                                                null,
                                                null,
+                                               null,
                                                0,
                                                null,
                                                null,
@@ -123,6 +124,4 @@ public class Vps4PlanChangeTest {
             throw new RuntimeException(e);
         }
     }
-
-
 }

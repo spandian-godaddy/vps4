@@ -51,7 +51,7 @@ public class Vps4PlanChange implements Command<Vps4PlanChange.Request, Void> {
         if (req.vm.managedLevel != req.credit.getManagedLevel()) {
             logger.info("Processing managed level change for account {} to level {}", req.vm.vmId,
                     req.credit.getManagedLevel());
-            updateVirtualMachineManagedLevel(context, req);
+            insertVmManagedData(context, req);
             updatePanoptaTemplate(context, req);
         }
         logger.info("Managed level {} for vm {} in request, matches managed level {} in credit. No action taken.",
@@ -59,19 +59,19 @@ public class Vps4PlanChange implements Command<Vps4PlanChange.Request, Void> {
         return null;
     }
 
-    private void updateVirtualMachineManagedLevel(CommandContext context, Request req) {
-        Map<String, Object> paramsToUpdate = new HashMap<>();
-        paramsToUpdate.put("managed_level", req.credit.getManagedLevel());
-        context.execute("UpdateVmManagedLevel", ctx -> {
-            virtualMachineService.updateVirtualMachine(req.credit.getProductId(), paramsToUpdate);
-            return null;
-        }, Void.class);
+    private void insertVmManagedData(CommandContext context, Request req) {
+        if (req.credit.isManaged()) {
+            context.execute("InsertVmManagedData", ctx -> {
+                virtualMachineService.insertManagedData(req.vm.vmId, req.credit.getManagedLevel());
+                return null;
+            }, Void.class);
+        }
     }
 
     private void updatePanoptaTemplate(CommandContext context, Request req) {
         logger.info("Updating Panopta template for account {} to level {}", req.vm.vmId, req.credit.getManagedLevel());
 
-        if (req.vm.managedLevel != req.credit.getManagedLevel() && req.credit.getManagedLevel() == 2) {
+        if (req.credit.isManaged()) {
             UpdateManagedPanoptaTemplate.Request request = new UpdateManagedPanoptaTemplate.Request();
             PanoptaServerDetails panoptaServerDetails = panoptaDataService.getPanoptaServerDetails(req.vm.vmId);
             request.serverId = panoptaServerDetails.getServerId();

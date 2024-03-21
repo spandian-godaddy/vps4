@@ -72,6 +72,7 @@ public class Vps4AddIpAddressTest {
                 null,
                 null,
                 null,
+                null,
                 "fake.hostname.com",
                 0,
                 UUID.randomUUID(),

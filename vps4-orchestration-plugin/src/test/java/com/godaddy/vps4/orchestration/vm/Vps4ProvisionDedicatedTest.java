@@ -125,6 +125,7 @@ public class Vps4ProvisionDedicatedTest {
                                      null,
                                      null,
                                      null,
+                                     null,
                                      "fake.host.name",
                                      0,
                                      UUID.randomUUID(),

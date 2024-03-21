@@ -132,6 +132,7 @@ public class Vps4ProvisionOHVmTest {
                                      null,
                                      null,
                                      null,
+                                     null,
                                      "fake.host.name",
                                      0,
                                      UUID.randomUUID(),

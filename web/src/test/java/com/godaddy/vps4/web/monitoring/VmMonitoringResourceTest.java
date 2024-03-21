@@ -80,6 +80,7 @@ public class VmMonitoringResourceTest {
                                 null,
                                 null,
                                 null,
+                                null,
                                 0,
                                 UUID.randomUUID(),
                                 null,

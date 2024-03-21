@@ -9,7 +9,6 @@ public class ProvisionVirtualMachineParameters {
                                              UUID orionGuid,
                                              String name,
                                              int tier,
-                                             int managedLevel,
                                              String image) {
         this.vps4UserId = vps4UserId;
         this.dataCenterId = dataCenterId;
@@ -17,7 +16,6 @@ public class ProvisionVirtualMachineParameters {
         this.orionGuid = orionGuid;
         this.name = name;
         this.tier = tier;
-        this.managedLevel = managedLevel;
         this.imageHfsName = image;
     }
 
@@ -27,7 +25,6 @@ public class ProvisionVirtualMachineParameters {
     private UUID orionGuid;
     private String name;
     private int tier;
-    private int managedLevel;
     private String imageHfsName;
 
     public long getVps4UserId() {
@@ -52,10 +49,6 @@ public class ProvisionVirtualMachineParameters {
 
     public int getTier() {
         return tier;
-    }
-
-    public int getManagedLevel() {
-        return managedLevel;
     }
 
     public String getImageHfsName() {

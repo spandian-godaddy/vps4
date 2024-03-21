@@ -81,7 +81,7 @@ public class SqlTestData {
         String sgidPrefix = "vps4-testing-" + hfsVmId + "-";
         ProvisionVirtualMachineParameters params = new ProvisionVirtualMachineParameters(
                 vps4UserId, dataCenterId, sgidPrefix, orionGuid, "testVirtualMachine",
-                tier, 0, image);
+                tier, image);
         VirtualMachine virtualMachine = virtualMachineService.provisionVirtualMachine(params);
         virtualMachineService.addHfsVmIdToVirtualMachine(virtualMachine.vmId, hfsVmId);
         virtualMachine = virtualMachineService.getVirtualMachine(virtualMachine.vmId);
@@ -119,6 +119,7 @@ public class SqlTestData {
         Sql.with(dataSource).exec("DELETE FROM scheduled_job WHERE vm_id = ?", null, vmId);
         Sql.with(dataSource).exec("DELETE FROM monitoring_pf WHERE vm_id = ?", null, vmId);
         Sql.with(dataSource).exec("DELETE FROM imported_vm WHERE vm_id = ?", null, vmId);
+        Sql.with(dataSource).exec("DELETE FROM managed_server WHERE vm_id = ?", null, vmId);
         Sql.with(dataSource).exec("DELETE FROM virtual_machine WHERE vm_id = ?", null, vmId);
         Sql.with(dataSource).exec("DELETE FROM project WHERE project_id = ?", null, vm.projectId);
         Sql.with(dataSource).exec("DELETE FROM scheduled_job WHERE scheduled_job_type_id=1 AND vm_id = ? ", null, vmId);

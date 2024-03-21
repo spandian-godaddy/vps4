@@ -38,17 +38,19 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
 
     private String selectVirtualMachineQuery = "SELECT DISTINCT vm.vm_id, vm.hfs_vm_id, vm.orion_guid, vm.project_id, vm.name as \"vm_name\", "
             + "vm.hostname, vm.account_status_id, vm.backup_job_id, vm.valid_on as \"vm_valid_on\", vm.canceled as \"vm_canceled\", "
-            + "vm.valid_until as \"vm_valid_until\", vm.nydus_warning_ack, vm.managed_level, vm.current_os, "
+            + "vm.valid_until as \"vm_valid_until\", vm.nydus_warning_ack, vm.current_os, "
             + "vms.spec_id, vms.spec_name, vms.tier, vms.cpu_core_count, vms.memory_mib, vms.disk_gib, vms.valid_on as \"spec_valid_on\", "
             + "vms.valid_until as \"spec_valid_until\", vms.name as \"spec_vps4_name\", vms.ip_address_count, st.server_type, st.server_type_id, st.platform, "
             + "image.name, image.hfs_name, image.image_id, image.control_panel_id, image.os_type_id, "
             + "primaryIp.address_id, primaryIp.hfs_address_id, primaryIp.ip_address, primaryIp.ip_address_type_id, primaryIp.valid_on, primaryIp.valid_until, family(primaryIp.ip_address), "
-            + "dc.data_center_id, dc.description "
+            + "dc.data_center_id, dc.description, "
+            + "ms.valid_on as \"ms_valid_on\", ms.managed_level "
             + "FROM virtual_machine vm "
             + "JOIN virtual_machine_spec vms ON vms.spec_id=vm.spec_id "
             + "JOIN image ON image.image_id=vm.image_id "
             + "JOIN project prj ON prj.project_id=vm.project_id "
             + "JOIN server_type st ON st.server_type_id = vms.server_type_id "
+            + "LEFT JOIN managed_server ms ON ms.vm_id = vm.vm_id "
             + "LEFT JOIN data_center dc ON dc.data_center_id = vm.data_center_id "
             + "LEFT JOIN ip_address primaryIp ON primaryIp.vm_id = vm.vm_id AND primaryIp.ip_address_type_id = 1 "
             + "LEFT JOIN ip_address allIps ON allIps.vm_id = vm.vm_id ";
@@ -131,6 +133,7 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
                                   rs.getTimestamp("vm_canceled", TimestampUtils.utcCalendar).toInstant(),
                                   rs.getTimestamp("vm_valid_until", TimestampUtils.utcCalendar).toInstant(),
                                   rs.getTimestamp("nydus_warning_ack", TimestampUtils.utcCalendar).toInstant(),
+                                  rs.getTimestamp("ms_valid_on") == null ? null : rs.getTimestamp("ms_valid_on", TimestampUtils.utcCalendar).toInstant(),
                                   rs.getString("hostname"),
                                   rs.getInt("managed_level"),
                                   backupJobId != null ? java.util.UUID.fromString(backupJobId) : null,
@@ -213,7 +216,7 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     @Override
     public VirtualMachine provisionVirtualMachine(ProvisionVirtualMachineParameters vmProvisionParameters) {
         UUID vmId = UUID.randomUUID();
-        Sql.with(dataSource).exec("SELECT * FROM virtual_machine_provision(?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        Sql.with(dataSource).exec("SELECT * FROM virtual_machine_provision(?, ?, ?, ?, ?, ?, ?, ?)",
                 null,
                 vmId,
                 vmProvisionParameters.getVps4UserId(),
@@ -221,7 +224,6 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
                 vmProvisionParameters.getOrionGuid(),
                 vmProvisionParameters.getName(),
                 vmProvisionParameters.getTier(),
-                vmProvisionParameters.getManagedLevel(),
                 vmProvisionParameters.getImageHfsName(),
                 vmProvisionParameters.getDataCenterId());
         return getVirtualMachine(vmId);
@@ -237,8 +239,8 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     @Override
     public VirtualMachine insertVirtualMachine(InsertVirtualMachineParameters insertVirtualMachineParameters) {
         UUID vmId = UUID.randomUUID();
-        Sql.with(dataSource).exec("INSERT INTO virtual_machine (vm_id, hfs_vm_id, orion_guid, name, project_id, spec_id, managed_level, image_id, data_center_id, hostname)" +
-                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        Sql.with(dataSource).exec("INSERT INTO virtual_machine (vm_id, hfs_vm_id, orion_guid, name, project_id, spec_id, image_id, data_center_id, hostname)" +
+                        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 null,
                 vmId,
                 insertVirtualMachineParameters.hfsVmId,
@@ -246,10 +248,10 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
                 insertVirtualMachineParameters.name,
                 insertVirtualMachineParameters.projectId,
                 insertVirtualMachineParameters.specId,
-                0,
                 insertVirtualMachineParameters.imageId,
                 insertVirtualMachineParameters.dataCenterId,
                 insertVirtualMachineParameters.hostname);
+
         return getVirtualMachine(vmId);
     }
 
@@ -461,6 +463,12 @@ public class JdbcVirtualMachineService implements VirtualMachineService {
     @Override
     public void ackNydusWarning(UUID vmId) {
         Sql.with(dataSource).exec("UPDATE virtual_machine vm SET nydus_warning_ack=now_utc() WHERE vm_id=?", null, vmId);
+    }
+
+    @Override
+    public void insertManagedData(UUID vmId, int managedLevel) {
+        Sql.with(dataSource).exec("INSERT INTO managed_server (vm_id, managed_level, valid_on) VALUES (?, ?, now_utc()) " +
+                "ON CONFLICT (vm_id) DO UPDATE SET managed_level = EXCLUDED.managed_level, valid_on = now_utc()", null, vmId, managedLevel);
     }
 
     @Override

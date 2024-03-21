@@ -89,7 +89,7 @@ public class JdbcVirtualMachineServiceTest {
     @Test
     public void testHasCPanel() {
         ProvisionVirtualMachineParameters params = new ProvisionVirtualMachineParameters(vps4User.getId(), 1, "vps4-testing-",
-                orionGuid, "testServer", 10, 1, "centos-7-cpanel-11");
+                orionGuid, "testServer", 10, "centos-7-cpanel-11");
 
         virtualMachineService.provisionVirtualMachine(params);
 
@@ -101,7 +101,7 @@ public class JdbcVirtualMachineServiceTest {
     @Test
     public void testHasPleskPanel() {
         ProvisionVirtualMachineParameters params = new ProvisionVirtualMachineParameters(vps4User.getId(), 1, "vps4-testing-",
-                orionGuid, "testServer", 10, 1, "windows-2012r2-plesk-12.5");
+                orionGuid, "testServer", 10, "windows-2012r2-plesk-12.5");
 
         virtualMachineService.provisionVirtualMachine(params);
         VirtualMachine vm = virtualMachineService.getVirtualMachines(VirtualMachineType.ACTIVE, vps4User.getId(), null, null, null, null, null).get(0);
@@ -116,7 +116,7 @@ public class JdbcVirtualMachineServiceTest {
         int specId = virtualMachineService.getSpec(tier, ServerType.Platform.OPENSTACK.getplatformId()).specId;
 
         ProvisionVirtualMachineParameters params = new ProvisionVirtualMachineParameters(vps4User.getId(), 1, "vps4-testing-",
-                orionGuid, name, tier, 1, "centos-7");
+                orionGuid, name, tier, "centos-7");
 
         virtualMachineService.provisionVirtualMachine(params);
         List<VirtualMachine> vms = virtualMachineService.getVirtualMachines(VirtualMachineType.ACTIVE, vps4User.getId(), null, null, null, null, null);
@@ -371,7 +371,7 @@ public class JdbcVirtualMachineServiceTest {
     @Test
     public void testVmOsDistro() {
         ProvisionVirtualMachineParameters params = new ProvisionVirtualMachineParameters(vps4User.getId(), 1, "vps4-testing-",
-                orionGuid, "testServer", 10, 1, "hfs-centos-7-cpanel-11");
+                orionGuid, "testServer", 10, "hfs-centos-7-cpanel-11");
         VirtualMachine vm = virtualMachineService.provisionVirtualMachine(params);
         virtualMachines.add(vm);
 
@@ -381,27 +381,12 @@ public class JdbcVirtualMachineServiceTest {
     @Test
     public void testVmOsDistroIspConfig() {
         ProvisionVirtualMachineParameters params = new ProvisionVirtualMachineParameters(vps4User.getId(), 1, "vps4-testing-",
-                orionGuid, "testServer", 10, 1, "vps4-ubuntu-1604-ispconfig-3");
+                orionGuid, "testServer", 10, "vps4-ubuntu-1604-ispconfig-3");
         VirtualMachine vm = virtualMachineService.provisionVirtualMachine(params);
         virtualMachines.add(vm);
 
         System.out.println(virtualMachineService.getOSDistro(vm.vmId));
         Assert.assertEquals( "ubuntu-1604", virtualMachineService.getOSDistro(vm.vmId));
-    }
-
-    @Test
-    public void testUpdateManagedLevel() {
-        VirtualMachine vm = SqlTestData.insertTestVm(orionGuid, dataSource, vps4User.getId());
-        virtualMachines.add(vm);
-
-        Assert.assertEquals(0,  vm.managedLevel);
-
-        Map<String, Object> paramsToUpdate = new HashMap<>();
-        paramsToUpdate.put("managed_level", 2);
-        virtualMachineService.updateVirtualMachine(vm.vmId, paramsToUpdate);
-        vm = virtualMachineService.getVirtualMachine(vm.vmId);
-
-        Assert.assertEquals(2,  vm.managedLevel);
     }
 
     @Test
@@ -474,6 +459,34 @@ public class JdbcVirtualMachineServiceTest {
 
         Map<Integer, Integer> zombieServerCount = virtualMachineService.getZombieServerCountByTiers();
         assertEquals(2, zombieServerCount.get(10).intValue());
+    }
+
+    @Test
+    public void testInsertManagedData() {
+        VirtualMachine vm = SqlTestData.insertTestVm(orionGuid, dataSource, vps4User.getId());
+        virtualMachines.add(vm);
+
+        assertNull(virtualMachineService.getVirtualMachine(vm.vmId).managedLevelValidOn);
+
+        virtualMachineService.insertManagedData(vm.vmId, 2);
+
+        assertTrue(virtualMachineService.getVirtualMachine(vm.vmId).managedLevelValidOn.isBefore(Instant.now()));
+        assertEquals(2, virtualMachineService.getVirtualMachine(vm.vmId).managedLevel);
+    }
+
+    @Test
+    public void testInsertManagedDataOnConflictDoesUpdate() {
+        VirtualMachine vm = SqlTestData.insertTestVm(orionGuid, dataSource, vps4User.getId());
+        virtualMachines.add(vm);
+        virtualMachineService.insertManagedData(vm.vmId, 2);
+
+        VirtualMachine preConflictVm = virtualMachineService.getVirtualMachine(vm.vmId);
+        assertEquals(2, preConflictVm.managedLevel);
+
+        virtualMachineService.insertManagedData(vm.vmId, 1);
+
+        assertTrue(virtualMachineService.getVirtualMachine(vm.vmId).managedLevelValidOn.isAfter(preConflictVm.managedLevelValidOn));
+        assertEquals(1, virtualMachineService.getVirtualMachine(vm.vmId).managedLevel);
     }
 
     @Test

@@ -61,6 +61,7 @@ public class Vps4DestroyIpAddressActionTest {
                                                            null,
                                                            null,
                                                            null,
+                                                           null,
                                                            "fake.hostname.com",
                                                            0,
                                                            UUID.randomUUID(),

@@ -164,6 +164,8 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
 
         setupAutomaticBackupSchedule(request.vmInfo.vmId, request.shopperId);
 
+        insertVmManagedData(request.orionGuid, request.vmInfo.vmId);
+
         sendSetupEmail(request, primaryIpAddress);
 
         destroyIfOrionGuidIsMismatched(request.orionGuid);
@@ -481,6 +483,16 @@ public class Vps4ProvisionVm extends ActionCommand<ProvisionRequest, Vps4Provisi
             destroyVm(destroyRequest);
 
             throw new RuntimeException("Server is no longer tied to credit");
+        }
+    }
+
+    private void insertVmManagedData(UUID orionGuid, UUID vmId) {
+        VirtualMachineCredit credit = creditService.getVirtualMachineCredit(orionGuid);
+        if (credit.isManaged()) {
+            context.execute("InsertVmManagedData", ctx -> {
+                virtualMachineService.insertManagedData(vmId, credit.getManagedLevel());
+                return null;
+            }, Void.class);
         }
     }
 

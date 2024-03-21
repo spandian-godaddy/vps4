@@ -56,7 +56,7 @@ public class CreateTestVmRequest {
         Vps4User user = userService.getOrCreateUserForShopper(shopperId, "1", UUID.randomUUID());
 
         ProvisionVirtualMachineParameters params = new ProvisionVirtualMachineParameters(user.getId(), 1, "vps4-testing-", orionGuid,
-                "SomeNewVm", 1, 1, operatingSystem);
+                "SomeNewVm", 1, operatingSystem);
         UUID vmId = virtualMachineService.provisionVirtualMachine(params).vmId;
         virtualMachineService.addHfsVmIdToVirtualMachine(vmId, hfsVmId);
     }

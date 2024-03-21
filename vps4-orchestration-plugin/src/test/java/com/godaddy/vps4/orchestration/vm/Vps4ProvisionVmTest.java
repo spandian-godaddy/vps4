@@ -149,6 +149,7 @@ public class Vps4ProvisionVmTest {
                                      null,
                                      null,
                                      null,
+                                     null,
                                      "fake.host.name",
                                      0,
                                      UUID.randomUUID(),
@@ -206,6 +207,7 @@ public class Vps4ProvisionVmTest {
         when(virtualMachineService.getVirtualMachine(vmInfo.vmId)).thenReturn(this.vm);
 
         when(credit.getProductId()).thenReturn(vmId);
+        when(credit.isManaged()).thenReturn(true);
         when(creditService.getVirtualMachineCredit(orionGuid)).thenReturn(credit);
 
         when(context.execute(eq(AllocateIp.class), any(AllocateIp.Request.class))).thenReturn(primaryIp);
@@ -437,11 +439,29 @@ public class Vps4ProvisionVmTest {
         verify(intentService, never()).setVmIntents(eq(vmId), any());
     }
 
-        @Test
+    @Test
     public void setsVmIntentsEmptyIntents() {
         request.intentIds = new ArrayList<>();
         command.executeWithAction(context, request);
 
         verify(intentService, never()).setVmIntents(eq(vmId), any());
+    }
+
+    @Test
+    public void setsVmManagedLevelIfManaged() {
+        command.executeWithAction(context, request);
+
+        verify(creditService, times(2)).getVirtualMachineCredit(orionGuid);
+        verify(context, times(1)).execute(eq("InsertVmManagedData"), any(Function.class), eq(Void.class));
+    }
+
+    @Test
+    public void doesNotSetVmManagedLevelIfSelfManaged() {
+        when(credit.isManaged()).thenReturn(false);
+
+        command.executeWithAction(context, request);
+
+        verify(creditService, times(2)).getVirtualMachineCredit(orionGuid);
+        verify(context, times(0)).execute(eq("SetVmManagedLevelValidOn"), any(Function.class), eq(Void.class));
     }
 }

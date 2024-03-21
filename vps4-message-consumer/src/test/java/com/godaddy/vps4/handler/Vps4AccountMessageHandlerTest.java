@@ -104,6 +104,7 @@ public class Vps4AccountMessageHandlerTest {
                                 null,
                                 null,
                                 null,
+                                null,
                                 0,
                                 UUID.randomUUID(),
                                 null,

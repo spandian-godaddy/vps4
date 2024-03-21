@@ -95,6 +95,7 @@ public class CdnResourceTest {
                 Instant.now().plus(24, ChronoUnit.HOURS),
                 null,
                 null,
+                null,
                 0,
                 UUID.randomUUID(),
                 dataCenter,

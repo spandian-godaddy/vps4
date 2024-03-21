@@ -262,7 +262,7 @@ public class VmResource {
         try {
             params = new ProvisionVirtualMachineParameters(vps4User.getId(), provisionVmRequest.dataCenterId, sgidPrefix,
                                                            provisionVmRequest.orionGuid, provisionVmRequest.name,
-                                                           vmCredit.getTier(), vmCredit.getManagedLevel(),
+                                                           vmCredit.getTier(),
                                                            provisionVmRequest.image);
             virtualMachine = virtualMachineService.provisionVirtualMachine(params);
             creditService.claimVirtualMachineCredit(provisionVmRequest.orionGuid, provisionVmRequest.dataCenterId,

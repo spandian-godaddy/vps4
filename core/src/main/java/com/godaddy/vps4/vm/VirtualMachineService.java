@@ -73,6 +73,8 @@ public interface VirtualMachineService {
 
     void ackNydusWarning(UUID vmId);
 
+    void insertManagedData(UUID vmId, int managedLevel);
+
     void setMonitoringPlanFeature(UUID vmId, boolean monitoring);
 
     boolean getMonitoringPlanFeature (UUID orionGuid);

@@ -23,6 +23,7 @@ public class VirtualMachine {
     public Instant canceled;
     public Instant validUntil;
     public Instant nydusWarningAck;
+    public Instant managedLevelValidOn;
     public String hostname;
     public int managedLevel;
     public UUID backupJobId;
@@ -44,6 +45,7 @@ public class VirtualMachine {
             Instant canceled,
             Instant validUntil,
             Instant nydusWarningAck,
+            Instant managedLevelValidOn,
             String hostname,
             int managedLevel,
             UUID backupJobId,
@@ -61,6 +63,7 @@ public class VirtualMachine {
         this.canceled = canceled;
         this.validUntil = validUntil;
         this.nydusWarningAck = nydusWarningAck;
+        this.managedLevelValidOn = managedLevelValidOn;
         this.hostname = hostname;
         this.managedLevel = managedLevel;
         this.backupJobId = backupJobId;
@@ -81,6 +84,7 @@ public class VirtualMachine {
         canceled = virtualMachine.canceled;
         validUntil = virtualMachine.validUntil;
         nydusWarningAck = virtualMachine.nydusWarningAck;
+        managedLevelValidOn = virtualMachine.managedLevelValidOn;
         hostname = virtualMachine.hostname;
         managedLevel = virtualMachine.managedLevel;
         backupJobId = virtualMachine.backupJobId;

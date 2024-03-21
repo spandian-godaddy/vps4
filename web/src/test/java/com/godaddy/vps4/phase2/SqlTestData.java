@@ -77,7 +77,7 @@ public class SqlTestData {
         VirtualMachineService virtualMachineService = new JdbcVirtualMachineService(dataSource);
         long hfsVmId = getNextHfsVmId(dataSource);
         ProvisionVirtualMachineParameters params = new ProvisionVirtualMachineParameters(vps4UserId, dataCenterId, TEST_VM_SGID, orionGuid,
-                TEST_VM_NAME, tier, 1, imageName);
+                TEST_VM_NAME, tier, imageName);
         VirtualMachine virtualMachine = virtualMachineService.provisionVirtualMachine(params);
         virtualMachineService.addHfsVmIdToVirtualMachine(virtualMachine.vmId, hfsVmId);
         virtualMachineService.setBackupJobId(virtualMachine.vmId, UUID.randomUUID());
@@ -146,6 +146,7 @@ public class SqlTestData {
                                           + " WHERE sj.vm_id = v.vm_id AND " + test_vm_condition, null);
         Sql.with(dataSource).exec("DELETE FROM snapshot s USING virtual_machine v WHERE s.vm_id = v.vm_id AND " + test_vm_condition, null);
         Sql.with(dataSource).exec("DELETE FROM monitoring_pf m USING virtual_machine v WHERE m.vm_id = v.vm_id AND " + test_vm_condition, null);
+        Sql.with(dataSource).exec("DELETE FROM managed_server ms USING project p JOIN virtual_machine v USING (project_id) WHERE ms.vm_id = v.vm_id AND " + test_sgid_condition, null);
         Sql.with(dataSource).exec("DELETE FROM virtual_machine v USING project p WHERE v.project_id = p.project_id AND " + test_sgid_condition, null);
         Sql.with(dataSource).exec("DELETE FROM notification_filter nf WHERE nf.notification_id = '" + notificationId + "'", null);
         Sql.with(dataSource).exec("DELETE FROM notification_extended_details ned WHERE ned.notification_id =  '" + notificationId + "'", null);
