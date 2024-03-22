@@ -15,7 +15,6 @@ import javax.sql.DataSource;
 import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 
 public class JdbcVps4UserServiceTest {
 

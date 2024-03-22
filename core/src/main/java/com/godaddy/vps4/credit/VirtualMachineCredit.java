@@ -25,7 +25,6 @@ public class VirtualMachineCredit {
 
     public String resellerId;
     public String shopperId;
-    public String mssql;
 
     public ProdMeta prodMeta;
     public EntitlementData entitlementData;
@@ -150,7 +149,7 @@ public class VirtualMachineCredit {
     public UUID getCustomerId() { return entitlementData.customerId; }
 
     public String getMssql() {
-        return mssql;
+        return entitlementData.mssql;
     }
 
     public int getCdnWaf() {
@@ -185,7 +184,7 @@ public class VirtualMachineCredit {
                 }
                 credit.entitlementData.controlPanel = planFeatures.get(PlanFeatures.CONTROL_PANEL_TYPE.toString());
                 credit.entitlementData.pfid = Integer.parseInt(planFeatures.getOrDefault(PlanFeatures.PF_ID.toString(), "0"));
-                credit.mssql = planFeatures.get(PlanFeatures.MSSQL.toString());
+                credit.entitlementData.mssql = planFeatures.get(PlanFeatures.MSSQL.toString());
                 credit.entitlementData.cdnWaf = Integer.parseInt(planFeatures.getOrDefault(PlanFeatures.CDNWAF.toString(), "0"));
             }
 
@@ -295,7 +294,7 @@ public class VirtualMachineCredit {
                 credit.entitlementData.monitoring = entitlementProduct.monitoring ? 1 : 0;
                 credit.entitlementData.operatingSystem = entitlementProduct.operatingSystem;
                 credit.entitlementData.controlPanel = entitlementProduct.controlPanelType;
-                credit.mssql = entitlementProduct.mssql;
+                credit.entitlementData.mssql = entitlementProduct.mssql;
                 credit.entitlementData.cdnWaf = entitlementProduct.cdnWaf != null ? entitlementProduct.cdnWaf : 0;
             }
 

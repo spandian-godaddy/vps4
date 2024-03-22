@@ -36,7 +36,7 @@ public class Vps4Credit {
         customerId = virtualMachineCredit.entitlementData.customerId;
         expireDate = virtualMachineCredit.entitlementData.expireDate;
         autoRenew = false;
-        mssql = virtualMachineCredit.mssql;
+        mssql = virtualMachineCredit.entitlementData.mssql;
         cdnWaf = virtualMachineCredit.getCdnWaf();
         ded4 = virtualMachineCredit.isDed4();
         hasMonitoring = virtualMachineCredit.hasMonitoring();

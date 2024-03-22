@@ -8,17 +8,17 @@ import java.util.Map;
 public enum AccountStatus {
     ACTIVE(1), SUSPENDED(2), ABUSE_SUSPENDED(3), REMOVED(4);
 
-    private final int statusId;
-
-    AccountStatus(int statusId) {
-        this.statusId = statusId;
-    }
-
-    private final static Map<Integer, AccountStatus> map = stream(AccountStatus.values())
+    private static final Map<Integer, AccountStatus> map = stream(AccountStatus.values())
             .collect(toMap(status -> status.statusId, status -> status));
 
     public static AccountStatus valueOf(int statusId) {
         return map.get(statusId);
+    }
+
+    private final int statusId;
+
+    AccountStatus(int statusId) {
+        this.statusId = statusId;
     }
 
     public int getAccountStatusId() {
