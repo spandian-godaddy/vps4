@@ -1,0 +1,1 @@
+alter table virtual_machine alter column managed_level drop not null;
