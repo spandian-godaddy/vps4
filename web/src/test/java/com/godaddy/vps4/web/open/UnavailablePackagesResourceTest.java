@@ -73,4 +73,16 @@ public class UnavailablePackagesResourceTest {
         Set<String> result = resource.getUnavailablePackages();
         assertEquals(multiPackageSet, result);
     }
+
+    @Test
+    public void getsPackagesWhenNoUnavailableTiers() {
+        List<InventoryDetails> inventory = new ArrayList<>();
+        inventory.add(createInventoryDetail("ded.hdd.c4.r32.d8000", 60, 10));
+        inventory.add(createInventoryDetail("ded.hdd.c6.r64.d8000", 80, 30));
+        inventory.add(createInventoryDetail("ded.ssd.c4.r32.d1024", 120, 20));
+        when(inventoryResource.getInventory(eq(null), anyInt())).thenReturn(inventory);
+
+        Set<String> result = resource.getUnavailablePackages();
+        assertEquals(0, result.size());
+    }
 }

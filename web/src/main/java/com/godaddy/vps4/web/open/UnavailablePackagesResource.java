@@ -1,5 +1,6 @@
 package com.godaddy.vps4.web.open;
 
+import java.util.HashSet;
 import java.util.Set;
 
 import javax.inject.Inject;
@@ -41,6 +42,9 @@ public class UnavailablePackagesResource {
                 .filter(i -> i.available == 0)
                 .map(i -> i.tier)
                 .toArray(Integer[]::new);
+        if (unavailableTiers.length == 0) {
+            return new HashSet<>();
+        }
         return packageService.getPackages(unavailableTiers);
     }
 }
