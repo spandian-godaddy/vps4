@@ -84,8 +84,12 @@
 
 ## Get Configs from AWS Secrets
 
-- we have [a Jenkins job](https://vps4.jenkins.int.godaddy.com/view/AWS%20Secrets/job/AWS%20Get%20Secret/) for retrieving secrets from AWS
-- for each secret in the table, run the Jenkins job and store the result from the Jenkins workspace on your laptop
+You can get the secrets either directly from AWS Secrets Manager or from Jenkins via our Get Secrets job
+- AWS Secrets Manager
+  - To access the AWS Secrets Manager use the GoDaddy AWS chiclet in Okta and choose the VPS4ESSP project. (Note Dev/Test secrets are in Dev-Private) If you got access to the groups above you should have access to the AWS SM account.  Search for Secrets Manager, if there's no quick link already.
+- Jenkins
+  - Use the [Jenkins job](https://vps4.jenkins.int.godaddy.com/view/AWS%20Secrets/job/AWS%20Get%20Secret/) for retrieving secrets from AWS
+  - For each secret in the table, run the Jenkins job and store the result from the Jenkins workspace on your laptop.  The Workspace refers to a link in the Jenkins job once you run the job. Yes, there's a lot, but you only have to do this once. Unfortunately we've had to add a lot of additional certs recently for all the other services in order to integrate with their API.
 
 | Secret Name                    | File Name               | Environment | Path on Local Machine                                                         |
 |--------------------------------|-------------------------|-------------|-------------------------------------------------------------------------------|
@@ -95,14 +99,14 @@
 | /base/hfs.api.key              | hfs.api.key             | dev         | core/src/main/resources/com/godaddy/vps4/config/base/hfs.api.key              |
 | /local/messaging.api.crt       | messaging.api.crt       | dev         | core/src/main/resources/com/godaddy/vps4/config/local/messaging.api.crt       |
 | /local/messaging.api.key       | messaging.api.key       | dev         | core/src/main/resources/com/godaddy/vps4/config/local/messaging.api.key       |
-| /local/entitlements.api.crt    | entitlements.api.crt    | dev         | core/src/main/resources/com/godaddy/vps4/config/local/entitlements.api.crt    |
-| /local/entitlements.api.key    | entitlements.api.key    | dev         | core/src/main/resources/com/godaddy/vps4/config/local/entitlements.api.key    |
-| /local/firewall.api.crt        | firewall.api.crt        | dev         | core/src/main/resources/com/godaddy/vps4/config/local/firewall.api.crt        |
-| /local/firewall.api.key        | firewall.api.key        | dev         | core/src/main/resources/com/godaddy/vps4/config/local/firewall.api.key        |
-| /local/vps4.shopper.crt        | vps4.shopper.crt        | dev         | core/src/main/resources/com/godaddy/vps4/config/local/vps4.shopper.crt        |
-| /local/vps4.shopper.key        | vps4.shopper.key        | dev         | core/src/main/resources/com/godaddy/vps4/config/local/vps4.shopper.key        |
-| /local/vps4.api.crt            | vps4.api.crt            | dev         | core/src/main/resources/com/godaddy/vps4/config/local/vps4.api.crt            |
-| /local/vps4.api.key            | vps4.api.key            | dev         | core/src/main/resources/com/godaddy/vps4/config/local/vps4.api.key            |
+| /base/entitlements.api.crt    | entitlements.api.crt    | dev         | core/src/main/resources/com/godaddy/vps4/config/base/entitlements.api.crt    |
+| /base/entitlements.api.key    | entitlements.api.key    | dev         | core/src/main/resources/com/godaddy/vps4/config/base/entitlements.api.key    |
+| /base/firewall.api.crt        | firewall.api.crt        | dev         | core/src/main/resources/com/godaddy/vps4/config/base/firewall.api.crt        |
+| /base/firewall.api.key        | firewall.api.key        | dev         | core/src/main/resources/com/godaddy/vps4/config/base/firewall.api.key        |
+| /base/vps4.shopper.crt        | vps4.shopper.crt        | dev         | core/src/main/resources/com/godaddy/vps4/config/base/vps4.shopper.crt        |
+| /base/vps4.shopper.key        | vps4.shopper.key        | dev         | core/src/main/resources/com/godaddy/vps4/config/base/vps4.shopper.key        |
+| /base/vps4.api.crt            | vps4.api.crt            | dev         | core/src/main/resources/com/godaddy/vps4/config/base/vps4.api.crt            |
+| /base/vps4.api.key            | vps4.api.key            | dev         | core/src/main/resources/com/godaddy/vps4/config/base/vps4.api.key            |
 | /local/password_encryption.key | password_encryption.key | dev         | core/src/main/resources/com/godaddy/vps4/config/local/password_encryption.key |
 
 ## Database Configuration
