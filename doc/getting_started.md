@@ -190,7 +190,7 @@ You can get the secrets either directly from AWS Secrets Manager or from Jenkins
 - run your local vps4 web server
 - set your `authorization` request header
     - header should be in the format `Authorization: sso-jwt YOUR_DEV_IDP_TOKEN`
-    - the token can be found in your `auth_idp` cookie after signing in to [dev](https://sso.dev-godaddy.com/), or using a tool like [gotjwt](https://github.secureserver.net/sjohnson/gotjwt)
+    - the token can be found in your `auth_idp` cookie after signing in to [dev](https://sso.dev-godaddy.com/), or using a tool like [ssojwt](https://github.com/gdcorp-engineering/ssojwt/blob/main/README.md)
 - create a credit with the [POST /api/credits](http://localhost:8089/swagger/#!/credits/createCredit) endpoint
     - Example:
         ```json
@@ -220,10 +220,6 @@ You can get the secrets either directly from AWS Secrets Manager or from Jenkins
 
 ## Calling the HFS API Directly
 
-- if you want to call the HFS API directly, you'll need the HFS web developer client certs in your system keychain
-    - ask HFS team for read collaborator access to the [hfs/Creds](https://github.secureserver.net/hfs/Creds) repo, and then git clone it locally
-    - for each environment, find its pkcs12 cert (example: `Creds/ssl_ca/hfs/STAGE/hfs_end_web_developer.p12`)
-    - import the .p12 file into Mac KeyChain
-        - open KeyChain Access
-        - File -> Import Items, browse to .p12 file
-        - insert password `changeit`
+- HFS API also now supports JWT authentication, similar to the VPS4 API.
+- Call the [HFS APIs](http://hfs.api.dev-godaddy.com/#/) with your Jomax JWT or you can use a Cert JWT.  Use the same Authorization header format as above.
+    - [Generate a Cert JWT](https://godaddy-corp.atlassian.net/wiki/spaces/AUTH/pages/89655742/Cert+JWT) using the above listed hfs.api.crt and hfs.api.key.
